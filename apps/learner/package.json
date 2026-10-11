@@ -1,0 +1,46 @@
+{
+  "name": "@martyrs/learner",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite dev --port 5173",
+    "generate-routes": "tsr generate",
+    "build": "vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "npm run generate-routes && tsc --noEmit"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.3.3",
+    "@apollo/client-integration-tanstack-start": "0.14.5-rc.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-router-ssr-query": "^1.167.3",
+    "@workspace/data": "*",
+    "@tailwindcss/vite": "^4",
+    "@tanstack/react-devtools": "latest",
+    "@tanstack/react-router": "latest",
+    "@tanstack/react-router-devtools": "latest",
+    "@tanstack/react-start": "latest",
+    "@workspace/ui": "*",
+    "graphql": "^16.11.0",
+    "rxjs": "^7.8.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4"
+  },
+  "devDependencies": {
+    "@tanstack/devtools-vite": "latest",
+    "@tanstack/eslint-config": "latest",
+    "@tanstack/router-cli": "^1.167.40",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6",
+    "eslint": "^10",
+    "typescript": "^6.0.2",
+    "vite": "^8"
+  }
+}

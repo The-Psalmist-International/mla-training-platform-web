@@ -1,21 +1,42 @@
-# shadcn/ui monorepo template
+# Martyrs platform web
 
-This is a TanStack Start monorepo template with shadcn/ui.
+Two TanStack Start apps with shared shadcn UI (preset `b7nwSN6jVA`), Phosphor icons, Apollo GraphQL and TanStack Query. The sibling `mla-platform-core` backend is unchanged.
 
-## Adding components
+## Development
 
-To add components to your app, run the following command at the root of your `web` app:
+Use Node 22.15+ or Node 24 LTS and npm 11.12.1. From this folder:
 
-```bash
-pnpm dlx shadcn@latest add button -c apps/web
+```sh
+npm install
+npm run dev
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+- Orchestrator: http://localhost:3000 (`npm run dev:orchestrator`)
+- Learner: http://localhost:5173 (`npm run dev:learner`)
 
-## Using components
+Copy each app's `.env.example` to `.env.local` to override `VITE_GRAPHQL_URL`; the default is `http://localhost:4000/graphql`. Start the backend separately to use the connection check. No secrets belong in `VITE_*` variables.
 
-To use the components in your app, import them from the `ui` package.
+## Workspaces
 
-```tsx
-import { Button } from "@workspace/ui/components/button";
+```text
+apps/
+  orchestrator/   # Admin/instructor app
+  learner/        # Learner app
+packages/
+  ui/            # Preset theme, shared components, Phosphor defaults
+  data/          # Apollo/Query clients, typed operations, focused tests
 ```
+
+Apollo handles GraphQL; Query handles REST and other non-GraphQL data. Both use request-scoped caches and TanStack Start SSR integrations. This is a scaffold, not completed dashboards or authentication.
+
+## Checks and components
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npx shadcn@latest add button -c apps/orchestrator
+```
+
+Components added from either app are routed to the shared UI workspace. See [frontend setup](docs/frontend-setup.md) for data ownership, SSR, session boundaries, and next steps.

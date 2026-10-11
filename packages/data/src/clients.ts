@@ -15,8 +15,14 @@ export interface DataClientOptions {
 
 export function validateGraphqlUrl(value: string) {
   const url = new URL(value)
-  if (!(["http:", "https:"] as string[]).includes(url.protocol) || url.username || url.password) {
-    throw new Error("VITE_GRAPHQL_URL must be an absolute HTTP(S) URL without credentials.")
+  if (
+    !(["http:", "https:"] as string[]).includes(url.protocol) ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error(
+      "VITE_GRAPHQL_URL must be an absolute HTTP(S) URL without credentials."
+    )
   }
   return url.toString()
 }
@@ -32,7 +38,9 @@ export function createDataClients(options: DataClientOptions) {
     },
   })
   const authLink = new SetContextLink(async (previousContext) => {
-    const token = options.getAccessToken ? await options.getAccessToken() : accessToken
+    const token = options.getAccessToken
+      ? await options.getAccessToken()
+      : accessToken
     return {
       headers: {
         ...previousContext.headers,
@@ -42,17 +50,14 @@ export function createDataClients(options: DataClientOptions) {
   })
   const apolloClient = new ApolloClient({
     cache: new InMemoryCache(),
-    link: authLink.concat(new HttpLink({
-      uri: graphqlUrl,
-      credentials: "include",
-      fetch: options.fetch,
-    })),
-    // Mutations are never automatically retried by a transport retry link.
-    defaultOptions: {
-      watchQuery: { errorPolicy: "none" },
-      query: { errorPolicy: "none" },
-      mutate: { errorPolicy: "none" },
-    },
+    link: authLink.concat(
+      new HttpLink({
+        uri: graphqlUrl,
+        credentials: "include",
+        fetch: options.fetch,
+      })
+    ),
+    // Keep Apollo's default strict error policy; no automatic mutation retry link.
   })
 
   return {

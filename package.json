@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "turbo dev --ui=stream",
+    "dev:orchestrator": "npm run dev --workspace=@martyrs/orchestrator",
+    "dev:learner": "npm run dev --workspace=@martyrs/learner",
+    "test": "turbo test",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"
@@ -17,7 +20,7 @@
   },
   "packageManager": "npm@11.12.1",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.15.0"
   },
   "workspaces": [
     "apps/*",

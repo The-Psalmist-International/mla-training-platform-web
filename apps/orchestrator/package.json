@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@martyrs/orchestrator",
   "version": "0.0.1",
   "type": "module",
   "private": true,
@@ -7,19 +7,26 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 3000",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "npm run generate-routes && tsc --noEmit"
   },
   "dependencies": {
+    "@apollo/client": "^4.3.3",
+    "@apollo/client-integration-tanstack-start": "0.14.5-rc.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-router-ssr-query": "^1.167.3",
+    "@workspace/data": "*",
     "@tailwindcss/vite": "^4",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-router": "latest",
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-start": "latest",
     "@workspace/ui": "*",
-    "lucide-react": "^1.55.0",
+    "graphql": "^16.11.0",
+    "rxjs": "^7.8.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4"

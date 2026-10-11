@@ -14,13 +14,14 @@ export interface CurrentUser {
   role: "admin" | "instructor" | "learner"
 }
 
-export const CURRENT_USER_QUERY: TypedDocumentNode<{ me: CurrentUser | null }> = gql`
-  query CurrentUser {
-    me {
-      id
-      name
-      email
-      role
+export const CURRENT_USER_QUERY: TypedDocumentNode<{ me: CurrentUser | null }> =
+  gql`
+    query CurrentUser {
+      me {
+        id
+        name
+        email
+        role
+      }
     }
-  }
-`
+  `

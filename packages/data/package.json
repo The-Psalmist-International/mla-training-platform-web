@@ -1,0 +1,32 @@
+{
+  "name": "@workspace/data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+  },
+  "dependencies": {
+    "@apollo/client": "^4.3.3",
+    "@apollo/client-integration-tanstack-start": "0.14.5-rc.0",
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-router": "latest",
+    "@tanstack/react-start": "latest",
+    "graphql": "^16.11.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@tanstack/eslint-config": "latest",
+    "eslint": "^10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.0"
+  }
+}
