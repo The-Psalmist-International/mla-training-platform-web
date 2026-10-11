@@ -7,13 +7,18 @@ import type { ApolloClientIntegration } from "@apollo/client-integration-tanstac
 import type { QueryClient } from "@tanstack/react-query"
 import type { ReactNode } from "react"
 import appCss from "@workspace/ui/globals.css?url"
+import { themeInitScript } from "@workspace/ui/components/theme-provider"
+import type { DataClients } from "@workspace/data"
+import type { AuthSession } from "./auth/session"
 
 interface RouterContext extends ApolloClientIntegration.RouterContext {
   queryClient: QueryClient
   graphqlUrl: string
+  dataClients: DataClients
+  auth: AuthSession
 }
 
-export const Route = createRootRouteWithContext<RouterContext>()({
+export const rootRoute = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -21,6 +26,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { title: "Martyrs | Orchestrator" },
     ],
     links: [
+      {
+        rel: "preload",
+        href: "/SeasonCollectionVF-TRIAL.ttf",
+        as: "font",
+        type: "font/ttf",
+        crossOrigin: "anonymous",
+      },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "data:," },
     ],
@@ -41,9 +53,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-svh bg-background text-foreground antialiased">
         {children}

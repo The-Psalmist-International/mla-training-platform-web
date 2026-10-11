@@ -4,32 +4,33 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite dev --port 5173",
-    "generate-routes": "tsr generate",
+    "dev": "vite dev --port 5001 --strictPort",
     "build": "vite build",
-    "preview": "vite preview --port 5173",
+    "preview": "vite preview --port 5001 --strictPort",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "npm run generate-routes && tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@apollo/client": "^4.3.3",
     "@apollo/client-integration-tanstack-start": "0.14.5-rc.0",
     "@phosphor-icons/react": "^2.1.10",
-    "@tanstack/react-query": "^5.104.1",
-    "@tanstack/react-router-ssr-query": "^1.167.3",
-    "@workspace/data": "*",
     "@tailwindcss/vite": "^4",
     "@tanstack/react-devtools": "latest",
+    "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-router": "latest",
     "@tanstack/react-router-devtools": "latest",
+    "@tanstack/react-router-ssr-query": "^1.167.3",
     "@tanstack/react-start": "latest",
+    "@workspace/data": "*",
     "@workspace/ui": "*",
+    "formik": "^2.4.9",
     "graphql": "^16.11.0",
-    "rxjs": "^7.8.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4"
+    "rxjs": "^7.8.2",
+    "tailwindcss": "^4",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tanstack/devtools-vite": "latest",

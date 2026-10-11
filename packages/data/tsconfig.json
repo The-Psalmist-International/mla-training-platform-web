@@ -10,6 +10,6 @@
     "noEmit": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src"],
+  "include": ["src", "apollo"],
   "exclude": ["node_modules", "dist"]
 }

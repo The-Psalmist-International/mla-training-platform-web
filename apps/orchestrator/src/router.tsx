@@ -1,9 +1,11 @@
 import { createRouter } from "@tanstack/react-router"
+import type {} from "@tanstack/react-start"
 import { routerWithApolloClient } from "@apollo/client-integration-tanstack-start"
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query"
 import { createDataClients } from "@workspace/data"
 import { UiProvider } from "@workspace/ui/components/ui-provider"
-import { routeTree } from "./routeTree.gen"
+import { routeTree } from "./route-tree"
+import { createAuthSession } from "./auth/session"
 
 export function getRouter() {
   const clients = createDataClients({
@@ -16,6 +18,8 @@ export function getRouter() {
       ...routerWithApolloClient.defaultContext,
       queryClient: clients.queryClient,
       graphqlUrl: clients.graphqlUrl,
+      dataClients: clients,
+      auth: createAuthSession(clients),
     },
     scrollRestoration: true,
     defaultPreload: "intent",
@@ -24,6 +28,13 @@ export function getRouter() {
   })
   setupRouterSsrQueryIntegration({ router, queryClient: clients.queryClient })
   return routerWithApolloClient(router, clients.apolloClient)
+}
+
+declare module "@tanstack/react-start" {
+  interface Register {
+    ssr: true
+    router: ReturnType<typeof getRouter>
+  }
 }
 
 declare module "@tanstack/react-router" {

@@ -1,6 +1,6 @@
 # Martyrs platform web
 
-Two TanStack Start apps with shared shadcn UI (preset `b7nwSN6jVA`), Phosphor icons, Apollo GraphQL and TanStack Query. The sibling `mla-platform-core` backend is unchanged.
+Two TanStack Start apps with shared shadcn UI (preset `b7nwSN6jVA`), Phosphor icons, Apollo GraphQL and TanStack Query. The sibling `mla-platform-core` backend runs separately.
 
 ## Development
 
@@ -11,8 +11,8 @@ npm install
 npm run dev
 ```
 
-- Orchestrator: http://localhost:3000 (`npm run dev:orchestrator`)
-- Learner: http://localhost:5173 (`npm run dev:learner`)
+- Orchestrator: http://localhost:5000 (`npm run dev:orchestrator`)
+- Learner: http://localhost:5001 (`npm run dev:learner`)
 
 Copy each app's `.env.example` to `.env.local` to override `VITE_GRAPHQL_URL`; the default is `http://localhost:4000/graphql`. Start the backend separately to use the connection check. No secrets belong in `VITE_*` variables.
 
@@ -27,7 +27,9 @@ packages/
   data/          # Apollo/Query clients, typed operations, focused tests
 ```
 
-Apollo handles GraphQL; Query handles REST and other non-GraphQL data. Both use request-scoped caches and TanStack Start SSR integrations. This is a scaffold, not completed dashboards or authentication.
+Apollo handles GraphQL; Query handles REST and other non-GraphQL data. Both use request-scoped caches and TanStack Start SSR integrations. Routes are declared programmatically in each app's `src/route-tree.tsx`; route views live in `src/pages`. Feature operations live in `packages/data/apollo/<feature>/query.ts`.
+
+Orchestrator opens at `/sign-in`, with sign-in, forgot-password and reset-password screens connected to the backend's existing mutations. Light is the default; the theme switch persists a dark/light preference. Access tokens remain in memory. "Remember my email" saves only the email, not the session. Session restoration, Google callback handling, invitation acceptance and actual workspace screens remain follow-up work.
 
 ## Checks and components
 

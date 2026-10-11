@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { createDataClients, validateGraphqlUrl } from "./clients"
-import { HEALTH_QUERY } from "./operations"
+import { HEALTH_QUERY } from "../apollo/platform/query"
 import { backendHealthOptions } from "./health"
 
 const graphqlUrl = "http://localhost:4000/graphql"
@@ -20,14 +20,12 @@ describe("shared data clients", () => {
   })
 
   it("sends credentials and the latest bearer token, then clears both caches on logout", async () => {
-    const request = vi
-      .fn<typeof fetch>()
-      .mockImplementation(
-        async () =>
-          new Response(JSON.stringify({ data: { health: "ok" } }), {
-            headers: { "content-type": "application/json" },
-          })
-      )
+    const request = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ data: { health: "ok" } }), {
+          headers: { "content-type": "application/json" },
+        })
+    )
     const clients = createDataClients({ graphqlUrl, fetch: request })
     await clients.setAccessToken("first-token")
     await clients.apolloClient.query({
@@ -53,14 +51,12 @@ describe("shared data clients", () => {
 
   it("reads injected request-local authentication on each operation", async () => {
     let token = "request-token"
-    const request = vi
-      .fn<typeof fetch>()
-      .mockImplementation(
-        async () =>
-          new Response(JSON.stringify({ data: { health: "ok" } }), {
-            headers: { "content-type": "application/json" },
-          })
-      )
+    const request = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ data: { health: "ok" } }), {
+          headers: { "content-type": "application/json" },
+        })
+    )
     const clients = createDataClients({
       graphqlUrl,
       fetch: request,

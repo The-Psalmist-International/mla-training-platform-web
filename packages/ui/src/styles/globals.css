@@ -1,8 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/instrument-sans";
+
+@font-face {
+  font-family: "Season Collection Sans";
+  src: url("/SeasonCollectionVF-TRIAL.ttf") format("truetype");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+  font-variation-settings: "SERF" 0;
+}
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../../apps/**/*.{ts,tsx}";
@@ -116,8 +123,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Inter Variable", sans-serif;
-  --font-heading: "Instrument Sans Variable", sans-serif;
+  --font-sans: "Season Collection Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Season Collection Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -125,10 +132,31 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+    font-variation-settings: "SERF" 0;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
 }
+
+/* Reference-inspired auth palette; shared preset remains unchanged elsewhere. */
+.auth-surface {
+  --primary: #155dfb;
+  --primary-foreground: #ffffff;
+  --ring: #155dfb;
+  --input: #8a8f99;
+  --auth-link: var(--primary);
+}
+.dark .auth-surface {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --muted-foreground: #a1a1aa;
+  --primary: #155dfb;
+  --primary-foreground: #ffffff;
+  --ring: #51a2ff;
+  --input: #62626d;
+  --auth-link: #51a2ff;
+}
+.auth-link { color: var(--auth-link); }
