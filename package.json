@@ -7,7 +7,8 @@
     "dev": "turbo dev --ui=stream",
     "dev:orchestrator": "npm run dev --workspace=@martyrs/orchestrator",
     "dev:learner": "npm run dev --workspace=@martyrs/learner",
-    "test": "turbo test",
+    "test": "npm run test:tooling && turbo test",
+    "test:tooling": "node --experimental-strip-types --test tooling/vendor-chunks.test.mjs",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"

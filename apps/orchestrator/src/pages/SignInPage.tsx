@@ -51,8 +51,8 @@ export function SignInPage() {
 
   return (
     <AuthLayout
-      title="Sign in"
-      description="Access your account to manage projects, view analytics, and collaborate with your team."
+      title="Sign in to your account"
+      description="Enter your credentials to access your account."
     >
       <FormikProvider value={form}>
         <Form
@@ -100,41 +100,18 @@ export function SignInPage() {
               name="password"
               type="password"
               autoComplete="current-password"
-              placeholder="Ssshtt, it’s a secret"
+              placeholder="*********"
               required
               disabled={pending}
             />
           </div>
-          <label
-            className="flex cursor-pointer items-start gap-3 text-sm"
-            htmlFor="remember"
-          >
-            <input
-              id="remember"
-              name="remember"
-              type="checkbox"
-              className="mt-1 size-4 shrink-0 accent-primary outline-offset-4"
-              checked={form.values.remember}
-              disabled={pending}
-              onChange={(event) => {
-                void form.setFieldValue("remember", event.target.checked)
-                if (!event.target.checked) {
-                  try {
-                    localStorage.removeItem(emailKey)
-                  } catch {
-                    /* Storage can be unavailable. */
-                  }
-                }
-              }}
-            />
-            <span>
-              <span className="font-medium">Remember my email</span>
-              <span className="mt-1 block leading-6 text-muted-foreground">
-                Save my email on this device for faster access next time.
-              </span>
-            </span>
-          </label>
           <FormFeedback />
+          <p className="text-sm leading-6 text-muted-foreground">
+            Unable to access your account?{" "}
+            <span className="auth-link font-medium text-primary">
+              Contact support
+            </span>
+          </p>
           <Button
             type="submit"
             className="h-10 w-full transition-[background-color,opacity]"

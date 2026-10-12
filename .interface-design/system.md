@@ -6,7 +6,7 @@ Saved from the implemented auth UI on 2026-10-11. Read this before building or r
 
 The orchestrator serves administrators and instructors managing learning content, assessments, and learners. Interfaces should feel focused, calm, and operational. The supplied sign-in screenshot establishes the auth composition: a narrow centered form, compact heading, quiet supporting text, small blue workspace icon, and one full-width primary action. Do not introduce marketing panels, decorative gradients, oversized headings, or an enclosing card around this form.
 
-Preserve the shared shadcn preset `b7nwSN6jVA` and Base UI components. Auth's blue accent is scoped to `.auth-surface`; the shared preset remains purple elsewhere. Do not spread the auth override to all product screens without an explicit design decision.
+Preserve the shared shadcn preset `b7nwSN6jVA` and Base UI components. The user approved promoting auth blue to the shared primary across both apps: `#155dfb` with white primary-action text, plus `#51a2ff` for readable dark-mode focus and sidebar selected-link text. Neutral surfaces remain unchanged; `.auth-surface` keeps only its auth-specific control/surface refinements.
 
 ## Theme contract
 
@@ -81,7 +81,7 @@ Use a 4px base spacing unit and the existing preset radius scale (`--radius: 0.6
 
 Routes are programmatic in each app's `src/route-tree.tsx`; views live under `src/pages` with PascalCase page filenames. GraphQL operations live in `packages/data/apollo/<feature>/query.ts`. For Start asset-metadata compatibility and auth lifecycle limitations, see [frontend setup](../docs/frontend-setup.md).
 
-The signed-in handoff is not a dashboard layout reference. Session restoration, Google callback handling, invitation acceptance, orchestrator workspace screens, and learner product screens remain separate work. Extend these patterns deliberately rather than inventing unapproved navigation or dashboard structures.
+The orchestrator now has a reference-inspired shadcn sidebar/inset shell and initial views; see frontend setup for its backend-aligned navigation and role restrictions. The main inset has a subtle neutral-gray border and no shadow. Detailed workspace tools, session restoration, Google callback handling, invitation acceptance, and learner product screens remain separate work.
 
 ## Verification expectations
 

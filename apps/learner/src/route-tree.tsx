@@ -1,10 +1,9 @@
-import { createRoute } from "@tanstack/react-router"
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router"
 import { rootRoute } from "./root"
-import { HomePage } from "./pages/HomePage"
 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: HomePage,
+  component: lazyRouteComponent(() => import("./pages/HomePage"), "HomePage"),
 })
 export const routeTree = rootRoute.addChildren([homeRoute])
