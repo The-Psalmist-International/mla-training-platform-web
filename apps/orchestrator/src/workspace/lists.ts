@@ -54,7 +54,7 @@ async function execute<T, TVariables extends OperationVariables>(
     query,
     variables,
     fetchPolicy: "network-only",
-    context: { fetchOptions: { signal } },
+    context: { toast: "query-cache", fetchOptions: { signal } },
   })
   if (!result.data) throw new Error("Missing workspace response")
   return result.data

@@ -8,6 +8,8 @@ import {
 } from "react"
 import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@workspace/ui/components/toaster"
+import type { ToastStatus } from "@workspace/ui/lib/toast"
 import type { CurrentUser } from "@workspace/data"
 import { BookOpenIcon } from "@phosphor-icons/react/dist/csr/BookOpen"
 import { FilmStripIcon } from "@phosphor-icons/react/dist/csr/FilmStrip"
@@ -127,7 +129,7 @@ function LibraryTable({
 }) {
   const { dataClients, auth } = useRouter().options.context
   const queryClient = useQueryClient()
-  const [feedback, setFeedback] = useState("")
+  const { toast } = useToast()
   const urlState = validateLibrarySearch(view, useSearch({ strict: false }))
   const navigate = useNavigate()
   const id = useId()
@@ -187,8 +189,8 @@ function LibraryTable({
   const closeAction = () => {
     if (auth.getUser() === user) updateSearch({ modal: undefined, item: undefined }, true)
   }
-  const changed = (message?: string) => {
-    if (message && auth.getUser() === user) setFeedback(message)
+  const changed = (message?: string, status: ToastStatus = "success") => {
+    if (message && auth.getUser() === user) toast({ title: view === "courses" ? "Course updated" : "Video library updated", description: message, status })
     void queryClient
       .invalidateQueries({
         queryKey: [
@@ -282,14 +284,6 @@ function LibraryTable({
   ]
   return (
     <WorkspacePageFrame view={view}>
-      <p
-        role="status"
-        className={
-          feedback ? "mb-3 shrink-0 text-sm text-muted-foreground" : "sr-only"
-        }
-      >
-        {feedback}
-      </p>
       <DataTable
         rows={query.data?.items ?? []}
         columns={columns}

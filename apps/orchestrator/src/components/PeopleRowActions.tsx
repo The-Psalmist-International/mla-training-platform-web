@@ -1,6 +1,7 @@
 import { useId, useRef } from "react"
 import { useBlocker, useRouter } from "@tanstack/react-router"
 import { Form, FormikProvider, useFormik } from "formik"
+import { useToast } from "@workspace/ui/components/toaster"
 import * as yup from "yup"
 import type { CurrentUser, UserListItem, UserRole } from "@workspace/data"
 import { UserGearIcon } from "@phosphor-icons/react/dist/csr/UserGear"
@@ -185,6 +186,7 @@ export function PeopleAccessDialog({
   onSuccess: (person: UserListItem) => void
 }) {
   const { auth, dataClients } = useRouter().options.context
+  const { toast } = useToast()
   const id = useId()
   const pending = useRef(false)
   useBlocker({
@@ -215,7 +217,7 @@ export function PeopleAccessDialog({
           type === "role" ? { type, role } : { type, disabled: disabling }
         )
       } catch (error) {
-        helpers.setStatus(peopleAccessErrorMessage(error))
+        if (auth.getUser() === actor) toast({ title: "Access could not be updated", description: peopleAccessErrorMessage(error), status: "error" })
         pending.current = false
         return
       }

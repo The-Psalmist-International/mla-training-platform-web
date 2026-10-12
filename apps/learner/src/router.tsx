@@ -4,10 +4,16 @@ import { routerWithApolloClient } from "@apollo/client-integration-tanstack-star
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query"
 import { createDataClients } from "@workspace/data"
 import { UiProvider } from "@workspace/ui/components/ui-provider"
+import { createToasts } from "@workspace/ui/lib/toast"
+import { requestToastMessage } from "@workspace/ui/lib/request-toasts"
 import { routeTree } from "./route-tree"
 
 export function getRouter() {
+  const toasts = createToasts()
   const clients = createDataClients({
+    onRequestComplete: (event) => {
+      if (typeof window !== "undefined" && event.kind === "mutation") toasts.toast(requestToastMessage(event))
+    },
     graphqlUrl:
       import.meta.env.VITE_GRAPHQL_URL ?? "http://localhost:4000/graphql",
   })
@@ -21,7 +27,7 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-    Wrap: UiProvider,
+    Wrap: ({ children }) => <UiProvider toasts={toasts}>{children}</UiProvider>,
   })
   setupRouterSsrQueryIntegration({ router, queryClient: clients.queryClient })
   return routerWithApolloClient(router, clients.apolloClient)

@@ -4,12 +4,14 @@ import { useMutation } from "@apollo/client/react"
 import { Link, useRouter } from "@tanstack/react-router"
 import { RESET_PASSWORD_MUTATION } from "@workspace/data/apollo/auth/query"
 import { Button } from "@workspace/ui/components/button"
+import { useToast } from "@workspace/ui/components/toaster"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { resetPasswordSchema } from "../auth/validation"
 import { AuthLayout } from "../components/AuthLayout"
 import { authErrorMessage } from "../auth/session"
 
 export function ResetPasswordPage() {
+  const { toast } = useToast()
   const { auth } = useRouter().options.context
   const [token, setToken] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -22,7 +24,7 @@ export function ResetPasswordPage() {
       if (!token) return
       helpers.setStatus(undefined)
       try {
-        await resetPassword({ variables: { input: { token, password } } })
+        await resetPassword({ variables: { input: { token, password } }, context: { toast: false } })
         await auth.clearSession()
         helpers.resetForm()
         setToken(null)
@@ -32,8 +34,9 @@ export function ResetPasswordPage() {
           window.location.pathname
         )
         setComplete(true)
+        toast({ title: "Password updated", description: "You can now sign in with your new password.", status: "success" })
       } catch (failure) {
-        helpers.setStatus(authErrorMessage(failure))
+        toast({ title: "Password could not be updated", description: authErrorMessage(failure), status: "error" })
       }
     },
   })

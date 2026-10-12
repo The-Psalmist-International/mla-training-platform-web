@@ -1,4 +1,5 @@
-import { HttpLink } from "@apollo/client"
+import { ApolloLink, HttpLink } from "@apollo/client"
+import { Observable } from "rxjs"
 import { SetContextLink } from "@apollo/client/link/context"
 import { ErrorLink } from "@apollo/client/link/error"
 import {
@@ -10,13 +11,23 @@ import {
   ApolloClient,
   InMemoryCache,
 } from "@apollo/client-integration-tanstack-start"
-import { QueryClient } from "@tanstack/react-query"
+import { QueryCache, QueryClient, isCancelledError } from "@tanstack/react-query"
+
+export interface RequestNotification {
+  kind: "query" | "mutation"
+  operationName?: string
+  queryKey?: readonly unknown[]
+  status: "success" | "error"
+  error?: unknown
+}
 
 export interface DataClientOptions {
   graphqlUrl: string
   /** Supply a request-local token source for authenticated SSR in a future auth slice. */
   getAccessToken?: () => string | null | Promise<string | null>
   fetch?: typeof globalThis.fetch
+  /** User-facing outcomes only; no credentials, variables, or response data. */
+  onRequestComplete?: (event: RequestNotification) => void
 }
 
 export function validateGraphqlUrl(value: string) {
@@ -39,12 +50,55 @@ export function createDataClients(options: DataClientOptions) {
   let accessToken: string | null = null
   let authGeneration = 0
   const authFailureListeners = new Set<() => void>()
+  const queryGenerations = new WeakMap<object, number>()
+  const notify = (event: RequestNotification) => {
+    if (isCancelledError(event.error) || (event.error instanceof Error && event.error.name === "AbortError")) return
+    try { options.onRequestComplete?.(event) } catch { /* Feedback must not change a request's result. */ }
+  }
+  const queryCache = new QueryCache({
+    onSuccess: (_data, query) => {
+      if (queryGenerations.get(query) === authGeneration)
+        notify({ kind: "query", queryKey: query.queryKey, status: "success" })
+    },
+    onError: (error, query) => {
+      if (queryGenerations.get(query) === authGeneration)
+        notify({ kind: "query", queryKey: query.queryKey, status: "error", error })
+    },
+  })
+  queryCache.subscribe((event) => {
+    if (event.type === "updated" && event.action.type === "fetch")
+      queryGenerations.set(event.query, authGeneration)
+  })
   const queryClient = new QueryClient({
+    queryCache,
     defaultOptions: {
       queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
       mutations: { retry: false },
     },
   })
+  const notificationLink = new ApolloLink((operation, forward) => new Observable((observer) => {
+    const context = operation.getContext()
+    const kind = operation.operationType === "mutation" ? "mutation" : "query"
+    let completed = false
+    const report = (error?: unknown) => {
+      if (completed) return
+      completed = true
+      // Managed queries report after TanStack retries and validates their response.
+      // Compound mutations have one flow-owned toast rather than one per subrequest.
+      if (context.toast === false || context.toast === "query-cache" || context.authGeneration !== authGeneration) return
+      notify({ kind, operationName: operation.operationName, status: error ? "error" : "success", error })
+    }
+    const subscription = forward(operation).subscribe({
+      next: (result) => {
+        if (result.errors?.length) report(new CombinedGraphQLErrors(result))
+        else report()
+        observer.next(result)
+      },
+      error: (error: unknown) => { report(error); observer.error(error) },
+      complete: () => observer.complete(),
+    })
+    return () => subscription.unsubscribe()
+  }))
   const authLink = new SetContextLink(async (previousContext) => {
     const generation = authGeneration
     const token = options.getAccessToken
@@ -92,7 +146,7 @@ export function createDataClients(options: DataClientOptions) {
   })
   const apolloClient = new ApolloClient({
     cache: new InMemoryCache(),
-    link: authLink.concat(errorLink).concat(
+    link: authLink.concat(notificationLink).concat(errorLink).concat(
       new HttpLink({
         uri: graphqlUrl,
         credentials: "include",

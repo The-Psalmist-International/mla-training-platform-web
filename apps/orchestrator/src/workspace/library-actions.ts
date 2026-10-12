@@ -54,7 +54,7 @@ export function courseDetailsOptions(
         query: COURSE_DETAILS_QUERY,
         variables: { id },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing course details response")
       return result.data.course
@@ -76,6 +76,7 @@ export async function saveCourse(
   if (id) {
     const result = await clients.apolloClient.mutate({
       mutation: UPDATE_COURSE_MUTATION,
+      context: { toast: false },
       variables: { id, input: values },
     })
     if (!result.data) throw new Error("Missing course update response")
@@ -83,6 +84,7 @@ export async function saveCourse(
   }
   const result = await clients.apolloClient.mutate({
     mutation: CREATE_COURSE_MUTATION,
+    context: { toast: false },
     variables: { input: values },
   })
   if (!result.data) throw new Error("Missing course create response")
@@ -98,6 +100,7 @@ export async function changeCourseStatus(
   if (action === "publish") {
     const result = await clients.apolloClient.mutate({
       mutation: PUBLISH_COURSE_MUTATION,
+      context: { toast: false },
       variables: { id },
     })
     if (!result.data) throw new Error("Missing publication response")
@@ -106,6 +109,7 @@ export async function changeCourseStatus(
   if (action === "unpublish") {
     const result = await clients.apolloClient.mutate({
       mutation: UNPUBLISH_COURSE_MUTATION,
+      context: { toast: false },
       variables: { id },
     })
     if (!result.data) throw new Error("Missing unpublication response")
@@ -113,6 +117,7 @@ export async function changeCourseStatus(
   }
   const result = await clients.apolloClient.mutate({
     mutation: ARCHIVE_COURSE_MUTATION,
+    context: { toast: false },
     variables: { id },
   })
   if (!result.data) throw new Error("Missing archive response")
@@ -131,7 +136,7 @@ export function videoDetailsOptions(
         query: VIDEO_ASSET_DETAILS_QUERY,
         variables: { id },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing video details response")
       return result.data.videoAsset
@@ -152,7 +157,7 @@ export function videoPreviewOptions(
         query: PREVIEW_LESSON_VIDEO_QUERY,
         variables: { id },
         fetchPolicy: "no-cache",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing video preview response")
       const url = new URL(result.data.previewLessonVideo.url)
@@ -176,6 +181,7 @@ export async function createVideoUpload(
   requireAuthor(user)
   const result = await clients.apolloClient.mutate({
     mutation: CREATE_LESSON_VIDEO_UPLOAD_MUTATION,
+    context: { toast: false },
     variables: { input },
   })
   if (!result.data) throw new Error("Missing upload response")
@@ -189,6 +195,7 @@ export async function refreshVideoUpload(
   requireAuthor(user)
   const result = await clients.apolloClient.mutate({
     mutation: REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
+    context: { toast: false },
     variables: { id },
   })
   if (!result.data) throw new Error("Missing upload renewal response")
@@ -202,6 +209,7 @@ export async function syncVideo(
   requireAuthor(user)
   const result = await clients.apolloClient.mutate({
     mutation: SYNC_LESSON_VIDEO_ASSET_MUTATION,
+    context: { toast: false },
     variables: { id },
   })
   if (!result.data) throw new Error("Missing video status response")

@@ -74,7 +74,7 @@ export function emailDeliveryTableOptions(
           offset: params.pageIndex * params.pageSize,
         },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing email delivery response")
       return result.data.adminEmailMessagesPage
@@ -100,7 +100,7 @@ export function emailDeliveryDetailOptions(
         query: ADMIN_EMAIL_MESSAGE_QUERY,
         variables: { id },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing email detail response")
       return result.data.adminEmailMessage

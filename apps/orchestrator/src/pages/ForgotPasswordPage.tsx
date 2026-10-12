@@ -4,12 +4,14 @@ import { useMutation } from "@apollo/client/react"
 import { Link } from "@tanstack/react-router"
 import { REQUEST_PASSWORD_RESET_MUTATION } from "@workspace/data/apollo/auth/query"
 import { Button } from "@workspace/ui/components/button"
+import { useToast } from "@workspace/ui/components/toaster"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { forgotPasswordSchema } from "../auth/validation"
 import { AuthLayout } from "../components/AuthLayout"
 import { authErrorMessage } from "../auth/session"
 
 export function ForgotPasswordPage() {
+  const { toast } = useToast()
   const [sent, setSent] = useState(false)
   const [requestReset] = useMutation(REQUEST_PASSWORD_RESET_MUTATION)
   const form = useFormik({
@@ -18,10 +20,11 @@ export function ForgotPasswordPage() {
     onSubmit: async ({ email }, helpers) => {
       helpers.setStatus(undefined)
       try {
-        await requestReset({ variables: { email: email.trim().toLowerCase() } })
+        await requestReset({ variables: { email: email.trim().toLowerCase() }, context: { toast: false } })
         setSent(true)
+        toast({ title: "Password reset requested", description: "If an account exists for this email, you will receive a reset link shortly.", status: "success" })
       } catch (failure) {
-        helpers.setStatus(authErrorMessage(failure))
+        toast({ title: "Reset link could not be requested", description: authErrorMessage(failure), status: "error" })
       }
     },
   })

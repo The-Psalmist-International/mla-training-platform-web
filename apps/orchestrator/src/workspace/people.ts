@@ -37,6 +37,7 @@ export async function updatePeopleAccess(
   if (change.type === "role") {
     const result = await clients.apolloClient.mutate({
       mutation: SET_USER_ROLE_MUTATION,
+      context: { toast: false },
       variables: { id, role: change.role },
     })
     if (!result.data) throw new Error("Missing role response")
@@ -44,6 +45,7 @@ export async function updatePeopleAccess(
   }
   const result = await clients.apolloClient.mutate({
     mutation: SET_USER_DISABLED_MUTATION,
+    context: { toast: false },
     variables: { id, disabled: change.disabled },
   })
   if (!result.data) throw new Error("Missing account status response")
@@ -98,7 +100,7 @@ export function peopleTableOptions(
           offset: params.pageIndex * params.pageSize,
         },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing people response")
       return result.data.usersPage

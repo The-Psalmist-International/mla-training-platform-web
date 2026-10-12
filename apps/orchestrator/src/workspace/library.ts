@@ -60,7 +60,7 @@ export function libraryTableOptions(
             status: search.status as CourseStatus | undefined,
           },
           fetchPolicy: "network-only",
-          context: { fetchOptions: { signal } },
+          context: { toast: "query-cache", fetchOptions: { signal } },
         })
         if (!result.data) throw new Error("Missing courses response")
         return result.data.coursesPage
@@ -72,7 +72,7 @@ export function libraryTableOptions(
           status: search.status as VideoAssetStatus | undefined,
         },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing video library response")
       return {

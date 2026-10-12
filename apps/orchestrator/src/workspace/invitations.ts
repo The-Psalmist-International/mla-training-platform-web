@@ -51,7 +51,7 @@ export function invitationsTableOptions(
           offset: params.pageIndex * params.pageSize,
         },
         fetchPolicy: "network-only",
-        context: { fetchOptions: { signal } },
+        context: { toast: "query-cache", fetchOptions: { signal } },
       })
       if (!result.data) throw new Error("Missing invitations response")
       return result.data.invitationsPage
@@ -66,6 +66,7 @@ export async function sendInvitation(
   if (actor.role !== "admin") throw new Error("Admin access required")
   const result = await clients.apolloClient.mutate({
     mutation: CREATE_INVITATION_MUTATION,
+    context: { toast: false },
     variables: { input },
   })
   if (!result.data) throw new Error("Missing invitation response")
@@ -79,6 +80,7 @@ export async function revokeInvitation(
   if (actor.role !== "admin") throw new Error("Admin access required")
   const result = await clients.apolloClient.mutate({
     mutation: REVOKE_INVITATION_MUTATION,
+    context: { toast: false },
     variables: { id },
   })
   if (result.data?.revokeInvitation !== true)

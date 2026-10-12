@@ -7,6 +7,7 @@ import {
 } from "react"
 import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@workspace/ui/components/toaster"
 import type { CurrentUser, UserListItem } from "@workspace/data"
 import {
   DataTable,
@@ -108,7 +109,7 @@ function PeopleTable({ user }: { user: CurrentUser }) {
   const urlState = useSearch({ from: "/workspace/people" })
   const navigate = useNavigate({ from: "/workspace/people" })
   const params = peopleParamsFromSearch(urlState)
-  const [feedback, setFeedback] = useState("")
+  const { toast } = useToast()
   const [search, setSearch] = useState(params.search)
   const updateSearch = useCallback(
     (patch: Partial<PeopleSearchState>, replace = false) => {
@@ -159,12 +160,6 @@ function PeopleTable({ user }: { user: CurrentUser }) {
   }
   return (
     <WorkspacePageFrame view="people">
-      <p
-        role="status"
-        className={feedback ? "text-sm text-muted-foreground" : "sr-only"}
-      >
-        {feedback}
-      </p>
       <DataTable
         ariaLabel="People"
         rows={query.data?.items ?? []}
@@ -310,7 +305,7 @@ function PeopleTable({ user }: { user: CurrentUser }) {
           actor={user}
           onClose={closeAction}
           onSuccess={(person) => {
-            setFeedback(`Access updated for ${person.name}.`)
+            toast({ title: "Access updated", description: `Access updated for ${person.name}.`, status: "success" })
             // Refresh failures belong to the table, not the completed mutation.
             void queryClient
               .invalidateQueries({

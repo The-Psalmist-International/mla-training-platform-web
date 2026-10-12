@@ -1,6 +1,7 @@
 import { useId, useRef } from "react"
 import { useBlocker, useRouter } from "@tanstack/react-router"
 import { Form, FormikProvider, useFormik } from "formik"
+import { useToast } from "@workspace/ui/components/toaster"
 import type { CurrentUser, InvitationListItem, UserRole } from "@workspace/data"
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt"
 import { ProhibitIcon } from "@phosphor-icons/react/dist/csr/Prohibit"
@@ -138,6 +139,7 @@ export function InvitationDialog({
       !isError &&
       status !== "accepted" &&
       (!revoking || status === "pending"))
+  const { toast } = useToast()
   const form = useFormik<{ email: string; role: UserRole }>({
     initialValues: { email: "", role: "learner" },
     validationSchema: creating ? invitationSchema : undefined,
@@ -151,9 +153,7 @@ export function InvitationDialog({
           currentStatus === "accepted" ||
           (revoking && currentStatus !== "pending")
         ) {
-          helpers.setStatus(
-            "This invitation can no longer be changed. Refresh the table."
-          )
+          toast({ title: "Invitation unavailable", description: "This invitation can no longer be changed. Refresh the table.", status: "warning" })
           return
         }
       }
@@ -172,7 +172,7 @@ export function InvitationDialog({
           })
         }
       } catch (error) {
-        helpers.setStatus(invitationErrorMessage(error))
+        toast({ title: isInvitationQueueError(error) ? "Invitation email not queued" : "Invitation could not be updated", description: invitationErrorMessage(error), status: isInvitationQueueError(error) ? "warning" : "error" })
         pending.current = false
         if (!revoking && isInvitationQueueError(error)) onPartialSuccess()
         return

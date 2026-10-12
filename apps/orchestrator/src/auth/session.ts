@@ -18,7 +18,7 @@ export function authErrorMessage(error: unknown) {
 }
 
 /** Request/router scoped. Never persist access tokens or credentials. */
-export function createAuthSession(clients: DataClients) {
+export function createAuthSession(clients: DataClients, onExpired?: () => void) {
   let user: CurrentUser | null = null
   let deadline = 0
   let generation = 0
@@ -42,6 +42,7 @@ export function createAuthSession(clients: DataClients) {
   const expireIfNeeded = () => {
     if (user && Date.now() >= deadline) {
       void clearSession().catch(() => {})
+      onExpired?.()
     }
   }
   const watchExpiry = () => {
@@ -66,7 +67,10 @@ export function createAuthSession(clients: DataClients) {
     schedule()
   }
   const unsubscribeAuthFailure = clients.subscribeAuthFailure(() => {
-    if (user) void clearSession().catch(() => {})
+    if (user) {
+      void clearSession().catch(() => {})
+      onExpired?.()
+    }
   })
   return {
     clearSession,
@@ -92,6 +96,7 @@ export function createAuthSession(clients: DataClients) {
       if (signInGeneration !== generation) return
       const result = await clients.apolloClient.mutate({
         mutation: LOGIN_MUTATION,
+        context: { toast: false },
         variables: { input: { email, password } },
       })
       if (signInGeneration !== generation) return
@@ -99,7 +104,7 @@ export function createAuthSession(clients: DataClients) {
       if (!payload) throw new Error("Missing sign-in response")
       if (payload.user.role === "learner") {
         try {
-          await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+          await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION, context: { toast: false } })
         } finally {
           if (signInGeneration === generation) await clearSession()
         }
@@ -122,7 +127,7 @@ export function createAuthSession(clients: DataClients) {
     async signOut() {
       // Local logout must succeed even when the logout endpoint is unavailable.
       await clearSession()
-      await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+      await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION, context: { toast: false } })
     },
   }
 }

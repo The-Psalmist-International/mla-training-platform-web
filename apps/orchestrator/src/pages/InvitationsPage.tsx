@@ -7,6 +7,7 @@ import {
 } from "react"
 import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@workspace/ui/components/toaster"
 import type { CurrentUser, InvitationListItem } from "@workspace/data"
 import {
   DataTable,
@@ -104,7 +105,7 @@ function InvitationsTable({ user }: { user: CurrentUser }) {
   const urlState = useSearch({ from: "/workspace/invitations" })
   const navigate = useNavigate({ from: "/workspace/invitations" })
   const params = invitationsParamsFromSearch(urlState)
-  const [feedback, setFeedback] = useState("")
+  const { toast } = useToast()
   const [search, setSearch] = useState(params.search)
   const updateSearch = useCallback(
     (patch: Partial<InvitationsSearchState>, replace = false) => {
@@ -157,12 +158,6 @@ function InvitationsTable({ user }: { user: CurrentUser }) {
   }
   return (
     <WorkspacePageFrame view="invitations">
-      <p
-        role="status"
-        className={feedback ? "text-sm text-muted-foreground" : "sr-only"}
-      >
-        {feedback}
-      </p>
       <DataTable
         ariaLabel="Invitations"
         rows={query.data?.items ?? []}
@@ -325,11 +320,11 @@ function InvitationsTable({ user }: { user: CurrentUser }) {
               .catch(() => {})
           }
           onSuccess={({ kind, email }) => {
-            setFeedback(
+            toast({ title: kind === "revoke" ? "Invitation revoked" : "Invitation email queued", status: "success", description:
               kind === "revoke"
                 ? `Invitation revoked for ${email}.`
                 : `Invitation email queued for ${email}.`
-            )
+            })
             void queryClient
               .invalidateQueries({
                 queryKey: [

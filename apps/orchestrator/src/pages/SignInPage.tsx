@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Form, FormikProvider, useFormik } from "formik"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
+import { useToast } from "@workspace/ui/components/toaster"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { signInSchema } from "../auth/validation"
 import { AuthLayout } from "../components/AuthLayout"
@@ -12,6 +13,7 @@ const emailKey = "martyrs.orchestrator.remembered-email"
 export function SignInPage() {
   const { auth } = useRouter().options.context
   const navigate = useNavigate()
+  const { toast } = useToast()
   const form = useFormik({
     initialValues: { email: "", password: "", remember: false },
     validationSchema: signInSchema,
@@ -20,6 +22,8 @@ export function SignInPage() {
       const normalizedEmail = email.trim().toLowerCase()
       try {
         await auth.signIn(normalizedEmail, password)
+        if (!auth.getUser()) return
+        toast({ title: "Signed in", status: "success" })
         helpers.setFieldValue("password", "", false)
         try {
           if (remember) localStorage.setItem(emailKey, normalizedEmail)
@@ -29,11 +33,11 @@ export function SignInPage() {
         }
         await navigate({ to: "/workspace", replace: true })
       } catch (failure) {
-        helpers.setStatus(
+        toast({ title: "Unable to sign in", status: "error", description:
           failure instanceof Error && failure.message === "LEARNER_ACCOUNT"
             ? "This workspace is for administrators and instructors. Please use the learner app."
             : authErrorMessage(failure)
-        )
+        })
       }
     },
   })

@@ -1,4 +1,5 @@
 export { createDataClients, validateGraphqlUrl } from "./clients"
+export type { RequestNotification } from "./clients"
 export type { DataClientOptions, DataClients } from "./clients"
 export { HEALTH_QUERY } from "../apollo/platform/query"
 export { COURSES_QUERY } from "../apollo/course/query"

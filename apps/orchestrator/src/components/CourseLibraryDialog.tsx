@@ -2,6 +2,7 @@ import { useId, useRef } from "react"
 import { useBlocker, useRouter } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { Form, FormikProvider, useFormik } from "formik"
+import { useToast } from "@workspace/ui/components/toaster"
 import type { CourseDetailsQuery, CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
@@ -177,7 +178,7 @@ function CourseActionDialog({
         }
         onClose()
       } catch (error) {
-        helpers.setStatus(libraryActionError(error))
+        if (auth.getUser() === user) toast({ title: "Course could not be updated", description: libraryActionError(error), status: "error" })
       } finally {
         pending.current = false
       }
