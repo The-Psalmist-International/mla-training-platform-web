@@ -15,6 +15,7 @@ export interface LibraryItem {
   description: string
   status: CourseStatus | VideoAssetStatus
   createdAt: string
+  ownerId?: string
   certificateEnabled?: boolean
   durationSeconds?: number | null
   sizeBytes?: string | null

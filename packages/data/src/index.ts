@@ -2,6 +2,15 @@ export { createDataClients, validateGraphqlUrl } from "./clients"
 export type { DataClientOptions, DataClients } from "./clients"
 export { HEALTH_QUERY } from "../apollo/platform/query"
 export { COURSES_QUERY } from "../apollo/course/query"
+export {
+  COURSE_DETAILS_QUERY,
+  CREATE_COURSE_MUTATION,
+  UPDATE_COURSE_MUTATION,
+  PUBLISH_COURSE_MUTATION,
+  UNPUBLISH_COURSE_MUTATION,
+  ARCHIVE_COURSE_MUTATION,
+} from "../apollo/course/query"
+export type { CourseDetailsQuery } from "../apollo/course/query"
 export type {
   CourseStatus,
   CourseListItem,
@@ -9,6 +18,14 @@ export type {
   CoursesQueryVariables,
 } from "../apollo/course/query"
 export { MY_VIDEO_ASSETS_QUERY } from "../apollo/media/query"
+export {
+  VIDEO_ASSET_DETAILS_QUERY,
+  PREVIEW_LESSON_VIDEO_QUERY,
+  CREATE_LESSON_VIDEO_UPLOAD_MUTATION,
+  REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
+  SYNC_LESSON_VIDEO_ASSET_MUTATION,
+} from "../apollo/media/query"
+export type { CreateLessonVideoUploadMutation } from "../apollo/media/query"
 export type {
   PageVariables,
   VideoAssetStatus,

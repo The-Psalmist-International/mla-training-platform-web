@@ -28,6 +28,51 @@ query MyVideoAssetsPage(
   }
 }
 
+query VideoAssetDetails($id: ID!) {
+  videoAsset(id: $id) {
+    ...VideoAssetListFields
+  }
+}
+query PreviewLessonVideo($id: ID!) {
+  previewLessonVideo(id: $id) {
+    url
+    expires
+  }
+}
+mutation CreateLessonVideoUpload($input: LessonVideoUploadInput!) {
+  createLessonVideoUpload(input: $input) {
+    asset {
+      ...VideoAssetListFields
+    }
+    upload {
+      endpoint
+      videoId
+      libraryId
+      signature
+      expires
+    }
+  }
+}
+mutation RefreshLessonVideoUpload($id: ID!) {
+  refreshLessonVideoUpload(id: $id) {
+    asset {
+      ...VideoAssetListFields
+    }
+    upload {
+      endpoint
+      videoId
+      libraryId
+      signature
+      expires
+    }
+  }
+}
+mutation SyncLessonVideoAsset($id: ID!) {
+  syncLessonVideoAsset(id: $id) {
+    ...VideoAssetListFields
+  }
+}
+
 query MyVideoAssets($limit: Int! = 20, $offset: Int! = 0) {
   myVideoAssets(limit: $limit, offset: $offset) {
     ...VideoAssetListFields

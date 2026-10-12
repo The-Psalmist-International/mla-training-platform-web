@@ -313,9 +313,16 @@ export function DataTable<TRow>({
                     className="px-4 py-12 text-center align-middle text-muted-foreground"
                   >
                     {hasError ? (
-                      <div>{errorState}</div>
+                      <div className="flex w-full items-center justify-center">
+                        {errorState}
+                      </div>
                     ) : (
-                      <div role="status">{emptyState}</div>
+                      <div
+                        role="status"
+                        className="flex w-full items-center justify-center"
+                      >
+                        {emptyState}
+                      </div>
                     )}
                   </td>
                 </tr>

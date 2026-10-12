@@ -4,9 +4,10 @@ import {
   useId,
   useState,
   useSyncExternalStore,
+  type ReactNode,
 } from "react"
 import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { BookOpenIcon } from "@phosphor-icons/react/dist/csr/BookOpen"
 import { FilmStripIcon } from "@phosphor-icons/react/dist/csr/FilmStrip"
@@ -21,6 +22,10 @@ import { EmptyState } from "@workspace/ui/components/empty-state"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { WorkspacePageFrame } from "./WorkspacePageFrame"
 import { WorkspacePageAction } from "./WorkspacePageAction"
+import { LibraryRowActions } from "./LibraryRowActions"
+import { CourseLibraryDialog } from "./CourseLibraryDialog"
+import { VideoUploadDialog } from "./VideoUploadDialog"
+import { VideoLibraryDialog } from "./VideoLibraryDialog"
 import { formatPeopleCreatedAt } from "../workspace/people"
 import {
   libraryTableOptions,
@@ -58,9 +63,13 @@ function LibraryStatus({ item }: { item: LibraryItem }) {
 export function LibraryCard({
   item,
   view,
+  actions,
+  onOpen,
 }: {
   item: LibraryItem
   view: LibraryView
+  actions?: ReactNode
+  onOpen?: () => void
 }) {
   const Icon = view === "courses" ? BookOpenIcon : FilmStripIcon
   return (
@@ -75,7 +84,17 @@ export function LibraryCard({
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <h3 className="line-clamp-2 leading-5 font-semibold" title={item.title}>
-          {item.title}
+          {onOpen ? (
+            <button
+              type="button"
+              onClick={onOpen}
+              className="text-left hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              {item.title}
+            </button>
+          ) : (
+            item.title
+          )}
         </h3>
         <p className="line-clamp-3 text-xs leading-5 text-muted-foreground">
           {view === "courses"
@@ -87,6 +106,7 @@ export function LibraryCard({
           {view === "courses" && item.certificateEnabled && (
             <span className="text-xs text-muted-foreground">Certificate</span>
           )}
+          {actions}
         </div>
       </div>
     </article>
@@ -105,7 +125,9 @@ function LibraryTable({
   view: LibraryView
   user: CurrentUser
 }) {
-  const { dataClients } = useRouter().options.context
+  const { dataClients, auth } = useRouter().options.context
+  const queryClient = useQueryClient()
+  const [feedback, setFeedback] = useState("")
   const urlState = validateLibrarySearch(view, useSearch({ strict: false }))
   const navigate = useNavigate()
   const id = useId()
@@ -158,6 +180,36 @@ function LibraryTable({
     })
   }
   const label = view === "courses" ? "Courses" : "Video library"
+  const openAction = (
+    modal: NonNullable<LibrarySearchState["modal"]>,
+    item: string
+  ) => updateSearch({ modal, item })
+  const closeAction = () => {
+    if (auth.getUser() === user) updateSearch({ modal: undefined, item: undefined }, true)
+  }
+  const changed = (message?: string) => {
+    if (message && auth.getUser() === user) setFeedback(message)
+    void queryClient
+      .invalidateQueries({
+        queryKey: [
+          "workspace",
+          dataClients.graphqlUrl,
+          user.id,
+          "library-table",
+        ],
+      })
+      .catch(() => {})
+    void queryClient
+      .invalidateQueries({
+        queryKey: [
+          "workspace",
+          dataClients.graphqlUrl,
+          user.id,
+          view === "courses" ? "course-details" : "video-details",
+        ],
+      })
+      .catch(() => {})
+  }
   const columns: DataTableColumn<LibraryItem>[] = [
     {
       id: "title",
@@ -165,7 +217,13 @@ function LibraryTable({
       className: "min-w-64",
       cell: (item) => (
         <div className="space-y-1">
-          <p className="font-medium">{item.title}</p>
+          <button
+            type="button"
+            onClick={() => openAction("details", item.id)}
+            className="text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            {item.title}
+          </button>
           {view === "courses" && (
             <p className="line-clamp-2 max-w-lg text-xs leading-5 text-muted-foreground">
               {item.description || "No course description yet."}
@@ -208,9 +266,30 @@ function LibraryTable({
         </time>
       ),
     },
+    {
+      id: "actions",
+      header: "Actions",
+      className: "w-20 text-right",
+      cell: (item) => (
+        <LibraryRowActions
+          item={item}
+          view={view}
+          user={user}
+          onSelect={openAction}
+        />
+      ),
+    },
   ]
   return (
     <WorkspacePageFrame view={view}>
+      <p
+        role="status"
+        className={
+          feedback ? "mb-3 shrink-0 text-sm text-muted-foreground" : "sr-only"
+        }
+      >
+        {feedback}
+      </p>
       <DataTable
         rows={query.data?.items ?? []}
         columns={columns}
@@ -221,7 +300,21 @@ function LibraryTable({
           view: urlState.layout ?? "table",
           onViewChange: (layout) =>
             updateSearch({ layout: layout === "grid" ? "grid" : undefined }),
-          renderCard: (item) => <LibraryCard item={item} view={view} />,
+          renderCard: (item) => (
+            <LibraryCard
+              item={item}
+              view={view}
+              onOpen={() => openAction("details", item.id)}
+              actions={
+                <LibraryRowActions
+                  item={item}
+                  view={view}
+                  user={user}
+                  onSelect={openAction}
+                />
+              }
+            />
+          ),
         }}
         search={{
           value: search,
@@ -246,8 +339,12 @@ function LibraryTable({
                     { value: "all", label: "All accessible courses" },
                     { value: "mine", label: "My courses" },
                   ]}
-                  onValueChange={(scope) =>
-                    updateSearch({ q: search.trim(), scope, page: undefined })
+                  onValueChange={(nextScope) =>
+                    updateSearch({
+                      q: search.trim(),
+                      scope: nextScope,
+                      page: undefined,
+                    })
                   }
                   className="min-w-36"
                 />
@@ -291,8 +388,8 @@ function LibraryTable({
           pageSize,
           totalCount: query.data?.totalCount ?? 0,
           onPageChange: (page) => updateSearch({ page: page + 1 }),
-          onPageSizeChange: (pageSize) =>
-            updateSearch({ pageSize, page: undefined }),
+          onPageSizeChange: (nextPageSize) =>
+            updateSearch({ pageSize: nextPageSize, page: undefined }),
         }}
         isLoading={query.isPending}
         isFetching={query.isFetching || search.trim() !== (urlState.q ?? "")}
@@ -341,6 +438,42 @@ function LibraryTable({
           ) : undefined
         }
       />
+      {view === "courses" &&
+        urlState.modal &&
+        urlState.modal !== "upload" &&
+        urlState.modal !== "resume" &&
+        urlState.modal !== "preview" && (
+          <CourseLibraryDialog
+            key={`${urlState.modal}-${urlState.item ?? "new"}`}
+            modal={urlState.modal}
+            id={urlState.item}
+            user={user}
+            onClose={closeAction}
+            onChanged={changed}
+          />
+        )}
+      {view === "videos" &&
+        (urlState.modal === "upload" || urlState.modal === "resume") && (
+          <VideoUploadDialog
+            key={`${urlState.modal}-${urlState.item ?? "new"}`}
+            assetId={urlState.modal === "resume" ? urlState.item : undefined}
+            user={user}
+            onClose={closeAction}
+            onChanged={changed}
+          />
+        )}
+      {view === "videos" &&
+        (urlState.modal === "details" || urlState.modal === "preview") &&
+        urlState.item && (
+          <VideoLibraryDialog
+            key={`${urlState.modal}-${urlState.item}`}
+            id={urlState.item}
+            preview={urlState.modal === "preview"}
+            user={user}
+            onClose={closeAction}
+            onChanged={changed}
+          />
+        )}
     </WorkspacePageFrame>
   )
 }

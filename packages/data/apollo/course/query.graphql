@@ -31,6 +31,71 @@ query CoursesPage(
   }
 }
 
+query CourseDetails($id: ID!) {
+  course(id: $id) {
+    id
+    ownerId
+    title
+    description
+    status
+    certificateEnabled
+    publishedAt
+    createdAt
+    updatedAt
+    modules {
+      id
+      title
+      position
+      items {
+        id
+        title
+        type
+        position
+        required
+      }
+    }
+  }
+}
+mutation CreateCourse($input: CreateCourseInput!) {
+  createCourse(input: $input) {
+    ...CourseListFields
+  }
+}
+mutation UpdateCourse($id: ID!, $input: UpdateCourseInput!) {
+  updateCourse(id: $id, input: $input) {
+    id
+    ownerId
+    title
+    description
+    status
+    certificateEnabled
+    publishedAt
+    createdAt
+    updatedAt
+  }
+}
+mutation PublishCourse($id: ID!) {
+  publishCourse(id: $id) {
+    id
+    title
+    status
+  }
+}
+mutation UnpublishCourse($id: ID!) {
+  unpublishCourse(id: $id) {
+    id
+    title
+    status
+  }
+}
+mutation ArchiveCourse($id: ID!) {
+  archiveCourse(id: $id) {
+    id
+    title
+    status
+  }
+}
+
 query Courses(
   $limit: Int! = 20
   $offset: Int! = 0
