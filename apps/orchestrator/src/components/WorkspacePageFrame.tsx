@@ -15,7 +15,7 @@ export function WorkspacePageFrame({
   return (
     <section
       aria-labelledby="page-heading"
-      className="flex min-h-0 min-w-0 flex-1 flex-col px-4 py-6 sm:px-6"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6"
     >
       <h1 id="page-heading" tabIndex={-1} className="sr-only">
         {workspaceViews[view].title}

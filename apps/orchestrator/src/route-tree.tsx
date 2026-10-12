@@ -6,6 +6,7 @@ import {
 import { rootRoute } from "./root"
 import { routePaths } from "./route-definitions"
 import { canAccessView } from "./workspace/navigation"
+import { validatePeopleSearch } from "./workspace/people-search"
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -123,6 +124,7 @@ const submissionsRoute = createRoute({
 const peopleRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "people",
+  validateSearch: validatePeopleSearch,
   beforeLoad: ({ context }) => {
     if (!canAccessView(context.auth.getUser()?.role, "people"))
       throw redirect({ to: "/workspace" })

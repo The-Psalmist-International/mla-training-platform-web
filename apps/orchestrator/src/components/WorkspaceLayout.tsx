@@ -67,7 +67,7 @@ export function WorkspaceLayout() {
       <SidebarInset
         id="workspace-content"
         tabIndex={-1}
-        className="min-w-0 border border-border/70 bg-card shadow-none outline-none md:min-h-[calc(100svh-1rem)] md:peer-data-[variant=inset]:shadow-none"
+        className="h-svh min-h-0 min-w-0 overflow-hidden border border-border/70 bg-card shadow-none outline-none md:h-[calc(100svh-1rem)] md:peer-data-[variant=inset]:shadow-none"
       >
         <header className="flex h-16 shrink-0 items-center gap-3 px-4 sm:px-6">
           <SidebarTrigger className="size-11 shrink-0 text-muted-foreground" />

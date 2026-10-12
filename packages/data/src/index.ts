@@ -54,12 +54,19 @@ export type {
   MyVideoSubmissionsQueryResult,
   MyVideoSubmissionsQueryVariables,
 } from "../apollo/submission/query"
-export { USERS_QUERY } from "../apollo/people/query"
+export {
+  USERS_QUERY,
+  USERS_PAGE_QUERY,
+  SET_USER_ROLE_MUTATION,
+  SET_USER_DISABLED_MUTATION,
+} from "../apollo/people/query"
 export type {
   UserRole,
   UserListItem,
   UsersQueryResult,
   UsersQueryVariables,
+  UsersPageQueryResult,
+  UsersPageQueryVariables,
 } from "../apollo/people/query"
 export { INVITATIONS_QUERY } from "../apollo/invitation/query"
 export type {

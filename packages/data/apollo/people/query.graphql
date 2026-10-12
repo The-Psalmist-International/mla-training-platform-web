@@ -1,3 +1,57 @@
+query UsersPage(
+  $search: String
+  $role: UserRole
+  $disabled: Boolean
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  usersPage(
+    search: $search
+    role: $role
+    disabled: $disabled
+    limit: $limit
+    offset: $offset
+  ) {
+    totalCount
+    items {
+      id
+      email
+      name
+      role
+      emailVerifiedAt
+      disabledAt
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+mutation SetUserRole($id: ID!, $role: UserRole!) {
+  setUserRole(id: $id, role: $role) {
+    id
+    name
+    email
+    role
+    emailVerifiedAt
+    disabledAt
+    createdAt
+    updatedAt
+  }
+}
+
+mutation SetUserDisabled($id: ID!, $disabled: Boolean!) {
+  setUserDisabled(id: $id, disabled: $disabled) {
+    id
+    name
+    email
+    role
+    emailVerifiedAt
+    disabledAt
+    createdAt
+    updatedAt
+  }
+}
+
 query Users($limit: Int! = 30, $offset: Int! = 0) {
   users(limit: $limit, offset: $offset) {
     id
