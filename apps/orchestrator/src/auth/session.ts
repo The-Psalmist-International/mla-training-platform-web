@@ -20,16 +20,64 @@ export function authErrorMessage(error: unknown) {
 /** Request/router scoped. Never persist access tokens or credentials. */
 export function createAuthSession(clients: DataClients) {
   let user: CurrentUser | null = null
+  let deadline = 0
+  let generation = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let stopWatching: (() => void) | undefined
   const listeners = new Set<() => void>()
   const notify = () => listeners.forEach((listener) => listener())
   const clearSession = async () => {
-    await clients.setAccessToken(null)
+    generation += 1
+    clearTimeout(timer)
+    timer = undefined
+    stopWatching?.()
+    stopWatching = undefined
+    deadline = 0
+    const hadUser = user !== null
     user = null
-    notify()
+    // Hide protected content before token/cache cleanup (which may be slow).
+    if (hadUser) notify()
+    await clients.setAccessToken(null)
   }
+  const expireIfNeeded = () => {
+    if (user && Date.now() >= deadline) {
+      void clearSession().catch(() => {})
+    }
+  }
+  const watchExpiry = () => {
+    if (typeof window === "undefined") return
+    const currentGeneration = generation
+    const schedule = () => {
+      if (currentGeneration !== generation) return
+      expireIfNeeded()
+      if (!user) return
+      // Long lifetimes must not overflow the browser's signed 32-bit timer delay.
+      timer = setTimeout(
+        schedule,
+        Math.max(1, Math.min(deadline - Date.now(), 2_147_483_647))
+      )
+    }
+    window.addEventListener("focus", expireIfNeeded)
+    window.document.addEventListener("visibilitychange", expireIfNeeded)
+    stopWatching = () => {
+      window.removeEventListener("focus", expireIfNeeded)
+      window.document.removeEventListener("visibilitychange", expireIfNeeded)
+    }
+    schedule()
+  }
+  const unsubscribeAuthFailure = clients.subscribeAuthFailure(() => {
+    if (user) void clearSession().catch(() => {})
+  })
   return {
     clearSession,
-    getUser: () => user,
+    getUser: () => {
+      expireIfNeeded()
+      return user
+    },
+    dispose() {
+      unsubscribeAuthFailure()
+      return clearSession()
+    },
     subscribe(listener: () => void) {
       listeners.add(listener)
       return () => {
@@ -38,29 +86,43 @@ export function createAuthSession(clients: DataClients) {
     },
     async signIn(email: string, password: string) {
       // Public auth operations must not send an old/expired bearer token.
-      await clearSession()
+      const clearing = clearSession()
+      const signInGeneration = generation
+      await clearing
+      if (signInGeneration !== generation) return
       const result = await clients.apolloClient.mutate({
         mutation: LOGIN_MUTATION,
         variables: { input: { email, password } },
       })
+      if (signInGeneration !== generation) return
       const payload = result.data?.login
       if (!payload) throw new Error("Missing sign-in response")
       if (payload.user.role === "learner") {
         try {
           await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
         } finally {
-          await clearSession()
+          if (signInGeneration === generation) await clearSession()
         }
         throw new Error("LEARNER_ACCOUNT")
       }
+      const expiresIn = payload.expiresIn
+      deadline =
+        Date.now() +
+        (Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn * 1_000 : 0)
       await clients.setAccessToken(payload.accessToken)
+      if (signInGeneration !== generation) return
+      if (Date.now() >= deadline) {
+        await clearSession()
+        return
+      }
       user = payload.user
+      watchExpiry()
       notify()
     },
     async signOut() {
-      await clients.setAccessToken(null)
-      await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+      // Local logout must succeed even when the logout endpoint is unavailable.
       await clearSession()
+      await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
     },
   }
 }

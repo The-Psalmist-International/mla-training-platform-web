@@ -1,9 +1,10 @@
 import { useId, useState, useSyncExternalStore } from "react"
-import { Link, useRouter } from "@tanstack/react-router"
+import { useRouter } from "@tanstack/react-router"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { EmptyState } from "@workspace/ui/components/empty-state"
+import { ErrorState } from "@workspace/ui/components/error-state"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { workspaceIcons } from "../workspace/icons"
 import {
@@ -16,6 +17,7 @@ import {
 } from "../workspace/lists"
 
 import { WorkspacePageFrame } from "./WorkspacePageFrame"
+import { WorkspacePageAction } from "./WorkspacePageAction"
 
 export function WorkspaceCollectionPage({ view }: { view: CollectionView }) {
   const { auth } = useRouter().options.context
@@ -111,25 +113,24 @@ function CollectionContent({
   return (
     <WorkspacePageFrame view={view} toolbar={toolbar}>
       {error ? (
-        <div
-          role="alert"
-          className="flex flex-1 flex-col items-center justify-center gap-4 py-12 text-center"
-        >
-          <p className="text-sm font-medium">We couldn't load this section.</p>
-          <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-            Check your connection and try again. If your session has expired,
-            sign in again.
-          </p>
-          <Button
-            variant="outline"
-            disabled={listQuery.isFetching || coursesQuery.isFetching}
-            onClick={() => {
-              if (coursesQuery.isError) void coursesQuery.refetch()
-              else void listQuery.refetch()
-            }}
-          >
-            Try again
-          </Button>
+        <div className="flex flex-1 items-center justify-center py-12">
+          <ErrorState
+            title="We couldn't load this section"
+            action={
+              <Button
+                variant="outline"
+                disabled={listQuery.isFetching || coursesQuery.isFetching}
+                onClick={() => {
+                  if (coursesQuery.isError) void coursesQuery.refetch()
+                  else void listQuery.refetch()
+                }}
+              >
+                {listQuery.isFetching || coursesQuery.isFetching
+                  ? "Trying again…"
+                  : "Try again"}
+              </Button>
+            }
+          />
         </div>
       ) : loading ? (
         <div
@@ -162,45 +163,10 @@ function CollectionContent({
                   : copy.description
             }
             action={
-              offset > 0 ? undefined : view === "courses" ? (
-                <Button
-                  type="button"
-                  disabled
-                  title="Course creation is not implemented yet"
-                >
-                  Create course
-                </Button>
-              ) : view === "videos" ? (
-                <Button
-                  type="button"
-                  disabled
-                  title="Video uploads are not implemented yet"
-                >
-                  Upload video
-                </Button>
-              ) : view === "invitations" ? (
-                <Button
-                  type="button"
-                  disabled
-                  title="Invitation creation is not implemented yet"
-                >
-                  Invite people
-                </Button>
-              ) : view === "people" ? (
-                <Button render={<Link to="/workspace/invitations" />}>
-                  Invite people
-                </Button>
-              ) : view === "enrollments" &&
-                user.role === "admin" &&
-                !noCourses ? (
-                <Button
-                  type="button"
-                  disabled
-                  title="Course assignment is not implemented yet"
-                >
-                  Assign course
-                </Button>
-              ) : undefined
+              offset > 0 ||
+              (view === "enrollments" && noCourses) ? undefined : (
+                <WorkspacePageAction view={view} role={user.role} />
+              )
             }
           />
         </div>

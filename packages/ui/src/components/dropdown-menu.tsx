@@ -156,16 +156,19 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   inset,
+  indicator = "check",
   ...props
 }: MenuPrimitive.CheckboxItem.Props & {
   inset?: boolean
+  indicator?: "check" | "switch"
 }) {
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-8 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "group/menu-checkbox relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-8 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        indicator === "switch" && "min-h-11 pr-14",
         className
       )}
       checked={checked}
@@ -175,9 +178,18 @@ function DropdownMenuCheckboxItem({
         className="pointer-events-none absolute right-2 flex items-center justify-center"
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
-        <MenuPrimitive.CheckboxItemIndicator>
-          <CheckIcon aria-hidden />
-        </MenuPrimitive.CheckboxItemIndicator>
+        {indicator === "switch" ? (
+          <span
+            aria-hidden
+            className="inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-input p-0.5 transition-colors group-data-checked/menu-checkbox:bg-primary motion-reduce:transition-none"
+          >
+            <span className="size-4 rounded-full bg-background shadow-sm transition-transform group-data-checked/menu-checkbox:translate-x-4 motion-reduce:transition-none" />
+          </span>
+        ) : (
+          <MenuPrimitive.CheckboxItemIndicator>
+            <CheckIcon aria-hidden />
+          </MenuPrimitive.CheckboxItemIndicator>
+        )}
       </span>
       {children}
     </MenuPrimitive.CheckboxItem>

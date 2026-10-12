@@ -1,5 +1,11 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react"
-import { Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router"
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,8 +20,15 @@ import {
   SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
 import { Separator } from "@workspace/ui/components/separator"
-import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
+import { BellIcon } from "@phosphor-icons/react/dist/csr/Bell"
+import { Button } from "@workspace/ui/components/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 import { WorkspaceSidebar } from "./WorkspaceSidebar"
+import { WorkspacePageAction } from "./WorkspacePageAction"
 import { viewForPath, workspaceViews } from "../workspace/navigation"
 
 export function WorkspaceLayout() {
@@ -33,7 +46,7 @@ export function WorkspaceLayout() {
     )
     return () => cancelAnimationFrame(frame)
   }, [pathname])
-  if (!user) return null
+  if (!user) return <Navigate to="/sign-in" replace />
   return (
     <SidebarProvider
       className="workspace-shell"
@@ -85,8 +98,27 @@ export function WorkspaceLayout() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <div className="ml-auto">
-            <ThemeToggle />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    render={<Link to="/workspace/notifications" />}
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 text-muted-foreground"
+                    aria-label="Notifications"
+                    aria-current={view === "notifications" ? "page" : undefined}
+                  >
+                    <BellIcon aria-hidden />
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom" sideOffset={8}>
+                Notifications
+              </TooltipContent>
+            </Tooltip>
+            <WorkspacePageAction view={view} role={user.role} compact />
           </div>
         </header>
         <Outlet />

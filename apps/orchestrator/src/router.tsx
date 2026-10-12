@@ -12,6 +12,7 @@ export function getRouter() {
     graphqlUrl:
       import.meta.env.VITE_GRAPHQL_URL ?? "http://localhost:4000/graphql",
   })
+  const auth = createAuthSession(clients)
   const router = createRouter({
     routeTree,
     context: {
@@ -19,12 +20,15 @@ export function getRouter() {
       queryClient: clients.queryClient,
       graphqlUrl: clients.graphqlUrl,
       dataClients: clients,
-      auth: createAuthSession(clients),
+      auth,
     },
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
     Wrap: UiProvider,
+  })
+  auth.subscribe(() => {
+    if (!auth.getUser()) void router.invalidate()
   })
   setupRouterSsrQueryIntegration({ router, queryClient: clients.queryClient })
   return routerWithApolloClient(router, clients.apolloClient)

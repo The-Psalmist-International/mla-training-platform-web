@@ -16,6 +16,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -35,6 +36,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar"
+import { useTheme } from "@workspace/ui/components/theme-provider"
+import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon"
 import { ChalkboardTeacherIcon } from "@phosphor-icons/react/dist/csr/ChalkboardTeacher"
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus"
@@ -161,6 +164,7 @@ function NavigationGroup({
 }
 
 export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
+  const { theme, toggleTheme } = useTheme()
   const { auth } = useRouter().options.context
   const navigate = useNavigate()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -262,6 +266,15 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
                   <UserCircleIcon aria-hidden />
                   My account
                 </DropdownMenuItem>
+                <DropdownMenuCheckboxItem
+                  checked={theme === "dark"}
+                  onCheckedChange={toggleTheme}
+                  closeOnClick={false}
+                  indicator="switch"
+                >
+                  <MoonIcon aria-hidden />
+                  Dark mode
+                </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={pending}
