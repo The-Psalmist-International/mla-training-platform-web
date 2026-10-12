@@ -1,0 +1,12 @@
+query Users($limit: Int! = 30, $offset: Int! = 0) {
+  users(limit: $limit, offset: $offset) {
+    id
+    email
+    name
+    role
+    emailVerifiedAt
+    disabledAt
+    createdAt
+    updatedAt
+  }
+}

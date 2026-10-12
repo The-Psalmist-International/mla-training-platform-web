@@ -8,10 +8,12 @@
     "./apollo/*/query": "./apollo/*/query.ts"
   },
   "scripts": {
+    "codegen": "graphql-codegen --config ../../codegen.ts",
+    "codegen:check": "graphql-codegen --config ../../codegen.ts --check",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "test": "vitest run",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"!src/generated/**\" \"apollo/**/*.{ts,graphql}\""
   },
   "dependencies": {
     "@apollo/client": "^4.3.3",
@@ -25,6 +27,10 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^7.4.6",
+    "@graphql-codegen/typed-document-node": "^7.1.1",
+    "@graphql-codegen/typescript": "^5.0.10",
+    "@graphql-codegen/typescript-operations": "^5.1.0",
     "@tanstack/eslint-config": "latest",
     "eslint": "^10",
     "typescript": "^6.0.2",

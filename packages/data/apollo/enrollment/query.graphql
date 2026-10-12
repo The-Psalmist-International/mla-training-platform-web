@@ -1,0 +1,23 @@
+query MyEnrollments($limit: Int! = 20, $offset: Int! = 0) {
+  myEnrollments(limit: $limit, offset: $offset) {
+    id
+    userId
+    courseId
+    enrolledBy
+    createdAt
+    completedAt
+    course {
+      ...CourseListFields
+    }
+  }
+}
+
+query CourseEnrollments($courseId: ID!, $limit: Int! = 20, $offset: Int! = 0) {
+  courseEnrollments(courseId: $courseId, limit: $limit, offset: $offset) {
+    id
+    userId
+    learnerName
+    createdAt
+    completedAt
+  }
+}

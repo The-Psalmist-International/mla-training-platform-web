@@ -1,0 +1,13 @@
+query Invitations($limit: Int! = 30, $offset: Int! = 0) {
+  invitations(limit: $limit, offset: $offset) {
+    id
+    email
+    role
+    invitedBy
+    acceptedBy
+    expiresAt
+    acceptedAt
+    revokedAt
+    createdAt
+  }
+}

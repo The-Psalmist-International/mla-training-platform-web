@@ -11,7 +11,9 @@
     "test:tooling": "node --experimental-strip-types --test tooling/vendor-chunks.test.mjs",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "codegen": "npm run codegen --workspace=@workspace/data",
+    "codegen:check": "npm run codegen:check --workspace=@workspace/data"
   },
   "devDependencies": {
     "prettier": "^3.9.9",

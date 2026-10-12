@@ -35,18 +35,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar"
-import { HouseIcon } from "@phosphor-icons/react/dist/csr/House"
-import { BellIcon } from "@phosphor-icons/react/dist/csr/Bell"
-import { BookOpenIcon } from "@phosphor-icons/react/dist/csr/BookOpen"
-import { FilmStripIcon } from "@phosphor-icons/react/dist/csr/FilmStrip"
-import { StudentIcon } from "@phosphor-icons/react/dist/csr/Student"
-import { ClipboardTextIcon } from "@phosphor-icons/react/dist/csr/ClipboardText"
-import { VideoCameraIcon } from "@phosphor-icons/react/dist/csr/VideoCamera"
-import { UsersIcon } from "@phosphor-icons/react/dist/csr/Users"
-import { EnvelopeSimpleIcon } from "@phosphor-icons/react/dist/csr/EnvelopeSimple"
-import { CertificateIcon } from "@phosphor-icons/react/dist/csr/Certificate"
-import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt"
-import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle"
 import { ChalkboardTeacherIcon } from "@phosphor-icons/react/dist/csr/ChalkboardTeacher"
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus"
@@ -59,21 +47,9 @@ import {
   type WorkspaceView,
 } from "../workspace/navigation"
 import { authErrorMessage } from "../auth/session"
+import { workspaceIcons } from "../workspace/icons"
 
-const icons = {
-  overview: HouseIcon,
-  notifications: BellIcon,
-  courses: BookOpenIcon,
-  videos: FilmStripIcon,
-  enrollments: StudentIcon,
-  assessments: ClipboardTextIcon,
-  submissions: VideoCameraIcon,
-  people: UsersIcon,
-  invitations: EnvelopeSimpleIcon,
-  certificates: CertificateIcon,
-  delivery: PaperPlaneTiltIcon,
-  account: UserCircleIcon,
-}
+const UserCircleIcon = workspaceIcons.account
 
 function NavigationGroup({
   title,
@@ -140,7 +116,7 @@ function NavigationGroup({
             <SidebarMenu className="gap-1">
               {visible.map((view) => {
                 const item = workspaceViews[view]
-                const Icon = icons[view]
+                const Icon = workspaceIcons[view]
                 const active = path.replace(/\/$/, "") === item.path
                 return (
                   <SidebarMenuItem key={view}>
@@ -205,7 +181,7 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
       className="border-0"
       aria-label="Orchestrator navigation"
     >
-      <SidebarHeader className="h-16 justify-center px-4 group-data-[collapsible=icon]:px-2">
+      <SidebarHeader className="h-16 shrink-0 justify-center border-b border-sidebar-border/70 px-4 group-data-[collapsible=icon]:px-2">
         <Link
           to="/workspace"
           className="flex items-center gap-3 rounded-md outline-offset-4"
@@ -232,7 +208,7 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
           ))}
         </nav>
       </SidebarContent>
-      <SidebarFooter className="shrink-0 p-3 group-data-[collapsible=icon]:p-2">
+      <SidebarFooter className="shrink-0 border-t border-sidebar-border/70 p-3 group-data-[collapsible=icon]:p-2">
         {error && (
           <p role="alert" className="px-2 text-xs leading-5 text-destructive">
             {error}

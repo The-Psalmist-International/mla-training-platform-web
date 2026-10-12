@@ -1,0 +1,48 @@
+query AssessmentReviewQueue(
+  $courseId: ID!
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  assessmentReviewQueue(courseId: $courseId, limit: $limit, offset: $offset) {
+    id
+    enrollmentId
+    assessmentId
+    assessmentTitle
+    attemptNumber
+    learnerName
+    submittedAt
+    status
+  }
+}
+
+query MyAssessmentAttempts(
+  $enrollmentId: ID!
+  $assessmentId: ID!
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  myAssessmentAttempts(
+    enrollmentId: $enrollmentId
+    assessmentId: $assessmentId
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    enrollmentId
+    assessmentId
+    assessmentTitle
+    attemptNumber
+    status
+    passMark
+    attemptLimit
+    timeLimitSeconds
+    maxScore
+    score
+    passed
+    version
+    startedAt
+    deadlineAt
+    submittedAt
+    gradedAt
+  }
+}

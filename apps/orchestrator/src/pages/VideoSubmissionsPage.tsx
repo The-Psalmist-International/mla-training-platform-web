@@ -1,5 +1,5 @@
-import { WorkspacePlaceholder } from "../components/WorkspacePlaceholder"
+import { WorkspaceCollectionPage } from "../components/WorkspaceCollectionPage"
 
 export function VideoSubmissionsPage() {
-  return <WorkspacePlaceholder view="submissions" />
+  return <WorkspaceCollectionPage view="submissions" />
 }

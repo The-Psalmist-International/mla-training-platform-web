@@ -1,7 +1,1 @@
-import { gql, type TypedDocumentNode } from "@apollo/client"
-
-export const HEALTH_QUERY: TypedDocumentNode<{ health: string }> = gql`
-  query PlatformHealth {
-    health
-  }
-`
+export { PlatformHealthDocument as HEALTH_QUERY } from "../../src/generated/graphql"

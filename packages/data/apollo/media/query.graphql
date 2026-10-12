@@ -1,0 +1,16 @@
+fragment VideoAssetListFields on VideoAsset {
+  id
+  title
+  mimeType
+  status
+  durationSeconds
+  sizeBytes
+  createdAt
+  updatedAt
+}
+
+query MyVideoAssets($limit: Int! = 20, $offset: Int! = 0) {
+  myVideoAssets(limit: $limit, offset: $offset) {
+    ...VideoAssetListFields
+  }
+}

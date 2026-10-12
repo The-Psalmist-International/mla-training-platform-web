@@ -1,5 +1,5 @@
-import { WorkspacePlaceholder } from "../components/WorkspacePlaceholder"
+import { WorkspaceCollectionPage } from "../components/WorkspaceCollectionPage"
 
 export function CertificatesPage() {
-  return <WorkspacePlaceholder view="certificates" />
+  return <WorkspaceCollectionPage view="certificates" />
 }

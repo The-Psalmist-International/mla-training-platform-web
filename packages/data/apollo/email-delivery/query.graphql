@@ -1,0 +1,28 @@
+query AdminEmailMessages(
+  $status: EmailDeliveryStatus
+  $purpose: String
+  $recipient: String
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  adminEmailMessages(
+    status: $status
+    purpose: $purpose
+    recipient: $recipient
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    notificationId
+    recipient
+    purpose
+    status
+    providerMessageId
+    failureCode
+    createdAt
+    sentAt
+    deliveredAt
+    bouncedAt
+    complainedAt
+  }
+}

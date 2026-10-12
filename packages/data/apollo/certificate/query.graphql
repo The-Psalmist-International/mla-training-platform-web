@@ -1,0 +1,27 @@
+fragment CertificateListFields on Certificate {
+  id
+  enrollmentId
+  certificateNumber
+  recipientName
+  courseTitle
+  issuedAt
+  status
+  verificationCode
+  verificationUrl
+  pdfPath
+  revokedAt
+  revokedBy
+  revokedReason
+}
+
+query MyCertificates($limit: Int! = 20, $offset: Int! = 0) {
+  myCertificates(limit: $limit, offset: $offset) {
+    ...CertificateListFields
+  }
+}
+
+query CertificateForEnrollment($enrollmentId: ID!) {
+  certificateForEnrollment(enrollmentId: $enrollmentId) {
+    ...CertificateListFields
+  }
+}

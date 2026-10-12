@@ -1,0 +1,29 @@
+fragment CourseListFields on Course {
+  id
+  ownerId
+  title
+  description
+  status
+  certificateEnabled
+  publishedAt
+  createdAt
+  updatedAt
+}
+
+query Courses(
+  $limit: Int! = 20
+  $offset: Int! = 0
+  $status: CourseStatus
+  $mine: Boolean
+  $search: String
+) {
+  courses(
+    limit: $limit
+    offset: $offset
+    status: $status
+    mine: $mine
+    search: $search
+  ) {
+    ...CourseListFields
+  }
+}

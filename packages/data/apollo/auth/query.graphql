@@ -1,0 +1,33 @@
+query CurrentUser {
+  me {
+    id
+    name
+    email
+    role
+  }
+}
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    accessToken
+    expiresIn
+    user {
+      id
+      name
+      email
+      role
+    }
+  }
+}
+
+mutation Logout {
+  logout
+}
+
+mutation RequestPasswordReset($email: String!) {
+  requestPasswordReset(email: $email)
+}
+
+mutation ResetPassword($input: ResetPasswordInput!) {
+  resetPassword(input: $input)
+}

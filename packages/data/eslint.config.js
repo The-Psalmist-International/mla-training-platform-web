@@ -12,5 +12,5 @@ export default [
       "pnpm/json-enforce-catalog": "off",
     },
   },
-  { ignores: ["eslint.config.js"] },
+  { ignores: ["eslint.config.js", "src/generated/**"] },
 ]

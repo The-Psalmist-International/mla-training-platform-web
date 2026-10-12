@@ -1,0 +1,56 @@
+query VideoSubmissionReviewQueue(
+  $courseId: ID!
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  videoSubmissionReviewQueue(
+    courseId: $courseId
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    enrollmentId
+    itemId
+    attemptNumber
+    promptTitle
+    learnerName
+    createdAt
+    status
+    asset {
+      ...VideoAssetListFields
+    }
+  }
+}
+
+query MyVideoSubmissions(
+  $enrollmentId: ID!
+  $itemId: ID!
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  myVideoSubmissions(
+    enrollmentId: $enrollmentId
+    itemId: $itemId
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    enrollmentId
+    itemId
+    attemptNumber
+    promptTitle
+    instructions
+    maxDurationSeconds
+    requiresReview
+    status
+    failureCode
+    feedback
+    reviewedBy
+    reviewedAt
+    createdAt
+    updatedAt
+    asset {
+      ...VideoAssetListFields
+    }
+  }
+}

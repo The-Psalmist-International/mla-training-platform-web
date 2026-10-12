@@ -36,7 +36,36 @@ Apollo owns GraphQL operations, normalized entities and mutation cache updates. 
 
 TanStack Query owns REST and other non-GraphQL requests. Use `context.queryClient.ensureQueryData(...)` in loaders and Query hooks in components. The router SSR Query adapter handles dehydration, hydration and provider wrapping. Do not wrap the same GraphQL data in a second Query cache.
 
-Each `getRouter()` creates fresh clients, never process-wide instances. Both integrations preserve existing router wrapping and serialization; the caches are separate per request and per app. Typed starter documents match the backend's current `health` and `me` operations. Full schema-based GraphQL code generation is deferred.
+Each `getRouter()` creates fresh clients, never process-wide instances. Both integrations preserve existing router wrapping and serialization; the caches are separate per request and per app. Typed documents and operation types are generated from the sibling backend's `schema.graphql`; no live endpoint is needed.
+
+## GraphQL code generation
+
+Operations live in `packages/data/apollo/<feature>/query.graphql`; each feature's
+`query.ts` reexports generated typed documents and compatibility aliases. The
+features are `course`, `media`, `enrollment`, `assessment`, `submission`, `people`,
+`invitation`, `certificate`, `email-delivery`, `auth`, and `platform` (health only).
+Import through `@workspace/data` or `@workspace/data/apollo/<feature>/query`.
+Existing root operation/type exports and auth mutations are preserved.
+
+Keep `../mla-platform-core/schema.graphql` current using the backend's codegen
+workflow. From the frontend root or `packages/data`, run:
+
+```sh
+npm run codegen
+npm run codegen:check
+```
+
+`codegen.ts` resolves absolute paths relative to the config, so both working
+directories use the same schema, feature documents, and output. Commit
+`packages/data/src/generated/graphql.ts` after changing documents or the schema;
+do not edit or format it manually. `codegen:check` validates operations and fails
+on stale output without writing. Use it as an optional CI validation; ordinary
+data typecheck/tests do not regenerate or require a running backend.
+
+Generated types follow SDL rather than backend validators: nullable inputs such
+as course `mine` allow null, while email `purpose`/`EmailDeliveryPurpose` are
+strings. Omit unset filters and retain backend-specific validation in callers.
+Pagination still uses non-null inputs with the existing operation defaults.
 
 ## Endpoint and authentication boundary
 
@@ -77,9 +106,11 @@ apps/<app>/src/
   pages/                  # PascalCase route view components
 packages/data/
   src/                    # Shared clients, REST helpers, exports and tests
-  apollo/
-    auth/query.ts         # Auth queries and mutations
-    platform/query.ts     # Health query
+    generated/graphql.ts  # Generated schema/operation types and typed documents
+  apollo/<feature>/
+    query.graphql         # Source operations (platform: health; auth: existing flows)
+    query.ts              # Typed document reexports and derived type aliases
+codegen.ts                # Local sibling schema and feature document configuration
 tooling/programmatic-start.mts
 tooling/vendor-chunks.mts  # Shared client-only vendor splitting
 ```
