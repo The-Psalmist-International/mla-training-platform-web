@@ -10,6 +10,27 @@ fragment CourseListFields on Course {
   updatedAt
 }
 
+query CoursesPage(
+  $limit: Int! = 20
+  $offset: Int! = 0
+  $status: CourseStatus
+  $mine: Boolean
+  $search: String
+) {
+  coursesPage(
+    limit: $limit
+    offset: $offset
+    status: $status
+    mine: $mine
+    search: $search
+  ) {
+    totalCount
+    items {
+      ...CourseListFields
+    }
+  }
+}
+
 query Courses(
   $limit: Int! = 20
   $offset: Int! = 0

@@ -7,7 +7,7 @@ export function StatusBadge({
   className,
 }: {
   children: ReactNode
-  tone?: "success" | "neutral"
+  tone?: "success" | "neutral" | "destructive"
   className?: string
 }) {
   return (
@@ -17,7 +17,9 @@ export function StatusBadge({
         "inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[10px] leading-none whitespace-nowrap uppercase",
         tone === "success"
           ? "bg-success text-success-foreground"
-          : "bg-muted text-muted-foreground",
+          : tone === "destructive"
+            ? "bg-destructive/10 text-destructive"
+            : "bg-muted text-muted-foreground",
         className
       )}
     >

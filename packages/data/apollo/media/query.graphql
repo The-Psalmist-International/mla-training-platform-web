@@ -9,6 +9,25 @@ fragment VideoAssetListFields on VideoAsset {
   updatedAt
 }
 
+query MyVideoAssetsPage(
+  $limit: Int! = 20
+  $offset: Int! = 0
+  $status: VideoAssetStatus
+  $search: String
+) {
+  myVideoAssetsPage(
+    limit: $limit
+    offset: $offset
+    status: $status
+    search: $search
+  ) {
+    totalCount
+    items {
+      ...VideoAssetListFields
+    }
+  }
+}
+
 query MyVideoAssets($limit: Int! = 20, $offset: Int! = 0) {
   myVideoAssets(limit: $limit, offset: $offset) {
     ...VideoAssetListFields

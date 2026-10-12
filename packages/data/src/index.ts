@@ -92,6 +92,12 @@ export type {
   CertificateForEnrollmentQueryVariables,
 } from "../apollo/certificate/query"
 export { ADMIN_EMAIL_MESSAGES_QUERY } from "../apollo/email-delivery/query"
+export { COURSES_PAGE_QUERY } from "../apollo/course/query"
+export { MY_VIDEO_ASSETS_PAGE_QUERY } from "../apollo/media/query"
+export {
+  ADMIN_EMAIL_MESSAGES_PAGE_QUERY,
+  ADMIN_EMAIL_MESSAGE_QUERY,
+} from "../apollo/email-delivery/query"
 export type {
   EmailDeliveryStatus,
   EmailDeliveryPurpose,

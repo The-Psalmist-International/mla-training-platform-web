@@ -26,3 +26,52 @@ query AdminEmailMessages(
     complainedAt
   }
 }
+
+query AdminEmailMessagesPage(
+  $status: EmailDeliveryStatus
+  $purpose: String
+  $recipient: String
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  adminEmailMessagesPage(
+    status: $status
+    purpose: $purpose
+    recipient: $recipient
+    limit: $limit
+    offset: $offset
+  ) {
+    totalCount
+    items {
+      id
+      notificationId
+      recipient
+      purpose
+      status
+      providerMessageId
+      failureCode
+      createdAt
+      sentAt
+      deliveredAt
+      bouncedAt
+      complainedAt
+    }
+  }
+}
+
+query AdminEmailMessage($id: ID!) {
+  adminEmailMessage(id: $id) {
+    id
+    notificationId
+    recipient
+    purpose
+    status
+    providerMessageId
+    failureCode
+    createdAt
+    sentAt
+    deliveredAt
+    bouncedAt
+    complainedAt
+  }
+}

@@ -262,7 +262,7 @@ function InvitationsTable({ user }: { user: CurrentUser }) {
               description={
                 hasFilters
                   ? "Try a different search or clear your filters."
-                  : "Invite invitations to join the academy and get started."
+                  : "Invite people to join the academy and get started."
               }
               action={
                 hasFilters ? (

@@ -1,5 +1,5 @@
-import { WorkspaceCollectionPage } from "../components/WorkspaceCollectionPage"
+import { LibraryCollectionPage } from "../components/LibraryCollectionPage"
 
 export function VideoLibraryPage() {
-  return <WorkspaceCollectionPage view="videos" />
+  return <LibraryCollectionPage view="videos" />
 }

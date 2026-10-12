@@ -1,4 +1,6 @@
-import { useId, type ReactNode } from "react"
+import { useId, useState, type ReactNode } from "react"
+import { SquaresFourIcon } from "@phosphor-icons/react/dist/csr/SquaresFour"
+import { TableIcon } from "@phosphor-icons/react/dist/csr/Table"
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwise"
 import { CaretDoubleLeftIcon } from "@phosphor-icons/react/dist/csr/CaretDoubleLeft"
 import { CaretDoubleRightIcon } from "@phosphor-icons/react/dist/csr/CaretDoubleRight"
@@ -18,6 +20,23 @@ export interface DataTableColumn<TRow> {
   cell: (row: TRow) => ReactNode
   className?: string
 }
+
+export type DataTableView = "table" | "grid"
+export type DataTableLayout<TRow> =
+  | { mode: "table" }
+  | { mode: "grid"; renderCard: (row: TRow) => ReactNode }
+  | ({ mode: "toggle"; renderCard: (row: TRow) => ReactNode } & (
+      | {
+          view: DataTableView
+          onViewChange: (view: DataTableView) => void
+          defaultView?: never
+        }
+      | {
+          view?: never
+          defaultView?: DataTableView
+          onViewChange?: (view: DataTableView) => void
+        }
+    ))
 
 export interface DataTableProps<TRow> {
   rows: TRow[]
@@ -45,6 +64,8 @@ export interface DataTableProps<TRow> {
   emptyState?: ReactNode
   errorState?: ReactNode
   className?: string
+  /** Omit for the standard table; grid and toggle modes require a card renderer. */
+  layout?: DataTableLayout<TRow>
 }
 
 export function DataTable<TRow>({
@@ -61,8 +82,23 @@ export function DataTable<TRow>({
   emptyState = "No results found.",
   errorState,
   className,
+  layout = { mode: "table" },
 }: DataTableProps<TRow>) {
   const id = useId()
+  const [localView, setLocalView] = useState<DataTableView>(
+    layout.mode === "toggle" ? (layout.defaultView ?? "table") : "table"
+  )
+  const view =
+    layout.mode === "grid"
+      ? "grid"
+      : layout.mode === "toggle"
+        ? (layout.view ?? localView)
+        : "table"
+  const changeView = (next: DataTableView) => {
+    if (layout.mode !== "toggle") return
+    if (layout.view === undefined) setLocalView(next)
+    layout.onViewChange?.(next)
+  }
   const {
     pageIndex,
     pageSize,
@@ -115,6 +151,38 @@ export function DataTable<TRow>({
         </div>
         <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
           {filters}
+          {layout.mode === "toggle" && (
+            <div
+              role="group"
+              aria-label={`${ariaLabel} layout`}
+              className="flex items-center gap-1 rounded-md border border-border p-1"
+            >
+              {(
+                [
+                  ["table", TableIcon, "Table view"],
+                  ["grid", SquaresFourIcon, "Grid view"],
+                ] as const
+              ).map(([value, Icon, label]) => (
+                <Tooltip key={value}>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant={view === value ? "secondary" : "ghost"}
+                        size="icon-sm"
+                        aria-label={label}
+                        aria-pressed={view === value}
+                        onClick={() => changeView(value)}
+                      />
+                    }
+                  >
+                    <Icon aria-hidden className="size-4" />
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          )}
           <Tooltip>
             <TooltipTrigger
               render={
@@ -136,92 +204,141 @@ export function DataTable<TRow>({
       </div>
       <div
         role="region"
-        aria-label={`${ariaLabel} table scroll area`}
+        aria-label={`${ariaLabel} ${view} scroll area`}
         tabIndex={0}
         className="min-h-0 min-w-0 flex-1 overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
       >
-        <table
-          className={cn(
-            "w-full border-separate border-spacing-0 text-left",
-            (hasError || (!isLoading && rows.length === 0)) && "h-full"
-          )}
-          aria-busy={!hasError && (isLoading || isFetching)}
-        >
-          <caption className="sr-only">{ariaLabel}</caption>
-          <thead className="sticky top-0 z-10 h-9 text-muted-foreground">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.id}
-                  scope="col"
-                  className={cn(
-                    "bg-muted px-3 py-2 font-medium first:rounded-l-md last:rounded-r-md",
-                    column.className
-                  )}
-                >
-                  {column.header}
-                </th>
+        {view === "grid" && layout.mode !== "table" ? (
+          hasError ? (
+            <div className="flex min-h-full items-center justify-center px-4 py-12 text-center text-muted-foreground">
+              {errorState}
+            </div>
+          ) : isLoading ? (
+            <div role="status">
+              <span className="sr-only">Loading {ariaLabel}</span>
+              <ul
+                aria-hidden
+                className="grid grid-cols-1 gap-4 @xl/data-table:grid-cols-2 @4xl/data-table:grid-cols-3 @6xl/data-table:grid-cols-4"
+              >
+                {Array.from({ length: Math.min(pageSize, 6) }, (_, index) => (
+                  <li
+                    key={index}
+                    data-slot="data-table-loading-card"
+                    className="overflow-hidden rounded-lg border border-border"
+                  >
+                    <Skeleton className="aspect-video w-full rounded-none motion-reduce:animate-none" />
+                    <div className="space-y-3 p-3">
+                      <Skeleton className="h-5 w-3/4 motion-reduce:animate-none" />
+                      <Skeleton className="h-12 w-full motion-reduce:animate-none" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : rows.length === 0 ? (
+            <div
+              role="status"
+              className="flex min-h-full items-center justify-center px-4 py-12 text-center text-muted-foreground"
+            >
+              {emptyState}
+            </div>
+          ) : (
+            <ul
+              aria-label={ariaLabel}
+              aria-busy={isFetching}
+              className="grid grid-cols-1 gap-4 pb-1 @xl/data-table:grid-cols-2 @4xl/data-table:grid-cols-3 @6xl/data-table:grid-cols-4"
+            >
+              {rows.map((row) => (
+                <li key={getRowId(row)} className="min-w-0">
+                  {layout.renderCard(row)}
+                </li>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {!hasError && isLoading ? (
-              Array.from({ length: Math.min(pageSize, 6) }, (_, index) => (
-                <tr
-                  key={index}
-                  data-slot="data-table-loading-row"
-                  className="even:bg-muted/60"
-                >
-                  {columns.map((column, columnIndex) => (
-                    <td
-                      key={column.id}
-                      className={cn("px-3 py-3.5", column.className)}
-                    >
-                      {index === 0 && columnIndex === 0 && (
-                        <span role="status" className="sr-only">
-                          Loading {ariaLabel}
-                        </span>
-                      )}
-                      <Skeleton
-                        aria-hidden
-                        className="h-5 w-full motion-reduce:animate-none"
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : hasError || rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center align-middle text-muted-foreground"
-                >
-                  {hasError ? (
-                    <div>{errorState}</div>
-                  ) : (
-                    <div role="status">{emptyState}</div>
-                  )}
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr
-                  key={getRowId(row)}
-                  className="even:bg-muted/60 hover:bg-muted/80"
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={column.id}
-                      className={cn("px-3 py-2.5", column.className)}
-                    >
-                      {column.cell(row)}
-                    </td>
-                  ))}
-                </tr>
-              ))
+            </ul>
+          )
+        ) : (
+          <table
+            className={cn(
+              "w-full border-separate border-spacing-0 text-left",
+              (hasError || (!isLoading && rows.length === 0)) && "h-full"
             )}
-          </tbody>
-        </table>
+            aria-busy={!hasError && (isLoading || isFetching)}
+          >
+            <caption className="sr-only">{ariaLabel}</caption>
+            <thead className="sticky top-0 z-10 h-9 text-muted-foreground">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.id}
+                    scope="col"
+                    className={cn(
+                      "bg-muted px-3 py-2 font-medium first:rounded-l-md last:rounded-r-md",
+                      column.className
+                    )}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {!hasError && isLoading ? (
+                Array.from({ length: Math.min(pageSize, 6) }, (_, index) => (
+                  <tr
+                    key={index}
+                    data-slot="data-table-loading-row"
+                    className="even:bg-muted/60"
+                  >
+                    {columns.map((column, columnIndex) => (
+                      <td
+                        key={column.id}
+                        className={cn("px-3 py-3.5", column.className)}
+                      >
+                        {index === 0 && columnIndex === 0 && (
+                          <span role="status" className="sr-only">
+                            Loading {ariaLabel}
+                          </span>
+                        )}
+                        <Skeleton
+                          aria-hidden
+                          className="h-5 w-full motion-reduce:animate-none"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : hasError || rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-12 text-center align-middle text-muted-foreground"
+                  >
+                    {hasError ? (
+                      <div>{errorState}</div>
+                    ) : (
+                      <div role="status">{emptyState}</div>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr
+                    key={getRowId(row)}
+                    className="even:bg-muted/60 hover:bg-muted/80"
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.id}
+                        className={cn("px-3 py-2.5", column.className)}
+                      >
+                        {column.cell(row)}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
       <footer className="sticky bottom-0 z-10 grid w-full shrink-0 grid-cols-2 items-center gap-3 bg-background py-4 @4xl/data-table:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <p

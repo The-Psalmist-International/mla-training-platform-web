@@ -9,6 +9,11 @@ import { canAccessView } from "./workspace/navigation"
 import { validatePeopleSearch } from "./workspace/people-search"
 import { validateInvitationsSearch } from "./workspace/invitations-search"
 import { validateCollectionSearch } from "./workspace/collection-search"
+import { validateEmailDeliverySearch } from "./workspace/email-delivery-search"
+import {
+  validateCoursesSearch,
+  validateVideosSearch,
+} from "./workspace/library-search"
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -77,7 +82,7 @@ const notificationsRoute = createRoute({
 const coursesRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "courses",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateCoursesSearch,
   component: lazyRouteComponent(
     () => import("./pages/CoursesPage"),
     "CoursesPage"
@@ -87,7 +92,7 @@ const coursesRoute = createRoute({
 const videosRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "videos",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateVideosSearch,
   component: lazyRouteComponent(
     () => import("./pages/VideoLibraryPage"),
     "VideoLibraryPage"
@@ -173,7 +178,7 @@ const certificatesRoute = createRoute({
 const deliveryRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "email-delivery",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateEmailDeliverySearch,
   beforeLoad: ({ context }) => {
     if (!canAccessView(context.auth.getUser()?.role, "delivery"))
       throw redirect({ to: "/workspace" })
