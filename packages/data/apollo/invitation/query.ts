@@ -6,3 +6,8 @@ export type {
   InvitationsQueryVariables,
 } from "../../src/generated/graphql"
 export type InvitationListItem = InvitationsQuery["invitations"][number]
+export {
+  InvitationsPageDocument as INVITATIONS_PAGE_QUERY,
+  CreateInvitationDocument as CREATE_INVITATION_MUTATION,
+  RevokeInvitationDocument as REVOKE_INVITATION_MUTATION,
+} from "../../src/generated/graphql"

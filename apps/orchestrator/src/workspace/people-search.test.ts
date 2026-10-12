@@ -120,11 +120,16 @@ describe("People URL state", () => {
       history,
     })
     await router.load()
-    await router.navigate({
+    const modalLocation = router.buildLocation({
       to: "/workspace/people",
       search: (previous) =>
-        updatePeopleSearch(previous, { modal: "role", person: "ada" }),
+        updatePeopleSearch(validatePeopleSearch(previous), {
+          modal: "role",
+          person: "ada",
+        }),
     })
+    history.push(modalLocation.href)
+    await router.load()
     expect(router.state.location.search).toMatchObject({
       q: "Ada",
       page: 3,
@@ -143,12 +148,16 @@ describe("People URL state", () => {
     history.forward()
     await router.load()
     expect(router.state.location.search.modal).toBe("role")
-    await router.navigate({
+    const closedLocation = router.buildLocation({
       to: "/workspace/people",
       search: (previous) =>
-        updatePeopleSearch(previous, { modal: undefined, person: undefined }),
-      replace: true,
+        updatePeopleSearch(validatePeopleSearch(previous), {
+          modal: undefined,
+          person: undefined,
+        }),
     })
+    history.replace(closedLocation.href)
+    await router.load()
     expect(router.state.location.search.person).toBeUndefined()
     expect(router.state.location.search.page).toBe(3)
   })

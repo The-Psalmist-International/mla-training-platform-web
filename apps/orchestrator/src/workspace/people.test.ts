@@ -308,11 +308,24 @@ describe("shared DataTable layout", () => {
     expect(
       html.match(/<button[^>]*aria-label="Refresh People"[^>]*>/)?.[0]
     ).toContain('disabled=""')
-    if (busy.isFetching) {
-      expect(html).toContain("animate-spin motion-reduce:animate-none")
-    } else {
-      expect(html).not.toContain("animate-spin")
-    }
+    expect(html).not.toContain("animate-spin")
+    expect(
+      html.match(/<button[^>]*aria-label="Refresh People"[^>]*>/)?.[0]
+    ).toContain("border-border")
+  })
+
+  it("renders full-width skeleton rows aligned with each table column", () => {
+    const html = renderTable(0, 0, true, {
+      columns: [
+        { id: "name", header: "Name", cell: (row) => row.name },
+        { id: "id", header: "ID", cell: (row) => row.id },
+      ],
+    })
+    expect(html.match(/data-slot="data-table-loading-row"/g)).toHaveLength(6)
+    expect(html.match(/data-slot="skeleton"/g)).toHaveLength(12)
+    expect(html).toContain("h-5 w-full")
+    expect(html).not.toContain("max-w-lg")
+    expect(html).not.toContain('colSpan="2"')
   })
 
   it("disables pagination at dataset boundaries and hides totals while loading", () => {

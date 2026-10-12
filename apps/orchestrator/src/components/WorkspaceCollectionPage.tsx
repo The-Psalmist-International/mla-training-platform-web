@@ -1,5 +1,5 @@
-import { useId, useState, useSyncExternalStore } from "react"
-import { useRouter } from "@tanstack/react-router"
+import { useId, useSyncExternalStore } from "react"
+import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
@@ -12,12 +12,15 @@ import {
   courseScopedViews,
   workspaceCoursesOptions,
   workspaceListOptions,
-  workspacePageSize,
   type CollectionView,
 } from "../workspace/lists"
 
 import { WorkspacePageFrame } from "./WorkspacePageFrame"
 import { WorkspacePageAction } from "./WorkspacePageAction"
+import {
+  validateCollectionSearch,
+  type CollectionSearchState,
+} from "../workspace/collection-search"
 
 export function WorkspaceCollectionPage({ view }: { view: CollectionView }) {
   const { auth } = useRouter().options.context
@@ -38,8 +41,18 @@ function CollectionContent({
   const { dataClients } = useRouter().options.context
   const selectorId = useId()
   const scoped = courseScopedViews.includes(view)
-  const [selectedCourse, setSelectedCourse] = useState("")
-  const [offset, setOffset] = useState(0)
+  const urlState = validateCollectionSearch(useSearch({ strict: false }))
+  const navigate = useNavigate()
+  const pageSize = urlState.pageSize ?? 20
+  const page = urlState.page ?? 1
+  const offset = (page - 1) * pageSize
+  const selectedCourse = urlState.course ?? ""
+  const updateSearch = (patch: Partial<CollectionSearchState>) =>
+    void navigate({
+      to: ".",
+      search: (previous) => validateCollectionSearch({ ...previous, ...patch }),
+      resetScroll: false,
+    })
   const coursesQuery = useInfiniteQuery({
     ...workspaceCoursesOptions(dataClients, user),
     enabled: scoped,
@@ -54,7 +67,8 @@ function CollectionContent({
       user,
       view,
       scoped ? courseId : "",
-      offset
+      offset,
+      pageSize
     ),
     enabled: !scoped || (coursesQuery.isSuccess && !!courseId),
   })
@@ -78,8 +92,7 @@ function CollectionContent({
             id={selectorId}
             value={courseId}
             onChange={(event) => {
-              setSelectedCourse(event.target.value)
-              setOffset(0)
+              updateSearch({ course: event.target.value, page: undefined })
             }}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -197,18 +210,17 @@ function CollectionContent({
           <Button
             variant="outline"
             disabled={offset === 0 || listQuery.isFetching}
-            onClick={() => setOffset(Math.max(0, offset - workspacePageSize))}
+            onClick={() => updateSearch({ page: Math.max(1, page - 1) })}
           >
             Previous
           </Button>
           <span className="text-xs text-muted-foreground">
-            {view === "certificates" ? "Enrollment page" : "Page"}{" "}
-            {offset / workspacePageSize + 1}
+            {view === "certificates" ? "Enrollment page" : "Page"} {page}
           </span>
           <Button
             variant="outline"
             disabled={!listQuery.data?.hasNextPage || listQuery.isFetching}
-            onClick={() => setOffset(offset + workspacePageSize)}
+            onClick={() => updateSearch({ page: page + 1 })}
           >
             Next
           </Button>

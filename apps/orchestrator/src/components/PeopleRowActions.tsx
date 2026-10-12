@@ -8,6 +8,7 @@ import { UserMinusIcon } from "@phosphor-icons/react/dist/csr/UserMinus"
 import { UserCheckIcon } from "@phosphor-icons/react/dist/csr/UserCheck"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { FormFeedback } from "@workspace/ui/components/form-input"
 import { SelectInput } from "@workspace/ui/components/select"
@@ -131,7 +132,9 @@ export function PeopleSelectionDialog({
             {type === "role" ? "Change role" : "Account access"}
           </DialogTitle>
           <DialogDescription>
-            Restore the person selected in this URL.
+            {type === "role"
+              ? "Select a new role for the selected user."
+              : "Manage account access for the selected user."}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -236,7 +239,11 @@ export function PeopleAccessDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Update access for {person.name} ({person.email}).
+            {type === "role"
+              ? "Select a new role for the selected user."
+              : disabling
+                ? "Disable sign-in for the selected user."
+                : "Restore sign-in for the selected user."}
           </DialogDescription>
         </DialogHeader>
         <FormikProvider value={form}>
@@ -249,6 +256,25 @@ export function PeopleAccessDialog({
             }}
           >
             <DialogBody className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar size="lg" aria-hidden className="after:border-0">
+                  <AvatarFallback>
+                    {person.name
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")
+                      .toUpperCase() || person.email.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="font-medium">{person.name}</p>
+                  <p className="text-xs break-all text-muted-foreground">
+                    {person.email}
+                  </p>
+                </div>
+              </div>
               {type === "role" ? (
                 <div className="space-y-2">
                   <label htmlFor={`${id}-role`} className="font-medium">
@@ -270,13 +296,12 @@ export function PeopleAccessDialog({
                     ]}
                   />
                 </div>
-              ) : (
+              ) : !disabling ? (
                 <p>
-                  {disabling
-                    ? "This person will no longer be able to sign in until their account is enabled again."
-                    : "This person will be able to sign in again with their existing role."}
+                  This person will be able to sign in again with their existing
+                  role.
                 </p>
-              )}
+              ) : null}
               {person.id === actor.id ? (
                 <Alert variant="warning">
                   You are changing your own access. You will be signed out and

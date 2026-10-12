@@ -16,10 +16,12 @@ export function WorkspacePageAction({
   compact?: boolean
 }) {
   const className = compact ? "h-10 max-sm:size-11 max-sm:p-0" : undefined
-  if (view === "people" && role === "admin") {
+  if ((view === "people" || view === "invitations") && role === "admin") {
     return (
       <Button
-        render={<Link to="/workspace/invitations" />}
+        render={
+          <Link to="/workspace/invitations" search={{ modal: "create" }} />
+        }
         className={className}
         aria-label="Invite people"
         title="Invite people"

@@ -197,7 +197,7 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
           </span>
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block text-sm font-semibold">
-              Martyrs Leadership Platform
+              MLA Platform Console
             </span>
             <span className="block text-xs text-muted-foreground uppercase">
               Orchestrator

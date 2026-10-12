@@ -69,6 +69,11 @@ export type {
   UsersPageQueryVariables,
 } from "../apollo/people/query"
 export { INVITATIONS_QUERY } from "../apollo/invitation/query"
+export {
+  INVITATIONS_PAGE_QUERY,
+  CREATE_INVITATION_MUTATION,
+  REVOKE_INVITATION_MUTATION,
+} from "../apollo/invitation/query"
 export type {
   InvitationListItem,
   InvitationsQueryResult,

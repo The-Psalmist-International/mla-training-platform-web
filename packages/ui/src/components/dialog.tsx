@@ -64,7 +64,7 @@ function DialogHeader({ className, ...props }: ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "flex shrink-0 flex-col gap-1 border-b border-border bg-popover py-4 pr-14 pl-6",
+        "flex shrink-0 flex-col gap-0.5 border-b border-border bg-popover py-4 pr-14 pl-6",
         className
       )}
       {...props}

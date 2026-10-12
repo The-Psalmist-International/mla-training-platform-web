@@ -7,6 +7,8 @@ import { rootRoute } from "./root"
 import { routePaths } from "./route-definitions"
 import { canAccessView } from "./workspace/navigation"
 import { validatePeopleSearch } from "./workspace/people-search"
+import { validateInvitationsSearch } from "./workspace/invitations-search"
+import { validateCollectionSearch } from "./workspace/collection-search"
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -75,6 +77,7 @@ const notificationsRoute = createRoute({
 const coursesRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "courses",
+  validateSearch: validateCollectionSearch,
   component: lazyRouteComponent(
     () => import("./pages/CoursesPage"),
     "CoursesPage"
@@ -84,6 +87,7 @@ const coursesRoute = createRoute({
 const videosRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "videos",
+  validateSearch: validateCollectionSearch,
   component: lazyRouteComponent(
     () => import("./pages/VideoLibraryPage"),
     "VideoLibraryPage"
@@ -93,6 +97,7 @@ const videosRoute = createRoute({
 const enrollmentsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "enrollments",
+  validateSearch: validateCollectionSearch,
   component: lazyRouteComponent(
     () => import("./pages/EnrollmentsPage"),
     "EnrollmentsPage"
@@ -102,6 +107,7 @@ const enrollmentsRoute = createRoute({
 const assessmentsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "assessment-reviews",
+  validateSearch: validateCollectionSearch,
   component: lazyRouteComponent(
     () => import("./pages/AssessmentReviewsPage"),
     "AssessmentReviewsPage"
@@ -113,6 +119,7 @@ const assessmentsRoute = createRoute({
 const submissionsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "video-submissions",
+  validateSearch: validateCollectionSearch,
   component: lazyRouteComponent(
     () => import("./pages/VideoSubmissionsPage"),
     "VideoSubmissionsPage"
@@ -138,6 +145,7 @@ const peopleRoute = createRoute({
 const invitationsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "invitations",
+  validateSearch: validateInvitationsSearch,
   beforeLoad: ({ context }) => {
     if (!canAccessView(context.auth.getUser()?.role, "invitations"))
       throw redirect({ to: "/workspace" })
@@ -151,6 +159,7 @@ const invitationsRoute = createRoute({
 const certificatesRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "certificates",
+  validateSearch: validateCollectionSearch,
   beforeLoad: ({ context }) => {
     if (!canAccessView(context.auth.getUser()?.role, "certificates"))
       throw redirect({ to: "/workspace" })
@@ -164,6 +173,7 @@ const certificatesRoute = createRoute({
 const deliveryRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "email-delivery",
+  validateSearch: validateCollectionSearch,
   beforeLoad: ({ context }) => {
     if (!canAccessView(context.auth.getUser()?.role, "delivery"))
       throw redirect({ to: "/workspace" })

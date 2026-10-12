@@ -96,7 +96,8 @@ export function workspaceListOptions(
   user: CurrentUser,
   view: CollectionView,
   courseId: string,
-  offset: number
+  offset: number,
+  pageSize = workspacePageSize
 ) {
   return queryOptions({
     queryKey: [
@@ -107,6 +108,7 @@ export function workspaceListOptions(
       view,
       courseId,
       offset,
+      pageSize,
     ],
     queryFn: async ({ signal }): Promise<WorkspaceList> => {
       if (!canAccessView(user.role, view))
@@ -114,7 +116,7 @@ export function workspaceListOptions(
       if (courseScopedViews.includes(view) && !courseId) {
         throw new Error("Select a course before loading this section.")
       }
-      const page = { limit: workspacePageSize, offset }
+      const page = { limit: pageSize, offset }
       const scope = { ...page, courseId }
       let items: WorkspaceRow[]
       let pageLength: number
@@ -275,10 +277,10 @@ export function workspaceListOptions(
             }
           }
           pageLength = data.courseEnrollments.length
-          return { items, hasNextPage: pageLength === workspacePageSize }
+          return { items, hasNextPage: pageLength === pageSize }
         }
       }
-      return { items, hasNextPage: items.length === workspacePageSize }
+      return { items, hasNextPage: items.length === pageSize }
     },
   })
 }

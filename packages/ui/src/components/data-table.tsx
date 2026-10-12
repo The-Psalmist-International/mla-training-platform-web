@@ -120,7 +120,7 @@ export function DataTable<TRow>({
               render={
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="icon-sm"
                   aria-label={`Refresh ${ariaLabel}`}
                   disabled={isLoading || isFetching}
@@ -128,13 +128,7 @@ export function DataTable<TRow>({
                 />
               }
             >
-              <ArrowClockwiseIcon
-                aria-hidden
-                className={cn(
-                  "size-4",
-                  isFetching && "animate-spin motion-reduce:animate-none"
-                )}
-              />
+              <ArrowClockwiseIcon aria-hidden className="size-4" />
             </TooltipTrigger>
             <TooltipContent>Refresh {ariaLabel}</TooltipContent>
           </Tooltip>
@@ -149,7 +143,7 @@ export function DataTable<TRow>({
         <table
           className={cn(
             "w-full border-separate border-spacing-0 text-left",
-            (hasError || isLoading || rows.length === 0) && "h-full"
+            (hasError || (!isLoading && rows.length === 0)) && "h-full"
           )}
           aria-busy={!hasError && (isLoading || isFetching)}
         >
@@ -171,7 +165,32 @@ export function DataTable<TRow>({
             </tr>
           </thead>
           <tbody>
-            {hasError || isLoading || rows.length === 0 ? (
+            {!hasError && isLoading ? (
+              Array.from({ length: Math.min(pageSize, 6) }, (_, index) => (
+                <tr
+                  key={index}
+                  data-slot="data-table-loading-row"
+                  className="even:bg-muted/60"
+                >
+                  {columns.map((column, columnIndex) => (
+                    <td
+                      key={column.id}
+                      className={cn("px-3 py-3.5", column.className)}
+                    >
+                      {index === 0 && columnIndex === 0 && (
+                        <span role="status" className="sr-only">
+                          Loading {ariaLabel}
+                        </span>
+                      )}
+                      <Skeleton
+                        aria-hidden
+                        className="h-5 w-full motion-reduce:animate-none"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : hasError || rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
@@ -179,20 +198,6 @@ export function DataTable<TRow>({
                 >
                   {hasError ? (
                     <div>{errorState}</div>
-                  ) : isLoading ? (
-                    <div
-                      role="status"
-                      className="mx-auto flex max-w-lg flex-col gap-3"
-                    >
-                      <span className="sr-only">Loading {ariaLabel}</span>
-                      {[0, 1, 2].map((index) => (
-                        <Skeleton
-                          key={index}
-                          aria-hidden
-                          className="h-8 w-full motion-reduce:animate-none"
-                        />
-                      ))}
-                    </div>
                   ) : (
                     <div role="status">{emptyState}</div>
                   )}

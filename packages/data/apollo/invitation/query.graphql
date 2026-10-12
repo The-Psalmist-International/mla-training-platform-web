@@ -11,3 +11,50 @@ query Invitations($limit: Int! = 30, $offset: Int! = 0) {
     createdAt
   }
 }
+
+query InvitationsPage(
+  $search: String
+  $role: UserRole
+  $status: InvitationStatus
+  $limit: Int! = 20
+  $offset: Int! = 0
+) {
+  invitationsPage(
+    search: $search
+    role: $role
+    status: $status
+    limit: $limit
+    offset: $offset
+  ) {
+    totalCount
+    items {
+      id
+      email
+      role
+      invitedBy
+      acceptedBy
+      expiresAt
+      acceptedAt
+      revokedAt
+      createdAt
+    }
+  }
+}
+
+mutation CreateInvitation($input: CreateInvitationInput!) {
+  createInvitation(input: $input) {
+    id
+    email
+    role
+    invitedBy
+    acceptedBy
+    expiresAt
+    acceptedAt
+    revokedAt
+    createdAt
+  }
+}
+
+mutation RevokeInvitation($id: ID!) {
+  revokeInvitation(id: $id)
+}
