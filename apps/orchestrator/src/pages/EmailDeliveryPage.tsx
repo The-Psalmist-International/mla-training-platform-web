@@ -31,11 +31,7 @@ import {
 import { formatPeopleCreatedAt } from "../workspace/people"
 import { EmailDeliveryDetailsDialog } from "../components/EmailDeliveryDetailsDialog"
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@workspace/ui/components/tooltip"
+import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import {
   emailDeliveryParamsFromSearch,
   updateEmailDeliverySearch,
@@ -163,10 +159,6 @@ function EmailDeliveryTable({ user }: { user: CurrentUser }) {
   }
   return (
     <WorkspacePageFrame view="delivery">
-      <p className="mb-4 shrink-0 text-xs leading-5 text-muted-foreground">
-        Look up a complete recipient email address. Sent means accepted by the
-        provider; delivered means accepted by the receiving mail server.
-      </p>
       <DataTable
         ariaLabel="Email delivery"
         rows={query.data?.items ?? []}
@@ -177,24 +169,17 @@ function EmailDeliveryTable({ user }: { user: CurrentUser }) {
             header: "Actions",
             className: "w-20 text-right",
             cell: (email) => (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`View delivery details for ${email.recipient}`}
-                      onClick={() =>
-                        updateSearch({ modal: "details", message: email.id })
-                      }
-                    />
-                  }
-                >
-                  <EyeIcon aria-hidden />
-                </TooltipTrigger>
-                <TooltipContent>View delivery details</TooltipContent>
-              </Tooltip>
+              <TableRowActions
+                subject={email.recipient}
+                primary={[
+                  {
+                    label: "View delivery details",
+                    icon: <EyeIcon aria-hidden />,
+                    onSelect: () =>
+                      updateSearch({ modal: "details", message: email.id }),
+                  },
+                ]}
+              />
             ),
           },
         ]}

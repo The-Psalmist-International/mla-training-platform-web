@@ -21,10 +21,9 @@ import {
   DialogFooter,
 } from "@workspace/ui/components/dialog"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
+  TableRowActions,
+  type TableRowAction,
+} from "@workspace/ui/components/table-row-actions"
 import {
   sendInvitation,
   revokeInvitation,
@@ -49,45 +48,21 @@ export function InvitationRowActions({
 }) {
   const status = getInvitationStatus(invitation)
   if (status === "accepted") return null
-  return (
-    <div className="flex items-center justify-end gap-1">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Resend invitation for ${invitation.email}`}
-              onClick={() => onSelect({ type: "resend", invitation })}
-            />
-          }
-        >
-          <PaperPlaneTiltIcon aria-hidden />
-        </TooltipTrigger>
-        <TooltipContent>Resend invitation</TooltipContent>
-      </Tooltip>
-      {status === "pending" && (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="text-destructive"
-                aria-label={`Revoke invitation for ${invitation.email}`}
-                onClick={() => onSelect({ type: "revoke", invitation })}
-              />
-            }
-          >
-            <ProhibitIcon aria-hidden />
-          </TooltipTrigger>
-          <TooltipContent>Revoke invitation</TooltipContent>
-        </Tooltip>
-      )}
-    </div>
-  )
+  const secondary: TableRowAction[] = [
+    {
+      label: "Resend invitation",
+      icon: <PaperPlaneTiltIcon aria-hidden />,
+      onSelect: () => onSelect({ type: "resend", invitation }),
+    },
+  ]
+  if (status === "pending")
+    secondary.push({
+      label: "Revoke invitation",
+      icon: <ProhibitIcon aria-hidden />,
+      destructive: true,
+      onSelect: () => onSelect({ type: "revoke", invitation }),
+    })
+  return <TableRowActions subject={invitation.email} secondary={secondary} />
 }
 
 type InvitationModal = "create" | "resend" | "revoke"
@@ -153,7 +128,12 @@ export function InvitationDialog({
           currentStatus === "accepted" ||
           (revoking && currentStatus !== "pending")
         ) {
-          toast({ title: "Invitation unavailable", description: "This invitation can no longer be changed. Refresh the table.", status: "warning" })
+          toast({
+            title: "Invitation unavailable",
+            description:
+              "This invitation can no longer be changed. Refresh the table.",
+            status: "warning",
+          })
           return
         }
       }
@@ -172,7 +152,13 @@ export function InvitationDialog({
           })
         }
       } catch (error) {
-        toast({ title: isInvitationQueueError(error) ? "Invitation email not queued" : "Invitation could not be updated", description: invitationErrorMessage(error), status: isInvitationQueueError(error) ? "warning" : "error" })
+        toast({
+          title: isInvitationQueueError(error)
+            ? "Invitation email not queued"
+            : "Invitation could not be updated",
+          description: invitationErrorMessage(error),
+          status: isInvitationQueueError(error) ? "warning" : "error",
+        })
         pending.current = false
         if (!revoking && isInvitationQueueError(error)) onPartialSuccess()
         return

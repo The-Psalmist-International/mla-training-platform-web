@@ -13,6 +13,7 @@ describe("orchestrator navigation", () => {
     for (const [view, page] of Object.entries(workspaceViews))
       expect(viewForPath(page.path)).toBe(view)
     expect(viewForPath("/workspace/courses/")).toBe("courses")
+    expect(viewForPath("/workspace/courses/course-id")).toBe("courses")
     expect(viewForPath("/workspace/unknown")).toBeUndefined()
   })
   it("restricts administration links and direct route access to admins", () => {

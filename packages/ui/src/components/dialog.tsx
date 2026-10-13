@@ -64,7 +64,7 @@ function DialogHeader({ className, ...props }: ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "flex shrink-0 flex-col gap-0.5 border-b border-border bg-popover py-4 pr-14 pl-6",
+        "flex shrink-0 flex-col gap-0 border-b border-border bg-popover py-3 pr-14 pl-6",
         className
       )}
       {...props}
@@ -103,7 +103,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "cn-font-heading text-lg font-medium text-foreground",
+        "cn-font-heading m-0 text-base leading-5 font-medium text-foreground",
         className
       )}
       {...props}
@@ -119,7 +119,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-[0.8125rem] leading-5 text-muted-foreground",
+        "m-0 text-[0.8125rem] leading-4 text-muted-foreground",
         className
       )}
       {...props}

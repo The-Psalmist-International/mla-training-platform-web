@@ -4,6 +4,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { createDataClients, type CurrentUser } from "@workspace/data"
 import {
   saveCourse,
+  addCourseModule,
   changeCourseStatus,
   courseDetailsOptions,
   videoDetailsOptions,
@@ -71,6 +72,37 @@ function fixture(data: object) {
 const cache = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
 describe("course and video writes", () => {
+  it("saves and clears a thumbnail through course metadata updates", async () => {
+    const { clients, request } = fixture({
+      updateCourse: { ...course, thumbnailUrl: null },
+    })
+    const values = {
+      title: course.title,
+      description: course.description,
+      certificateEnabled: false,
+    }
+    await saveCourse(
+      clients,
+      user,
+      { ...values, thumbnailUrl: " https://images.example.com/course.jpg " },
+      id
+    )
+    await saveCourse(clients, user, { ...values, thumbnailUrl: " " }, id)
+    const inputs = request.mock.calls.map(
+      (call) => JSON.parse(String(call[1]?.body)).variables.input
+    )
+    expect(inputs[0].thumbnailUrl).toBe("https://images.example.com/course.jpg")
+    expect(inputs[1].thumbnailUrl).toBeNull()
+    expect(
+      await courseFormSchema.isValid({
+        ...values,
+        thumbnailUrl: "http://example.com/image.jpg",
+      })
+    ).toBe(false)
+    expect(
+      await courseFormSchema.isValid({ ...values, thumbnailUrl: "" })
+    ).toBe(true)
+  })
   it("creates/updates trimmed course metadata through the generated mutations", async () => {
     const { clients, request } = fixture({
       createCourse: { ...course, __typename: "Course" },
@@ -99,6 +131,19 @@ describe("course and video writes", () => {
     expect(requests[1]).toMatchObject({
       operationName: "UpdateCourse",
       variables: { id },
+    })
+  })
+  it("adds a trimmed section through createCourseModule", async () => {
+    const { clients, request } = fixture({
+      createCourseModule: {
+        id,
+        modules: [{ id, title: "Foundations", position: 0 }],
+      },
+    })
+    await addCourseModule(clients, user, id, " Foundations ")
+    expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toMatchObject({
+      operationName: "CreateCourseModule",
+      variables: { courseId: id, input: { title: "Foundations" } },
     })
   })
   it.each(["publish", "unpublish", "archive"] as const)(
@@ -169,6 +214,9 @@ describe("course and video writes", () => {
     ).rejects.toThrow("Workspace access required")
     await expect(
       changeCourseStatus(clients, learner, id, "publish")
+    ).rejects.toThrow("Workspace access required")
+    await expect(
+      addCourseModule(clients, learner, id, "Section")
     ).rejects.toThrow("Workspace access required")
     await expect(
       createVideoUpload(clients, learner, {

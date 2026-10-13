@@ -94,7 +94,9 @@ export function VideoLibraryDialog({
             {preview ? "Video preview" : "Video details"}
           </DialogTitle>
           <DialogDescription>
-            {video?.title ?? "Load the selected video from your library."}
+            {preview
+              ? "Preview the selected video."
+              : "Review the details of the video."}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
@@ -139,6 +141,10 @@ export function VideoLibraryDialog({
                   />
                 ))}
               <dl className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <dt className="text-xs text-muted-foreground">Name</dt>
+                  <dd className="mt-1 font-medium">{video.title}</dd>
+                </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Status</dt>
                   <dd className="mt-1 font-medium capitalize">

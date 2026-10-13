@@ -1,12 +1,17 @@
 import type { CurrentUser } from "@workspace/data"
-import { DotsThreeIcon } from "@phosphor-icons/react/dist/csr/DotsThree"
-import { Button } from "@workspace/ui/components/button"
+import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut"
+import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
+import { PencilSimpleIcon } from "@phosphor-icons/react/dist/csr/PencilSimple"
+import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt"
+import { ArrowUUpLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowUUpLeft"
+import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive"
+import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play"
+import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple"
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@workspace/ui/components/dropdown-menu"
+  TableRowActions,
+  type TableRowAction,
+} from "@workspace/ui/components/table-row-actions"
 import type { LibraryItem } from "../workspace/library"
 import type {
   LibraryView,
@@ -18,75 +23,84 @@ export function LibraryRowActions({
   view,
   user,
   onSelect,
+  onExpand,
 }: {
   item: LibraryItem
   view: LibraryView
   user: CurrentUser
+  onExpand?: () => void
   onSelect: (
     modal: NonNullable<LibrarySearchState["modal"]>,
     id: string
   ) => void
 }) {
   const owns = user.role === "admin" || item.ownerId === user.id
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Actions for ${item.title}`}
-          />
+  const primary: TableRowAction[] = [
+    {
+      label: "View details",
+      icon: <EyeIcon aria-hidden />,
+      onSelect: () => onSelect("details", item.id),
+    },
+  ]
+  const secondary: TableRowAction[] = []
+  if (view === "courses") {
+    if (owns && item.status === "draft") {
+      primary.push({
+        label: "Edit course",
+        icon: <PencilSimpleIcon aria-hidden />,
+        onSelect: () => onSelect("edit", item.id),
+      })
+      secondary.push(
+        {
+          label: "Add section",
+          icon: <PlusIcon aria-hidden />,
+          onSelect: () => onSelect("details", item.id),
+        },
+        {
+          label: "Publish course",
+          icon: <PaperPlaneTiltIcon aria-hidden />,
+          onSelect: () => onSelect("publish", item.id),
         }
-      >
-        <DotsThreeIcon aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onSelect("details", item.id)}>
-          View details
-        </DropdownMenuItem>
-        {view === "courses" ? (
-          <>
-            {owns && item.status === "draft" && (
-              <>
-                <DropdownMenuItem onClick={() => onSelect("edit", item.id)}>
-                  Edit course
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSelect("publish", item.id)}>
-                  Publish course
-                </DropdownMenuItem>
-              </>
-            )}
-            {owns && item.status === "published" && (
-              <DropdownMenuItem onClick={() => onSelect("unpublish", item.id)}>
-                Return to draft
-              </DropdownMenuItem>
-            )}
-            {owns && item.status !== "archived" && (
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => onSelect("archive", item.id)}
-              >
-                Archive course
-              </DropdownMenuItem>
-            )}
-          </>
-        ) : (
-          <>
-            {item.status === "ready" && (
-              <DropdownMenuItem onClick={() => onSelect("preview", item.id)}>
-                Preview video
-              </DropdownMenuItem>
-            )}
-            {item.status === "pending_upload" && (
-              <DropdownMenuItem onClick={() => onSelect("resume", item.id)}>
-                Resume upload
-              </DropdownMenuItem>
-            )}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      )
+    }
+    if (onExpand)
+      primary.push({
+        label: "Expand course",
+        icon: <ArrowsOutIcon aria-hidden />,
+        onSelect: onExpand,
+      })
+    if (owns && item.status === "published")
+      secondary.push({
+        label: "Return to draft",
+        icon: <ArrowUUpLeftIcon aria-hidden />,
+        onSelect: () => onSelect("unpublish", item.id),
+      })
+    if (owns && item.status !== "archived")
+      secondary.push({
+        label: "Archive course",
+        icon: <ArchiveIcon aria-hidden />,
+        onSelect: () => onSelect("archive", item.id),
+        destructive: true,
+      })
+  } else {
+    if (item.status === "ready")
+      secondary.push({
+        label: "Preview video",
+        icon: <PlayIcon aria-hidden />,
+        onSelect: () => onSelect("preview", item.id),
+      })
+    if (item.status === "pending_upload")
+      secondary.push({
+        label: "Resume upload",
+        icon: <UploadSimpleIcon aria-hidden />,
+        onSelect: () => onSelect("resume", item.id),
+      })
+  }
+  return (
+    <TableRowActions
+      subject={item.title}
+      primary={primary}
+      secondary={secondary}
+    />
   )
 }

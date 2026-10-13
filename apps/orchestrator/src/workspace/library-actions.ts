@@ -7,6 +7,7 @@ import {
   PUBLISH_COURSE_MUTATION,
   UNPUBLISH_COURSE_MUTATION,
   ARCHIVE_COURSE_MUTATION,
+  CREATE_COURSE_MODULE_MUTATION,
   VIDEO_ASSET_DETAILS_QUERY,
   PREVIEW_LESSON_VIDEO_QUERY,
   CREATE_LESSON_VIDEO_UPLOAD_MUTATION,
@@ -23,6 +24,23 @@ function requireAuthor(user: CurrentUser) {
     throw new Error("Workspace access required")
 }
 export const courseFormSchema = yup.object({
+  thumbnailUrl: yup
+    .string()
+    .trim()
+    .max(2048, "Image URL must be 2,048 characters or fewer.")
+    .test(
+      "https-image",
+      "Enter an HTTPS image URL without credentials.",
+      (value) => {
+        if (!value) return true
+        try {
+          const url = new URL(value)
+          return url.protocol === "https:" && !url.username && !url.password
+        } catch {
+          return false
+        }
+      }
+    ),
   title: yup
     .string()
     .trim()
@@ -36,10 +54,18 @@ export const courseFormSchema = yup.object({
   certificateEnabled: yup.boolean().required(),
 })
 export type CourseFormValues = {
+  thumbnailUrl?: string
   title: string
   description: string
   certificateEnabled: boolean
 }
+export const courseModuleSchema = yup.object({
+  title: yup
+    .string()
+    .trim()
+    .required("Enter a section title.")
+    .max(200, "Title must be 200 characters or fewer."),
+})
 export type CourseAction = "publish" | "unpublish" | "archive"
 export function courseDetailsOptions(
   clients: DataClients,
@@ -72,6 +98,9 @@ export async function saveCourse(
     ...input,
     title: input.title.trim(),
     description: input.description.trim(),
+    ...(input.thumbnailUrl !== undefined
+      ? { thumbnailUrl: input.thumbnailUrl.trim() || null }
+      : {}),
   }
   if (id) {
     const result = await clients.apolloClient.mutate({
@@ -89,6 +118,21 @@ export async function saveCourse(
   })
   if (!result.data) throw new Error("Missing course create response")
   return result.data.createCourse
+}
+export async function addCourseModule(
+  clients: DataClients,
+  user: CurrentUser,
+  courseId: string,
+  title: string
+) {
+  requireAuthor(user)
+  const result = await clients.apolloClient.mutate({
+    mutation: CREATE_COURSE_MODULE_MUTATION,
+    context: { toast: false },
+    variables: { courseId, input: { title: title.trim() } },
+  })
+  if (!result.data) throw new Error("Missing course section response")
+  return result.data.createCourseModule
 }
 export async function changeCourseStatus(
   clients: DataClients,

@@ -26,6 +26,7 @@ import { WorkspacePageFrame } from "./WorkspacePageFrame"
 import { WorkspacePageAction } from "./WorkspacePageAction"
 import { LibraryRowActions } from "./LibraryRowActions"
 import { CourseLibraryDialog } from "./CourseLibraryDialog"
+import { CourseThumbnail } from "./CourseThumbnail"
 import { VideoUploadDialog } from "./VideoUploadDialog"
 import { VideoLibraryDialog } from "./VideoLibraryDialog"
 import { formatPeopleCreatedAt } from "../workspace/people"
@@ -76,14 +77,18 @@ export function LibraryCard({
   const Icon = view === "courses" ? BookOpenIcon : FilmStripIcon
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground">
-      <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
-        <Icon aria-hidden className="size-10" />
-        <span className="sr-only">
-          {view === "courses"
-            ? "Course cover unavailable"
-            : "Video thumbnail unavailable"}
-        </span>
-      </div>
+      {view === "courses" ? (
+        <CourseThumbnail
+          title={item.title}
+          thumbnailUrl={item.thumbnailUrl}
+          className="rounded-none"
+        />
+      ) : (
+        <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
+          <Icon aria-hidden className="size-10" />
+          <span className="sr-only">Video thumbnail unavailable</span>
+        </div>
+      )}
       <div className="flex flex-1 flex-col gap-2 p-3">
         <h3 className="line-clamp-2 leading-5 font-semibold" title={item.title}>
           {onOpen ? (
@@ -186,11 +191,24 @@ function LibraryTable({
     modal: NonNullable<LibrarySearchState["modal"]>,
     item: string
   ) => updateSearch({ modal, item })
+  const expandCourse = (courseId: string) => {
+    void navigate({
+      to: "/workspace/courses/$courseId",
+      params: { courseId },
+      search: { ...urlState, modal: undefined, item: undefined },
+    })
+  }
   const closeAction = () => {
-    if (auth.getUser() === user) updateSearch({ modal: undefined, item: undefined }, true)
+    if (auth.getUser() === user)
+      updateSearch({ modal: undefined, item: undefined }, true)
   }
   const changed = (message?: string, status: ToastStatus = "success") => {
-    if (message && auth.getUser() === user) toast({ title: view === "courses" ? "Course updated" : "Video library updated", description: message, status })
+    if (message && auth.getUser() === user)
+      toast({
+        title: view === "courses" ? "Course updated" : "Video library updated",
+        description: message,
+        status,
+      })
     void queryClient
       .invalidateQueries({
         queryKey: [
@@ -218,19 +236,29 @@ function LibraryTable({
       header: "Title",
       className: "min-w-64",
       cell: (item) => (
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={() => openAction("details", item.id)}
-            className="text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            {item.title}
-          </button>
+        <div className="flex items-center gap-3">
           {view === "courses" && (
-            <p className="line-clamp-2 max-w-lg text-xs leading-5 text-muted-foreground">
-              {item.description || "No course description yet."}
-            </p>
+            <CourseThumbnail
+              title={item.title}
+              thumbnailUrl={item.thumbnailUrl}
+              compact
+              className="w-16"
+            />
           )}
+          <div className="min-w-0 space-y-1">
+            <button
+              type="button"
+              onClick={() => openAction("details", item.id)}
+              className="text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              {item.title}
+            </button>
+            {view === "courses" && (
+              <p className="line-clamp-2 max-w-lg text-xs leading-5 text-muted-foreground">
+                {item.description || "No course description yet."}
+              </p>
+            )}
+          </div>
         </div>
       ),
     },
@@ -271,13 +299,16 @@ function LibraryTable({
     {
       id: "actions",
       header: "Actions",
-      className: "w-20 text-right",
+      className: "w-40 whitespace-nowrap text-right",
       cell: (item) => (
         <LibraryRowActions
           item={item}
           view={view}
           user={user}
           onSelect={openAction}
+          onExpand={
+            view === "courses" ? () => expandCourse(item.id) : undefined
+          }
         />
       ),
     },
@@ -305,6 +336,9 @@ function LibraryTable({
                   view={view}
                   user={user}
                   onSelect={openAction}
+                  onExpand={
+                    view === "courses" ? () => expandCourse(item.id) : undefined
+                  }
                 />
               }
             />

@@ -10,6 +10,7 @@ export {
   PUBLISH_COURSE_MUTATION,
   UNPUBLISH_COURSE_MUTATION,
   ARCHIVE_COURSE_MUTATION,
+  CREATE_COURSE_MODULE_MUTATION,
 } from "../apollo/course/query"
 export type { CourseDetailsQuery } from "../apollo/course/query"
 export type {

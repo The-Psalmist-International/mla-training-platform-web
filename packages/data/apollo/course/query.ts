@@ -9,6 +9,7 @@ export {
   PublishCourseDocument as PUBLISH_COURSE_MUTATION,
   UnpublishCourseDocument as UNPUBLISH_COURSE_MUTATION,
   ArchiveCourseDocument as ARCHIVE_COURSE_MUTATION,
+  CreateCourseModuleDocument as CREATE_COURSE_MODULE_MUTATION,
 } from "../../src/generated/graphql"
 export type { CourseDetailsQuery } from "../../src/generated/graphql"
 export type {

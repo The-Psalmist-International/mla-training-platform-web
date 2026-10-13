@@ -4,7 +4,7 @@ import { Form, FormikProvider, useFormik } from "formik"
 import { useToast } from "@workspace/ui/components/toaster"
 import * as yup from "yup"
 import type { CurrentUser, UserListItem, UserRole } from "@workspace/data"
-import { UserGearIcon } from "@phosphor-icons/react/dist/csr/UserGear"
+import { PencilSimpleIcon } from "@phosphor-icons/react/dist/csr/PencilSimple"
 import { UserMinusIcon } from "@phosphor-icons/react/dist/csr/UserMinus"
 import { UserCheckIcon } from "@phosphor-icons/react/dist/csr/UserCheck"
 import { Button } from "@workspace/ui/components/button"
@@ -22,11 +22,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
+import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import {
   peopleAccessErrorMessage,
   updatePeopleAccess,
@@ -47,41 +43,24 @@ export function PeopleRowActions({
   const statusLabel = person.disabledAt ? "Enable account" : "Disable account"
   const StatusIcon = person.disabledAt ? UserCheckIcon : UserMinusIcon
   return (
-    <div className="flex items-center justify-end gap-1">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Change role for ${person.name}`}
-              onClick={() => onSelect({ person, type: "role" })}
-            />
-          }
-        >
-          <UserGearIcon aria-hidden />
-        </TooltipTrigger>
-        <TooltipContent>Change role</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className={person.disabledAt ? undefined : "text-destructive"}
-              aria-label={`${statusLabel} for ${person.name}`}
-              onClick={() => onSelect({ person, type: "status" })}
-            />
-          }
-        >
-          <StatusIcon aria-hidden />
-        </TooltipTrigger>
-        <TooltipContent>{statusLabel}</TooltipContent>
-      </Tooltip>
-    </div>
+    <TableRowActions
+      subject={person.name}
+      primary={[
+        {
+          label: "Change role",
+          icon: <PencilSimpleIcon aria-hidden />,
+          onSelect: () => onSelect({ person, type: "role" }),
+        },
+      ]}
+      secondary={[
+        {
+          label: statusLabel,
+          icon: <StatusIcon aria-hidden />,
+          destructive: !person.disabledAt,
+          onSelect: () => onSelect({ person, type: "status" }),
+        },
+      ]}
+    />
   )
 }
 
@@ -217,7 +196,12 @@ export function PeopleAccessDialog({
           type === "role" ? { type, role } : { type, disabled: disabling }
         )
       } catch (error) {
-        if (auth.getUser() === actor) toast({ title: "Access could not be updated", description: peopleAccessErrorMessage(error), status: "error" })
+        if (auth.getUser() === actor)
+          toast({
+            title: "Access could not be updated",
+            description: peopleAccessErrorMessage(error),
+            status: "error",
+          })
         pending.current = false
         return
       }

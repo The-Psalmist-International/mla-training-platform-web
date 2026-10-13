@@ -3,6 +3,7 @@ fragment CourseListFields on Course {
   ownerId
   title
   description
+  thumbnailUrl
   status
   certificateEnabled
   publishedAt
@@ -37,6 +38,7 @@ query CourseDetails($id: ID!) {
     ownerId
     title
     description
+    thumbnailUrl
     status
     certificateEnabled
     publishedAt
@@ -67,6 +69,7 @@ mutation UpdateCourse($id: ID!, $input: UpdateCourseInput!) {
     ownerId
     title
     description
+    thumbnailUrl
     status
     certificateEnabled
     publishedAt
@@ -93,6 +96,16 @@ mutation ArchiveCourse($id: ID!) {
     id
     title
     status
+  }
+}
+mutation CreateCourseModule($courseId: ID!, $input: CourseModuleInput!) {
+  createCourseModule(courseId: $courseId, input: $input) {
+    id
+    modules {
+      id
+      title
+      position
+    }
   }
 }
 

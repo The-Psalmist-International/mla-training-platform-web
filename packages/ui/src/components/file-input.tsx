@@ -1,6 +1,8 @@
-import { useId, type ComponentProps } from "react"
+import { useId, useState, type ComponentProps } from "react"
 import { DatabaseIcon } from "@phosphor-icons/react/dist/csr/Database"
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
+import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash"
+import { Button } from "./button"
 import { cn } from "@workspace/ui/lib/utils"
 
 type FileInputProps = Omit<
@@ -10,12 +12,18 @@ type FileInputProps = Omit<
   file: File | null
   emptyText?: string
   helperText?: string
+  previewUrl?: string | null
+  onRemove?: () => void
+  removeLabel?: string
 }
 
 export function FileInput({
   file,
   emptyText = "No file selected",
   helperText = "Click to select a file.",
+  previewUrl,
+  onRemove,
+  removeLabel = "Remove file",
   className,
   id,
   disabled,
@@ -23,16 +31,34 @@ export function FileInput({
   ...props
 }: FileInputProps) {
   const generatedId = useId()
+  const [failedPreview, setFailedPreview] = useState<string | null>(null)
+  const hasPreview = !!previewUrl && previewUrl !== failedPreview
   const descriptionId = `${id ?? generatedId}-selection`
   return (
     <div
       data-slot="file-input"
       className={cn(
-        "relative flex min-h-50 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 text-center transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25 has-[[aria-invalid=true]]:border-destructive",
+        "relative flex min-h-50 w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 text-center transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25 has-[[aria-invalid=true]]:border-destructive",
+        hasPreview && "aspect-video",
         disabled ? "opacity-50" : "hover:border-muted-foreground/50",
         className
       )}
     >
+      {hasPreview && (
+        <>
+          <img
+            src={previewUrl}
+            alt=""
+            referrerPolicy="no-referrer"
+            onError={() => setFailedPreview(previewUrl)}
+            className="pointer-events-none absolute inset-0 size-full object-cover"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-black/55"
+          />
+        </>
+      )}
       <input
         {...props}
         id={id}
@@ -41,26 +67,56 @@ export function FileInput({
         aria-describedby={[descriptionId, describedBy]
           .filter(Boolean)
           .join(" ")}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
       />
+      {onRemove && (file || previewUrl) && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          className="absolute top-3 right-3 z-30 bg-background text-destructive hover:text-destructive"
+          aria-label={removeLabel}
+          title={removeLabel}
+          disabled={disabled}
+          onClick={onRemove}
+        >
+          <TrashIcon aria-hidden />
+        </Button>
+      )}
       <div
-        className="pointer-events-none flex w-full flex-col items-center gap-2"
+        className="pointer-events-none relative z-10 flex w-full flex-col items-center gap-2"
         id={descriptionId}
       >
         <span
-          className="relative mb-1 text-muted-foreground"
+          className={cn(
+            "relative mb-1",
+            hasPreview ? "text-white" : "text-muted-foreground"
+          )}
           aria-hidden="true"
         >
           <DatabaseIcon size={40} weight="light" />
           <PlusIcon
             size={18}
-            className="absolute -right-1 -bottom-1 bg-background"
+            className={cn(
+              "absolute -right-1 -bottom-1",
+              hasPreview ? "rounded-full bg-black/40" : "bg-background"
+            )}
           />
         </span>
-        <span className="max-w-full text-sm break-all text-foreground">
+        <span
+          className={cn(
+            "max-w-full text-sm break-all",
+            hasPreview ? "text-white" : "text-foreground"
+          )}
+        >
           {file ? file.name : emptyText}
         </span>
-        <span className="text-sm text-muted-foreground">
+        <span
+          className={cn(
+            "text-sm",
+            hasPreview ? "text-white/85" : "text-muted-foreground"
+          )}
+        >
           {file
             ? `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(file.size / (1024 * 1024))} MB${disabled ? "" : " · Click to choose another file."}`
             : helperText}

@@ -174,12 +174,13 @@ describe("People access actions", () => {
     ).toContain("Please try again")
   })
 
-  it("labels icon actions and only offers the applicable account action", () => {
+  it("keeps role editing visible and moves account status into the overflow menu", () => {
     const active = renderToStaticMarkup(
       createElement(PeopleRowActions, { person, onSelect: () => {} })
     )
     expect(active).toContain('aria-label="Change role for Ada"')
-    expect(active).toContain('aria-label="Disable account for Ada"')
+    expect(active).toContain('aria-label="More actions for Ada"')
+    expect(active).not.toContain('aria-label="Disable account for Ada"')
     expect(active).not.toContain("Enable account for Ada")
     const disabled = renderToStaticMarkup(
       createElement(PeopleRowActions, {
@@ -187,7 +188,8 @@ describe("People access actions", () => {
         onSelect: () => {},
       })
     )
-    expect(disabled).toContain('aria-label="Enable account for Ada"')
+    expect(disabled).toContain('aria-label="More actions for Ada"')
+    expect(disabled).not.toContain('aria-label="Enable account for Ada"')
     expect(disabled).not.toContain("Disable account for Ada")
     expect(active).not.toContain("Delete")
   })

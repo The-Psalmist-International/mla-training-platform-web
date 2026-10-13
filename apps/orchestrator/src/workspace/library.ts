@@ -13,6 +13,7 @@ export interface LibraryItem {
   id: string
   title: string
   description: string
+  thumbnailUrl?: string | null
   status: CourseStatus | VideoAssetStatus
   createdAt: string
   ownerId?: string

@@ -9,6 +9,7 @@ import {
   type DataTableLayout,
 } from "@workspace/ui/components/data-table"
 import { LibraryCard } from "../components/LibraryCollectionPage"
+import { LibraryRowActions } from "../components/LibraryRowActions"
 import {
   libraryTableOptions,
   formatVideoDuration,
@@ -31,6 +32,39 @@ const admin: CurrentUser = {
   email: "admin@example.com",
   role: "admin",
 }
+describe("library primary actions", () => {
+  const renderActions = (status: LibraryItem["status"], user = admin) =>
+    renderToStaticMarkup(
+      createElement(LibraryRowActions, {
+        item: { ...row, ownerId: "another-author", status },
+        view: "courses",
+        user,
+        onSelect: () => {},
+        onExpand: () => {},
+      })
+    )
+  it("keeps view, edit, and expand visible for an editable course with other actions behind the menu", () => {
+    const html = renderActions("draft")
+    expect(html).toContain('aria-label="View details for Leadership"')
+    expect(html).toContain('aria-label="Edit course for Leadership"')
+    expect(html).toContain('aria-label="Expand course for Leadership"')
+    expect(html).toContain('aria-label="More actions for Leadership"')
+    expect(html).not.toContain('aria-label="Archive course for Leadership"')
+  })
+  it("keeps edit unavailable for published, archived, and other instructors' courses", () => {
+    for (const html of [
+      renderActions("published"),
+      renderActions("archived"),
+      renderActions("draft", { ...admin, role: "instructor" }),
+    ]) {
+      expect(html).not.toContain('aria-label="Edit course for Leadership"')
+      expect(html).toContain('aria-label="Expand course for Leadership"')
+    }
+    expect(renderActions("archived")).not.toContain(
+      'aria-label="More actions for Leadership"'
+    )
+  })
+})
 const tableProps: DataTableProps<LibraryItem> = {
   rows: [row],
   columns: [{ id: "title", header: "Title", cell: (item) => item.title }],
@@ -146,16 +180,14 @@ describe("library data and URL state", () => {
     "queries server search, filters and matching totals for %s",
     async (view) => {
       const field = view === "courses" ? "coursesPage" : "myVideoAssetsPage"
-      const request = vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              data: { [field]: { items: [], totalCount: 42 } },
-            }),
-            { headers: { "content-type": "application/json" } }
-          )
+      const request = vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: { [field]: { items: [], totalCount: 42 } },
+          }),
+          { headers: { "content-type": "application/json" } }
         )
+      )
       const clients = createDataClients({
         graphqlUrl: "http://localhost:4000/graphql",
         fetch: request,
@@ -201,7 +233,7 @@ describe("library data and URL state", () => {
     )
     expect(html).toContain(row.title)
     expect(html).toContain(row.description)
-    expect(html).toContain("Course cover unavailable")
+    expect(html).toContain("bg-linear-to-br")
     expect(html).not.toContain("<img")
     expect(formatVideoDuration(3661)).toBe("1:01:01")
     expect(formatVideoDuration(null)).toBe("Duration unavailable")

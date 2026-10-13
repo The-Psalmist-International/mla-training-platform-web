@@ -1,4 +1,4 @@
-import { useId, useRef } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useBlocker, useRouter } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { Form, FormikProvider, useFormik } from "formik"
@@ -8,6 +8,13 @@ import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { FormFeedback, FormInput } from "@workspace/ui/components/form-input"
+import { FileInput } from "@workspace/ui/components/file-input"
+import {
+  uploadCourseThumbnail,
+  validateThumbnailFile,
+  ThumbnailUploadError,
+} from "../workspace/course-thumbnail"
+import { CourseThumbnail } from "./CourseThumbnail"
 import {
   Dialog,
   DialogContent,
@@ -20,6 +27,8 @@ import {
 import {
   courseDetailsOptions,
   courseFormSchema,
+  courseModuleSchema,
+  addCourseModule,
   saveCourse,
   changeCourseStatus,
   libraryActionError,
@@ -122,9 +131,23 @@ function CourseActionDialog({
   onClose: () => void
   onChanged: (message: string) => void
 }) {
-  const { dataClients } = useRouter().options.context
+  const { dataClients, auth } = useRouter().options.context
+  const { toast } = useToast()
   const id = useId(),
     pending = useRef(false)
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const [thumbnailError, setThumbnailError] = useState<string | null>(null)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  useEffect(() => {
+    if (!thumbnailFile) {
+      setThumbnailPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(thumbnailFile)
+    setThumbnailPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [thumbnailFile])
   const editing = modal === "create" || modal === "edit"
   const owns = !course || user.role === "admin" || course.ownerId === user.id
   const available =
@@ -138,6 +161,7 @@ function CourseActionDialog({
             : course?.status !== "archived")))
   const form = useFormik<CourseFormValues>({
     initialValues: {
+      thumbnailUrl: course?.thumbnailUrl ?? "",
       title: course?.title ?? "",
       description: course?.description ?? "",
       certificateEnabled: course?.certificateEnabled ?? false,
@@ -149,10 +173,20 @@ function CourseActionDialog({
       helpers.setStatus(undefined)
       try {
         if (editing) {
+          let thumbnailUrl = values.thumbnailUrl
+          if (thumbnailFile) {
+            setUploadingThumbnail(true)
+            setThumbnailError(null)
+            thumbnailUrl = await uploadCourseThumbnail(thumbnailFile)
+            // Keep a successful upload on a failed metadata save, so retry does not upload twice.
+            await helpers.setFieldValue("thumbnailUrl", thumbnailUrl, false)
+            setThumbnailFile(null)
+            setUploadingThumbnail(false)
+          }
           const result = await saveCourse(
             dataClients,
             user,
-            values,
+            { ...values, thumbnailUrl },
             modal === "edit" ? course?.id : undefined
           )
           pending.current = false
@@ -163,7 +197,12 @@ function CourseActionDialog({
               : `${result.title} updated.`
           )
         } else {
-          if (!course) return
+          if (!course) {
+            helpers.setStatus(
+              "This course is no longer available. Close the dialog and refresh the library."
+            )
+            return
+          }
           const result = await changeCourseStatus(
             dataClients,
             user,
@@ -178,8 +217,24 @@ function CourseActionDialog({
         }
         onClose()
       } catch (error) {
-        if (auth.getUser() === user) toast({ title: "Course could not be updated", description: libraryActionError(error), status: "error" })
+        const description =
+          error instanceof ThumbnailUploadError
+            ? error.message
+            : libraryActionError(error)
+        if (error instanceof ThumbnailUploadError)
+          setThumbnailError(description)
+        helpers.setStatus(description)
+        if (auth.getUser() === user)
+          toast({
+            title:
+              modal === "publish"
+                ? "Course could not be published"
+                : "Course could not be updated",
+            description,
+            status: "error",
+          })
       } finally {
+        setUploadingThumbnail(false)
         pending.current = false
       }
     },
@@ -204,12 +259,21 @@ function CourseActionDialog({
           <DialogDescription>
             {modal === "create"
               ? "Start a draft course with its title and description."
-              : course?.title}
+              : modal === "edit"
+                ? "Update the draft course details."
+                : modal === "details"
+                  ? "Review the course details and its sections."
+                  : modal === "publish"
+                    ? "Publish the selected draft course."
+                    : modal === "unpublish"
+                      ? "Return the selected course to draft."
+                      : "Archive the selected course."}
           </DialogDescription>
         </DialogHeader>
         <FormikProvider value={form}>
           <Form className="flex min-h-0 flex-1 flex-col" noValidate>
             <DialogBody className="space-y-4">
+              {course && <h3 className="font-medium">{course.title}</h3>}
               {!available ? (
                 <Alert variant="warning">
                   This action is not available for the course's current status
@@ -217,6 +281,58 @@ function CourseActionDialog({
                 </Alert>
               ) : editing ? (
                 <>
+                  <div className="space-y-2">
+                    <label htmlFor={`${id}-thumbnail`} className="font-medium">
+                      Thumbnail
+                    </label>
+                    <FileInput
+                      id={`${id}-thumbnail`}
+                      file={thumbnailFile}
+                      previewUrl={thumbnailPreview ?? form.values.thumbnailUrl}
+                      removeLabel="Remove thumbnail"
+                      onRemove={() => {
+                        setThumbnailFile(null)
+                        setThumbnailError(null)
+                        void form.setFieldValue("thumbnailUrl", "", false)
+                      }}
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={form.isSubmitting}
+                      emptyText={
+                        form.values.thumbnailUrl
+                          ? "Choose a replacement thumbnail"
+                          : "Choose a course thumbnail"
+                      }
+                      helperText="JPEG, PNG, or WebP, up to 5 MiB. A 16:9 image works best."
+                      aria-invalid={!!thumbnailError}
+                      aria-describedby={
+                        thumbnailError ? `${id}-thumbnail-error` : undefined
+                      }
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0]
+                        event.currentTarget.value = ""
+                        if (!file) return
+                        try {
+                          validateThumbnailFile(file)
+                          setThumbnailFile(file)
+                          setThumbnailError(null)
+                        } catch (error) {
+                          setThumbnailError(
+                            error instanceof Error
+                              ? error.message
+                              : "Choose a valid image."
+                          )
+                        }
+                      }}
+                    />
+                    {thumbnailError && (
+                      <p
+                        id={`${id}-thumbnail-error`}
+                        className="text-sm text-destructive"
+                      >
+                        {thumbnailError}
+                      </p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <label htmlFor={`${id}-title`} className="font-medium">
                       Title
@@ -284,6 +400,11 @@ function CourseActionDialog({
                 </>
               ) : modal === "details" && course ? (
                 <>
+                  <CourseThumbnail
+                    title={course.title}
+                    thumbnailUrl={course.thumbnailUrl}
+                    className="max-w-sm"
+                  />
                   <dl className="grid grid-cols-2 gap-4">
                     <div>
                       <dt className="text-xs text-muted-foreground">Status</dt>
@@ -305,6 +426,14 @@ function CourseActionDialog({
                   </p>
                   <div className="space-y-3">
                     <h3 className="font-medium">Sections</h3>
+                    {owns && course.status === "draft" && (
+                      <AddCourseModule
+                        courseId={course.id}
+                        user={user}
+                        disabled={form.isSubmitting}
+                        onAdded={onChanged}
+                      />
+                    )}
                     {course.modules.length ? (
                       <ul className="space-y-3">
                         {course.modules.map((module) => (
@@ -338,9 +467,19 @@ function CourseActionDialog({
                   </div>
                 </>
               ) : (
-                <Alert variant={modal === "archive" ? "warning" : "info"}>
+                <Alert
+                  variant={
+                    modal === "archive" ||
+                    (modal === "publish" &&
+                      !course?.modules.some((module) => module.items.length))
+                      ? "warning"
+                      : "info"
+                  }
+                >
                   {modal === "publish"
-                    ? "Publish this course for learners. The backend will validate every section and item before it becomes available."
+                    ? course?.modules.some((module) => module.items.length)
+                      ? "Publish this course for learners. Every section still needs complete lesson content or publishing will be rejected."
+                      : "Add at least one section with a lesson before publishing. A title and description are not enough."
                     : modal === "unpublish"
                       ? "Return this course to draft so its content can be edited. It will no longer be available as a published course."
                       : "Archive this course. It will leave the default course list, while its historical records are retained."}
@@ -353,9 +492,17 @@ function CourseActionDialog({
                 <Button
                   type="submit"
                   variant={modal === "archive" ? "destructive" : "default"}
-                  disabled={form.isSubmitting}
+                  disabled={
+                    form.isSubmitting ||
+                    (modal === "publish" &&
+                      !course?.modules.some((module) => module.items.length))
+                  }
                 >
-                  {form.isSubmitting ? "Saving..." : titles[modal]}
+                  {uploadingThumbnail
+                    ? "Uploading thumbnail..."
+                    : form.isSubmitting
+                      ? "Saving..."
+                      : titles[modal]}
                 </Button>
               )}
               <Button
@@ -371,5 +518,78 @@ function CourseActionDialog({
         </FormikProvider>
       </DialogContent>
     </Dialog>
+  )
+}
+function AddCourseModule({
+  courseId,
+  user,
+  disabled,
+  onAdded,
+}: {
+  courseId: string
+  user: CurrentUser
+  disabled: boolean
+  onAdded: (message: string) => void
+}) {
+  const { dataClients, auth } = useRouter().options.context
+  const { toast } = useToast()
+  const id = useId()
+  const pending = useRef(false)
+  const form = useFormik({
+    initialValues: { title: "" },
+    validationSchema: courseModuleSchema,
+    onSubmit: async (values, helpers) => {
+      if (pending.current) return
+      pending.current = true
+      try {
+        const result = await addCourseModule(
+          dataClients,
+          user,
+          courseId,
+          values.title
+        )
+        const title = result.modules.at(-1)?.title ?? values.title.trim()
+        helpers.resetForm()
+        onAdded(`${title} added.`)
+      } catch (error) {
+        if (auth.getUser() === user)
+          toast({
+            title: "Section could not be added",
+            description: libraryActionError(error),
+            status: "error",
+          })
+      } finally {
+        pending.current = false
+        helpers.setSubmitting(false)
+      }
+    },
+  })
+  return (
+    <FormikProvider value={form}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 space-y-2">
+          <label htmlFor={`${id}-section`} className="font-medium">
+            Section title
+          </label>
+          <FormInput
+            id={`${id}-section`}
+            name="title"
+            required
+            maxLength={200}
+            autoComplete="off"
+            placeholder="Foundations"
+            disabled={disabled || form.isSubmitting}
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled || form.isSubmitting}
+          onClick={() => void form.submitForm()}
+        >
+          {form.isSubmitting ? "Adding..." : "Add section"}
+        </Button>
+      </div>
+    </FormikProvider>
   )
 }

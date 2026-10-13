@@ -15,6 +15,7 @@ export const routeFiles = {
   "/workspace/": "src/pages/WorkspacePage.tsx",
   "/workspace/notifications": "src/pages/NotificationsPage.tsx",
   "/workspace/courses": "src/pages/CoursesPage.tsx",
+  "/workspace/courses/$courseId": "src/pages/CoursePage.tsx",
   "/workspace/videos": "src/pages/VideoLibraryPage.tsx",
   "/workspace/enrollments": "src/pages/EnrollmentsPage.tsx",
   "/workspace/assessment-reviews": "src/pages/AssessmentReviewsPage.tsx",

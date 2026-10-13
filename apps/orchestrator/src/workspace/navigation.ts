@@ -127,6 +127,7 @@ export function canAccessView(
 }
 
 export function viewForPath(path: string): WorkspaceView | undefined {
+  if (path.startsWith("/workspace/courses/")) return "courses"
   return (Object.keys(workspaceViews) as WorkspaceView[]).find(
     (view) => workspaceViews[view].path === path.replace(/\/$/, "")
   )

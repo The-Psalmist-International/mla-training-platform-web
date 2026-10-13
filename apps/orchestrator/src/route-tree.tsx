@@ -89,6 +89,16 @@ const coursesRoute = createRoute({
   ),
   head: () => ({ meta: [{ title: "Courses | Martyrs Orchestrator" }] }),
 })
+const courseRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: "courses/$courseId",
+  validateSearch: validateCoursesSearch,
+  component: lazyRouteComponent(
+    () => import("./pages/CoursePage"),
+    "CoursePage"
+  ),
+  head: () => ({ meta: [{ title: "Course | Martyrs Orchestrator" }] }),
+})
 const videosRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "videos",
@@ -208,6 +218,7 @@ export const routeTree = rootRoute.addChildren([
     overviewRoute,
     notificationsRoute,
     coursesRoute,
+    courseRoute,
     videosRoute,
     enrollmentsRoute,
     assessmentsRoute,
