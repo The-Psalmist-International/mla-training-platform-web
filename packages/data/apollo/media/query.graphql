@@ -1,6 +1,7 @@
 fragment VideoAssetListFields on VideoAsset {
   id
   title
+  thumbnailUrl
   mimeType
   status
   durationSeconds
@@ -69,6 +70,12 @@ mutation RefreshLessonVideoUpload($id: ID!) {
 }
 mutation SyncLessonVideoAsset($id: ID!) {
   syncLessonVideoAsset(id: $id) {
+    ...VideoAssetListFields
+  }
+}
+
+mutation SetLessonVideoThumbnail($id: ID!, $thumbnailUrl: String) {
+  setLessonVideoThumbnail(id: $id, thumbnailUrl: $thumbnailUrl) {
     ...VideoAssetListFields
   }
 }

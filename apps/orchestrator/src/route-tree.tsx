@@ -9,6 +9,7 @@ import { canAccessView } from "./workspace/navigation"
 import { validatePeopleSearch } from "./workspace/people-search"
 import { validateInvitationsSearch } from "./workspace/invitations-search"
 import { validateCollectionSearch } from "./workspace/collection-search"
+import { validateCourseSearch } from "./workspace/course-search"
 import { validateEmailDeliverySearch } from "./workspace/email-delivery-search"
 import {
   validateCoursesSearch,
@@ -92,7 +93,7 @@ const coursesRoute = createRoute({
 const courseRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "courses/$courseId",
-  validateSearch: validateCoursesSearch,
+  validateSearch: validateCourseSearch,
   component: lazyRouteComponent(
     () => import("./pages/CoursePage"),
     "CoursePage"

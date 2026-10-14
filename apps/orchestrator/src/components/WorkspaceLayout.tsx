@@ -5,7 +5,10 @@ import {
   Outlet,
   useRouter,
   useRouterState,
+  useSearch,
 } from "@tanstack/react-router"
+import { useQuery } from "@tanstack/react-query"
+import type { CurrentUser } from "@workspace/data"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,6 +33,11 @@ import {
 import { WorkspaceSidebar } from "./WorkspaceSidebar"
 import { WorkspacePageAction } from "./WorkspacePageAction"
 import { viewForPath, workspaceViews } from "../workspace/navigation"
+import { courseManagementOptions } from "../workspace/course-management"
+import {
+  courseListSearch,
+  validateCourseSearch,
+} from "../workspace/course-search"
 
 export function WorkspaceLayout() {
   const { auth } = useRouter().options.context
@@ -39,6 +47,12 @@ export function WorkspaceLayout() {
   })
   const view = viewForPath(pathname)
   const page = view ? workspaceViews[view] : undefined
+  const courseId = useRouterState({
+    select: (state) =>
+      state.matches.find(
+        (match) => match.routeId === "/workspace/courses/$courseId"
+      )?.params.courseId,
+  })
   useEffect(() => {
     // Focus the new page title after client navigation, without moving focus during initial render.
     const frame = requestAnimationFrame(() =>
@@ -91,11 +105,15 @@ export function WorkspaceLayout() {
                   <BreadcrumbSeparator className="hidden md:inline-flex" />
                 </>
               )}
-              <BreadcrumbItem className="min-w-0">
-                <BreadcrumbPage className="truncate text-sm font-medium">
-                  {page?.title ?? "Workspace"}
-                </BreadcrumbPage>
-              </BreadcrumbItem>
+              {courseId ? (
+                <CourseBreadcrumb courseId={courseId} user={user} />
+              ) : (
+                <BreadcrumbItem className="min-w-0">
+                  <BreadcrumbPage className="truncate text-sm font-medium">
+                    {page?.title ?? "Workspace"}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              )}
             </BreadcrumbList>
           </Breadcrumb>
           <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -124,5 +142,39 @@ export function WorkspaceLayout() {
         <Outlet />
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+function CourseBreadcrumb({
+  courseId,
+  user,
+}: {
+  courseId: string
+  user: CurrentUser
+}) {
+  const { dataClients } = useRouter().options.context
+  const search = useSearch({ strict: false })
+  const course = useQuery(courseManagementOptions(dataClients, user, courseId))
+  return (
+    <>
+      <BreadcrumbItem className="shrink-0">
+        <BreadcrumbLink
+          render={
+            <Link
+              to="/workspace/courses"
+              search={courseListSearch(validateCourseSearch(search))}
+            />
+          }
+        >
+          Courses
+        </BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem className="min-w-0">
+        <BreadcrumbPage className="truncate text-sm font-medium">
+          {course.data?.course.title ?? "Course"}
+        </BreadcrumbPage>
+      </BreadcrumbItem>
+    </>
   )
 }

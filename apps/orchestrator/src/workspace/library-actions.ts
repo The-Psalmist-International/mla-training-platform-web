@@ -13,6 +13,7 @@ import {
   CREATE_LESSON_VIDEO_UPLOAD_MUTATION,
   REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
   SYNC_LESSON_VIDEO_ASSET_MUTATION,
+  SET_LESSON_VIDEO_THUMBNAIL_MUTATION,
   type CurrentUser,
   type DataClients,
   type CreateLessonVideoUploadMutation,
@@ -22,6 +23,16 @@ import * as yup from "yup"
 function requireAuthor(user: CurrentUser) {
   if (user.role !== "admin" && user.role !== "instructor")
     throw new Error("Workspace access required")
+}
+export async function saveVideoThumbnail(clients: DataClients, user: CurrentUser, id: string, thumbnailUrl: string | null) {
+  requireAuthor(user)
+  const result = await clients.apolloClient.mutate({
+    mutation: SET_LESSON_VIDEO_THUMBNAIL_MUTATION,
+    variables: { id, thumbnailUrl },
+    context: { toast: false },
+  })
+  if (!result.data) throw new Error("Missing video thumbnail response")
+  return result.data.setLessonVideoThumbnail
 }
 export const courseFormSchema = yup.object({
   thumbnailUrl: yup

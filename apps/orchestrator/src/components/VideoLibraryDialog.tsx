@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useRouter, useBlocker } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { FileInput } from "@workspace/ui/components/file-input"
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,14 @@ import {
   videoPreviewOptions,
   syncVideo,
   libraryActionError,
+  saveVideoThumbnail,
 } from "../workspace/library-actions"
+import {
+  uploadCourseThumbnail,
+  validateThumbnailFile,
+  ThumbnailUploadError,
+} from "../workspace/course-thumbnail"
+import { VideoPlayer } from "./VideoPlayer"
 import { formatVideoDuration, formatVideoSize } from "../workspace/library"
 
 export function VideoLibraryDialog({
@@ -36,6 +44,24 @@ export function VideoLibraryDialog({
   onChanged: (message?: string) => void
 }) {
   const { dataClients } = useRouter().options.context
+  const queryClient = useQueryClient()
+  const inputId = useId()
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const [thumbnailOverride, setThumbnailOverride] = useState<
+    string | null | undefined
+  >(undefined)
+  const [thumbnailError, setThumbnailError] = useState("")
+  const [savingThumbnail, setSavingThumbnail] = useState(false)
+  useEffect(() => {
+    if (!thumbnailFile) {
+      setThumbnailPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(thumbnailFile)
+    setThumbnailPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [thumbnailFile])
   const query = useQuery(videoDetailsOptions(dataClients, user, id))
   const playback = useQuery({
     ...videoPreviewOptions(dataClients, user, id),
@@ -78,6 +104,52 @@ export function VideoLibraryDialog({
     }
   }
   const video = query.data
+  const saveThumbnail = async () => {
+    if (pending.current || !video || thumbnailError) return
+    pending.current = true
+    setBusy(true)
+    setSavingThumbnail(true)
+    setError("")
+    try {
+      let url =
+        thumbnailOverride !== undefined
+          ? thumbnailOverride
+          : (video.thumbnailUrl ?? null)
+      if (thumbnailFile) {
+        url = await uploadCourseThumbnail(thumbnailFile)
+        // Keep the uploaded URL for a retry if saving the metadata fails.
+        setThumbnailOverride(url)
+        setThumbnailFile(null)
+      }
+      const saved = await saveVideoThumbnail(dataClients, user, id, url)
+      queryClient.setQueryData(
+        videoDetailsOptions(dataClients, user, id).queryKey,
+        saved
+      )
+      void queryClient
+        .invalidateQueries({
+          queryKey: [
+            "workspace",
+            dataClients.graphqlUrl,
+            user.id,
+            "course-management",
+          ],
+        })
+        .catch(() => {})
+      setThumbnailOverride(undefined)
+      onChanged(url ? "Video thumbnail saved." : "Video thumbnail removed.")
+    } catch (failure) {
+      setError(
+        failure instanceof ThumbnailUploadError
+          ? failure.message
+          : libraryActionError(failure)
+      )
+    } finally {
+      pending.current = false
+      setBusy(false)
+      setSavingThumbnail(false)
+    }
+  }
   return (
     <Dialog
       open
@@ -109,6 +181,75 @@ export function VideoLibraryDialog({
             <Alert variant="warning">{libraryActionError(query.error)}</Alert>
           ) : video ? (
             <>
+              {!preview && (
+                <div className="space-y-2">
+                  <label
+                    htmlFor={`${inputId}-thumbnail`}
+                    className="font-medium"
+                  >
+                    Thumbnail
+                  </label>
+                  <FileInput
+                    id={`${inputId}-thumbnail`}
+                    file={thumbnailFile}
+                    previewUrl={
+                      thumbnailPreview ??
+                      (thumbnailOverride !== undefined
+                        ? thumbnailOverride
+                        : video.thumbnailUrl)
+                    }
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={busy}
+                    emptyText="Choose a video thumbnail"
+                    helperText="JPEG, PNG, or WebP, up to 5 MiB. A 16:9 image works best."
+                    removeLabel="Remove thumbnail"
+                    onRemove={() => {
+                      setThumbnailFile(null)
+                      setThumbnailOverride(null)
+                      setThumbnailError("")
+                    }}
+                    aria-invalid={!!thumbnailError}
+                    aria-describedby={
+                      thumbnailError ? `${inputId}-thumbnail-error` : undefined
+                    }
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0]
+                      event.currentTarget.value = ""
+                      if (!file) return
+                      try {
+                        validateThumbnailFile(file)
+                        setThumbnailFile(file)
+                        setThumbnailError("")
+                      } catch (failure) {
+                        setThumbnailError(
+                          failure instanceof Error
+                            ? failure.message
+                            : "Choose a valid image."
+                        )
+                      }
+                    }}
+                  />
+                  {thumbnailError && (
+                    <p
+                      id={`${inputId}-thumbnail-error`}
+                      role="alert"
+                      className="text-sm text-destructive"
+                    >
+                      {thumbnailError}
+                    </p>
+                  )}
+                  <Button
+                    onClick={() => void saveThumbnail()}
+                    disabled={
+                      busy ||
+                      !!thumbnailError ||
+                      (!thumbnailFile && thumbnailOverride === undefined)
+                    }
+                  >
+                    {savingThumbnail ? "Saving thumbnail..." : "Save thumbnail"}
+                  </Button>
+                </div>
+              )}
               {preview &&
                 (video.status !== "ready" ? (
                   <Alert>
@@ -116,12 +257,10 @@ export function VideoLibraryDialog({
                     status before previewing.
                   </Alert>
                 ) : playback.isPending ? (
-                  <div role="status">
-                    <span className="sr-only">
-                      Loading signed video preview
-                    </span>
-                    <Skeleton className="aspect-video w-full" />
-                  </div>
+                  <VideoPlayer
+                    title={`Preview: ${video.title}`}
+                    thumbnailUrl={video.thumbnailUrl}
+                  />
                 ) : playback.isError ? (
                   <Alert variant="warning">
                     {libraryActionError(playback.error)}
@@ -131,13 +270,10 @@ export function VideoLibraryDialog({
                     The preview link expired. Refresh the preview to continue.
                   </Alert>
                 ) : (
-                  <iframe
+                  <VideoPlayer
                     title={`Preview: ${video.title}`}
                     src={playback.data.url}
-                    className="aspect-video w-full rounded-md border-0"
-                    allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                    referrerPolicy="no-referrer"
+                    thumbnailUrl={video.thumbnailUrl}
                   />
                 ))}
               <dl className="grid grid-cols-2 gap-4">

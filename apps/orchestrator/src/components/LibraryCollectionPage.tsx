@@ -27,6 +27,7 @@ import { WorkspacePageAction } from "./WorkspacePageAction"
 import { LibraryRowActions } from "./LibraryRowActions"
 import { CourseLibraryDialog } from "./CourseLibraryDialog"
 import { CourseThumbnail } from "./CourseThumbnail"
+import { VideoThumbnail } from "./VideoThumbnail"
 import { VideoUploadDialog } from "./VideoUploadDialog"
 import { VideoLibraryDialog } from "./VideoLibraryDialog"
 import { formatPeopleCreatedAt } from "../workspace/people"
@@ -74,7 +75,6 @@ export function LibraryCard({
   actions?: ReactNode
   onOpen?: () => void
 }) {
-  const Icon = view === "courses" ? BookOpenIcon : FilmStripIcon
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground">
       {view === "courses" ? (
@@ -84,10 +84,10 @@ export function LibraryCard({
           className="rounded-none"
         />
       ) : (
-        <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
-          <Icon aria-hidden className="size-10" />
-          <span className="sr-only">Video thumbnail unavailable</span>
-        </div>
+        <VideoThumbnail
+          thumbnailUrl={item.thumbnailUrl}
+          className="rounded-none"
+        />
       )}
       <div className="flex flex-1 flex-col gap-2 p-3">
         <h3 className="line-clamp-2 leading-5 font-semibold" title={item.title}>
@@ -237,15 +237,21 @@ function LibraryTable({
       className: "min-w-64",
       cell: (item) => (
         <div className="flex items-center gap-3">
-          {view === "courses" && (
+          {view === "courses" ? (
             <CourseThumbnail
               title={item.title}
               thumbnailUrl={item.thumbnailUrl}
               compact
               className="w-16"
             />
+          ) : (
+            <VideoThumbnail
+              thumbnailUrl={item.thumbnailUrl}
+              compact
+              className="w-16"
+            />
           )}
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => openAction("details", item.id)}
@@ -253,11 +259,6 @@ function LibraryTable({
             >
               {item.title}
             </button>
-            {view === "courses" && (
-              <p className="line-clamp-2 max-w-lg text-xs leading-5 text-muted-foreground">
-                {item.description || "No course description yet."}
-              </p>
-            )}
           </div>
         </div>
       ),

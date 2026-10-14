@@ -142,6 +142,27 @@ describe("DataTable layouts", () => {
   })
 })
 describe("library data and URL state", () => {
+  it("renders saved video thumbnails and falls back for missing or unsafe URLs", () => {
+    const renderVideo = (thumbnailUrl: string | null) =>
+      renderToStaticMarkup(
+        createElement(LibraryCard, {
+          item: { ...row, thumbnailUrl },
+          view: "videos",
+        })
+      )
+    const html = renderVideo("https://images.example.com/video.jpg")
+    expect(html).toContain('src="https://images.example.com/video.jpg"')
+    expect(html).not.toContain("Video thumbnail unavailable")
+    for (const url of [
+      null,
+      "javascript:alert(1)",
+      "http://images.example.com/video.jpg",
+      "https://user:password@images.example.com/video.jpg",
+    ]) {
+      expect(renderVideo(url)).not.toContain("<img")
+      expect(renderVideo(url)).toContain("Video thumbnail unavailable")
+    }
+  })
   it("keeps layout changes out of the data query key", () => {
     const clients = createDataClients({
       graphqlUrl: "http://localhost:4000/graphql",

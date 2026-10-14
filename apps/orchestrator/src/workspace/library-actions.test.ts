@@ -12,6 +12,7 @@ import {
   createVideoUpload,
   refreshVideoUpload,
   syncVideo,
+  saveVideoThumbnail,
   courseFormSchema,
   libraryActionError,
 } from "./library-actions"
@@ -72,6 +73,36 @@ function fixture(data: object) {
 const cache = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
 describe("course and video writes", () => {
+  it("saves and removes video thumbnails through the dedicated mutation", async () => {
+    const thumbnailUrl = "https://images.example.com/video.jpg"
+    const { clients, request } = fixture({
+      setLessonVideoThumbnail: { ...asset, thumbnailUrl },
+    })
+    expect(
+      await saveVideoThumbnail(clients, user, id, thumbnailUrl)
+    ).toMatchObject({ id, thumbnailUrl })
+    await saveVideoThumbnail(clients, user, id, null)
+    const bodies = request.mock.calls.map((call) =>
+      JSON.parse(String(call[1]?.body))
+    )
+    expect(bodies.map((body) => body.variables)).toEqual([
+      { id, thumbnailUrl },
+      { id, thumbnailUrl: null },
+    ])
+    expect(
+      bodies.every((body) => body.operationName === "SetLessonVideoThumbnail")
+    ).toBe(true)
+    expect(bodies[0].query).toContain("thumbnailUrl")
+    await expect(
+      saveVideoThumbnail(
+        clients,
+        { ...user, role: "learner" },
+        id,
+        thumbnailUrl
+      )
+    ).rejects.toThrow("Workspace access required")
+    expect(request).toHaveBeenCalledTimes(2)
+  })
   it("saves and clears a thumbnail through course metadata updates", async () => {
     const { clients, request } = fixture({
       updateCourse: { ...course, thumbnailUrl: null },

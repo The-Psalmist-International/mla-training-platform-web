@@ -4,6 +4,8 @@ import { Form, FormikProvider, useFormik } from "formik"
 import type { CurrentUser } from "@workspace/data"
 import { useQuery } from "@tanstack/react-query"
 import { FileInput } from "@workspace/ui/components/file-input"
+import { Spinner } from "@workspace/ui/components/spinner"
+import { SelectInput } from "@workspace/ui/components/select"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
@@ -38,11 +40,21 @@ export function VideoUploadDialog({
   user,
   onClose,
   onChanged,
+  placement,
 }: {
   assetId?: string
   user: CurrentUser
   onClose: () => void
   onChanged: (message?: string) => void
+  placement?: {
+    modules: { id: string; title: string }[]
+    moduleId?: string
+    onUploaded: (
+      assetId: string,
+      title: string,
+      moduleId: string
+    ) => Promise<void>
+  }
 }) {
   const { dataClients } = useRouter().options.context
   const id = useId(),
@@ -62,8 +74,16 @@ export function VideoUploadDialog({
   const available =
     !assetId ||
     (!!selected && !details.isError && selected.status === "pending_upload")
-  const form = useFormik<{ title: string; file: File | null }>({
-    initialValues: { title: "", file: null },
+  const form = useFormik<{
+    title: string
+    file: File | null
+    moduleId: string
+  }>({
+    initialValues: {
+      title: "",
+      file: null,
+      moduleId: placement?.moduleId ?? placement?.modules[0]?.id ?? "",
+    },
     validationSchema: videoUploadSchema,
     onSubmit: async (values, helpers) => {
       if (pending.current || !available || !values.file) return
@@ -122,6 +142,25 @@ export function VideoUploadDialog({
                 : `${updated.title}: file uploaded. Video status: ${updated.status.replaceAll("_", " ")}.`
         } catch {
           message = `${upload.asset.title}: file uploaded, but its status could not be refreshed. Check status from the video details.`
+        }
+        if (placement) {
+          if (
+            !placement.modules.some((module) => module.id === values.moduleId)
+          )
+            throw new VideoTransferError(
+              "Choose a course module for this video."
+            )
+          try {
+            await placement.onUploaded(
+              upload.asset.id,
+              upload.asset.title,
+              values.moduleId
+            )
+          } catch {
+            throw new VideoTransferError(
+              "The video was uploaded but could not be attached to the course. Retry with this file, or attach it from the video library."
+            )
+          }
         }
         pending.current = false
         helpers.setSubmitting(false)
@@ -191,16 +230,35 @@ export function VideoUploadDialog({
         <FormikProvider value={form}>
           <Form noValidate className="flex min-h-0 flex-1 flex-col">
             <DialogBody className="space-y-4">
-              {!available ? (
+              {details.isPending && assetId ? (
+                <div className="flex min-h-32 items-center justify-center">
+                  <Spinner label="Loading video" />
+                </div>
+              ) : !available ? (
                 <Alert variant="warning">
-                  {details.isPending
-                    ? "Loading the video record..."
-                    : details.isError
-                      ? libraryActionError(details.error)
-                      : "This video is no longer awaiting upload. Close the dialog and check its status."}
+                  {details.isError
+                    ? libraryActionError(details.error)
+                    : "This video is no longer awaiting upload. Close the dialog and check its status."}
                 </Alert>
               ) : (
                 <>
+                  {placement && (
+                    <label className="block space-y-2">
+                      <span className="font-medium">Course module</span>
+                      <SelectInput
+                        value={form.values.moduleId}
+                        onValueChange={(moduleId) =>
+                          void form.setFieldValue("moduleId", moduleId)
+                        }
+                        disabled={locked}
+                        className="w-full"
+                        options={placement.modules.map((module) => ({
+                          value: module.id,
+                          label: module.title,
+                        }))}
+                      />
+                    </label>
+                  )}
                   <div className="space-y-2">
                     <label htmlFor={`${id}-title`} className="font-medium">
                       Title

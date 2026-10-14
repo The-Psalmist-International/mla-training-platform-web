@@ -19,13 +19,14 @@ export type {
   CoursesQueryResult,
   CoursesQueryVariables,
 } from "../apollo/course/query"
-export { MY_VIDEO_ASSETS_QUERY } from "../apollo/media/query"
+export { MY_VIDEO_ASSETS_QUERY, MY_VIDEO_ASSETS_PAGE_QUERY } from "../apollo/media/query"
 export {
   VIDEO_ASSET_DETAILS_QUERY,
   PREVIEW_LESSON_VIDEO_QUERY,
   CREATE_LESSON_VIDEO_UPLOAD_MUTATION,
   REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
   SYNC_LESSON_VIDEO_ASSET_MUTATION,
+  SET_LESSON_VIDEO_THUMBNAIL_MUTATION,
 } from "../apollo/media/query"
 export type { CreateLessonVideoUploadMutation } from "../apollo/media/query"
 export type {
@@ -112,7 +113,6 @@ export type {
 } from "../apollo/certificate/query"
 export { ADMIN_EMAIL_MESSAGES_QUERY } from "../apollo/email-delivery/query"
 export { COURSES_PAGE_QUERY } from "../apollo/course/query"
-export { MY_VIDEO_ASSETS_PAGE_QUERY } from "../apollo/media/query"
 export {
   ADMIN_EMAIL_MESSAGES_PAGE_QUERY,
   ADMIN_EMAIL_MESSAGE_QUERY,
@@ -133,3 +133,4 @@ export {
 } from "../apollo/auth/query"
 export type { CurrentUser, AuthPayload } from "../apollo/auth/query"
 export { backendHealthOptions } from "./health"
+export * from "../apollo/course-management/query"

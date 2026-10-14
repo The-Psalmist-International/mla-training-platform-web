@@ -1,0 +1,405 @@
+query CourseManagement($id: ID!) {
+  course(id: $id) {
+    id
+    ownerId
+    title
+    description
+    thumbnailUrl
+    status
+    certificateEnabled
+    publishedAt
+    createdAt
+    updatedAt
+    modules {
+      id
+      title
+      position
+      items {
+        id
+        title
+        type
+        position
+        required
+        body
+        videoLesson {
+          videoAssetId
+          completionThreshold
+          videoAsset {
+            id
+            thumbnailUrl
+            status
+            durationSeconds
+          }
+        }
+        assessment {
+          passMark
+          attemptLimit
+          timeLimitSeconds
+          questions {
+            id
+            type
+            prompt
+            points
+            position
+            explanation
+            referenceAnswer
+            options {
+              id
+              label
+              position
+              isCorrect
+            }
+          }
+        }
+        videoPrompt {
+          instructions
+          maxDurationSeconds
+          requiresReview
+        }
+      }
+    }
+  }
+}
+mutation ManageModule(
+  $courseId: ID!
+  $moduleId: ID!
+  $input: CourseModuleInput!
+) {
+  updateCourseModule(courseId: $courseId, moduleId: $moduleId, input: $input) {
+    id
+  }
+}
+mutation ArchiveModule($courseId: ID!, $moduleId: ID!) {
+  archiveCourseModule(courseId: $courseId, moduleId: $moduleId) {
+    id
+  }
+}
+mutation ReorderModules($courseId: ID!, $orderedIds: [ID!]!) {
+  reorderCourseModules(courseId: $courseId, orderedIds: $orderedIds) {
+    id
+  }
+}
+mutation ReorderLessons($courseId: ID!, $moduleId: ID!, $orderedIds: [ID!]!) {
+  reorderCourseItems(
+    courseId: $courseId
+    moduleId: $moduleId
+    orderedIds: $orderedIds
+  ) {
+    id
+  }
+}
+mutation ArchiveLesson($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
+  archiveCourseItem(courseId: $courseId, moduleId: $moduleId, itemId: $itemId) {
+    id
+  }
+}
+mutation MoveLesson(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $targetModuleId: ID!
+  $position: Int!
+) {
+  moveCourseItem(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    targetModuleId: $targetModuleId
+    position: $position
+  ) {
+    id
+  }
+}
+mutation AddTextLesson(
+  $courseId: ID!
+  $moduleId: ID!
+  $input: CreateTextLessonInput!
+) {
+  createTextLesson(courseId: $courseId, moduleId: $moduleId, input: $input) {
+    id
+  }
+}
+mutation EditTextLesson(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $input: UpdateTextLessonInput!
+) {
+  updateTextLesson(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    input: $input
+  ) {
+    id
+  }
+}
+mutation AddVideoLesson(
+  $courseId: ID!
+  $moduleId: ID!
+  $input: CreateVideoLessonInput!
+) {
+  createVideoLesson(courseId: $courseId, moduleId: $moduleId, input: $input) {
+    id
+  }
+}
+mutation EditVideoLesson(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $input: UpdateVideoLessonInput!
+) {
+  updateVideoLesson(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    input: $input
+  ) {
+    id
+  }
+}
+mutation AddAssessment(
+  $courseId: ID!
+  $moduleId: ID!
+  $input: CreateAssessmentInput!
+) {
+  createAssessment(courseId: $courseId, moduleId: $moduleId, input: $input) {
+    id
+  }
+}
+mutation EditAssessment(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $input: UpdateAssessmentInput!
+) {
+  updateAssessment(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    input: $input
+  ) {
+    id
+  }
+}
+mutation AddVideoPrompt(
+  $courseId: ID!
+  $moduleId: ID!
+  $input: CreateVideoPromptInput!
+) {
+  createVideoPrompt(courseId: $courseId, moduleId: $moduleId, input: $input) {
+    id
+  }
+}
+mutation EditVideoPrompt(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $input: UpdateVideoPromptInput!
+) {
+  updateVideoPrompt(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    input: $input
+  ) {
+    id
+  }
+}
+mutation SetCourseQuestions(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $questions: [AuthoringQuestionInput!]!
+) {
+  setAssessmentQuestions(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    questions: $questions
+  ) {
+    id
+  }
+}
+mutation SetCourseOwner($id: ID!, $ownerId: ID!) {
+  assignCourseOwner(id: $id, ownerId: $ownerId) {
+    id
+    ownerId
+  }
+}
+mutation SetCourseCertificate($id: ID!, $enabled: Boolean!) {
+  updateCourse(id: $id, input: { certificateEnabled: $enabled }) {
+    id
+    certificateEnabled
+  }
+}
+mutation AssignCourseLearner($courseId: ID!, $learnerId: ID!) {
+  assignCourse(courseId: $courseId, learnerId: $learnerId) {
+    id
+  }
+}
+query CourseLearners(
+  $courseId: ID!
+  $limit: Int!
+  $offset: Int!
+  $search: String
+) {
+  courseEnrollmentsPage(
+    courseId: $courseId
+    limit: $limit
+    offset: $offset
+    search: $search
+  ) {
+    totalCount
+    items {
+      id
+      userId
+      learnerName
+      createdAt
+      completedAt
+    }
+  }
+}
+query CourseLearnerDetails($id: ID!) {
+  enrollment(id: $id) {
+    id
+    courseId
+    userId
+    completedAt
+    progress {
+      itemId
+      status
+      watchedPercentage
+      completedAt
+    }
+  }
+  certificateForEnrollment(enrollmentId: $id) {
+    id
+    certificateNumber
+    recipientName
+    issuedAt
+    status
+    verificationUrl
+    revokedReason
+  }
+}
+query CourseAssessmentReviews(
+  $courseId: ID!
+  $limit: Int!
+  $offset: Int!
+  $search: String
+) {
+  assessmentReviewQueuePage(
+    courseId: $courseId
+    limit: $limit
+    offset: $offset
+    search: $search
+  ) {
+    totalCount
+    items {
+      id
+      assessmentTitle
+      learnerName
+      attemptNumber
+      submittedAt
+      status
+    }
+  }
+}
+query CourseVideoReviews(
+  $courseId: ID!
+  $limit: Int!
+  $offset: Int!
+  $search: String
+) {
+  videoSubmissionReviewQueuePage(
+    courseId: $courseId
+    limit: $limit
+    offset: $offset
+    search: $search
+  ) {
+    totalCount
+    items {
+      id
+      promptTitle
+      learnerName
+      attemptNumber
+      createdAt
+      status
+      asset {
+        id
+        title
+        status
+      }
+    }
+  }
+}
+query CourseAttemptReview($id: ID!) {
+  assessmentAttempt(id: $id) {
+    id
+    assessmentTitle
+    status
+    maxScore
+    score
+    passed
+    answers {
+      question {
+        id
+        type
+        prompt
+        points
+        options {
+          id
+          label
+        }
+      }
+      selectedOptionId
+      textAnswer
+      awardedPoints
+      feedback
+      explanation
+      referenceAnswer
+    }
+  }
+}
+mutation GradeCourseAttempt($input: GradeAssessmentAttemptInput!) {
+  gradeAssessmentAttempt(input: $input) {
+    id
+    status
+    score
+    passed
+  }
+}
+query CourseSubmissionReview($id: ID!) {
+  videoSubmission(id: $id) {
+    id
+    promptTitle
+    instructions
+    status
+    feedback
+    maxDurationSeconds
+  }
+  videoSubmissionPlayback(id: $id) {
+    url
+    expires
+  }
+}
+mutation ReviewCourseSubmission($input: ReviewVideoSubmissionInput!) {
+  reviewVideoSubmission(input: $input) {
+    id
+    status
+    feedback
+  }
+}
+mutation RevokeCourseCertificate($input: RevokeCertificateInput!) {
+  revokeCertificate(input: $input) {
+    id
+    status
+  }
+}
+query CourseLessonPlayback($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
+  lessonPlayback(courseId: $courseId, moduleId: $moduleId, itemId: $itemId) {
+    url
+    expires
+  }
+}

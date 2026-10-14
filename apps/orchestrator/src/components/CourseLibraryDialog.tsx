@@ -6,7 +6,10 @@ import { useToast } from "@workspace/ui/components/toaster"
 import type { CourseDetailsQuery, CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
+import { StarIcon } from "@phosphor-icons/react/dist/csr/Star"
+import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { FormFeedback, FormInput } from "@workspace/ui/components/form-input"
 import { FileInput } from "@workspace/ui/components/file-input"
 import {
@@ -27,8 +30,6 @@ import {
 import {
   courseDetailsOptions,
   courseFormSchema,
-  courseModuleSchema,
-  addCourseModule,
   saveCourse,
   changeCourseStatus,
   libraryActionError,
@@ -425,34 +426,56 @@ function CourseActionDialog({
                     {course.description || "No description yet."}
                   </p>
                   <div className="space-y-3">
-                    <h3 className="font-medium">Sections</h3>
-                    {owns && course.status === "draft" && (
-                      <AddCourseModule
-                        courseId={course.id}
-                        user={user}
-                        disabled={form.isSubmitting}
-                        onAdded={onChanged}
-                      />
-                    )}
+                    <h3 className="font-medium">Lessons</h3>
                     {course.modules.length ? (
-                      <ul className="space-y-3">
-                        {course.modules.map((module) => (
+                      <ul className="space-y-4">
+                        {course.modules.map((module, moduleIndex) => (
                           <li
                             key={module.id}
-                            className="rounded-md border border-border p-3"
+                            className="rounded-lg border border-border bg-card"
                           >
-                            <p className="font-medium">{module.title}</p>
-                            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                              {module.items.map((item) => (
-                                <li key={item.id}>
-                                  {item.title} ·{" "}
-                                  {item.type.replaceAll("_", " ")}
-                                  {item.required ? " · Required" : ""}
+                            <div className="flex items-center gap-3 rounded-t-lg bg-muted/30 px-3 py-3">
+                              <CaretDownIcon
+                                aria-hidden
+                                className="size-4 shrink-0 text-muted-foreground"
+                              />
+                              <span className="min-w-0">
+                                <span className="block font-semibold">
+                                  {moduleIndex + 1}. {module.title}
+                                </span>
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                  {module.items.length} lessons
+                                </span>
+                              </span>
+                            </div>
+                            <ul className="divide-y divide-border border-t border-border">
+                              {module.items.map((item, itemIndex) => (
+                                <li
+                                  key={item.id}
+                                  className="flex items-center gap-3 px-5 py-3"
+                                >
+                                  <span className="min-w-0 flex-1">
+                                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+                                      <span className="min-w-0 truncate">
+                                        {itemIndex + 1}. {item.title}
+                                      </span>
+                                      <StatusBadge>
+                                        {item.type.replaceAll("_", " ")}
+                                      </StatusBadge>
+                                      {item.required && (
+                                        <StarIcon
+                                          aria-label="Required"
+                                          weight="fill"
+                                          className="size-3.5 shrink-0 text-yellow-500"
+                                        />
+                                      )}
+                                    </span>
+                                  </span>
                                 </li>
                               ))}
                             </ul>
                             {!module.items.length && (
-                              <p className="mt-2 text-xs text-muted-foreground">
+                              <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
                                 No lessons yet.
                               </p>
                             )}
@@ -461,7 +484,7 @@ function CourseActionDialog({
                       </ul>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        No sections have been added yet.
+                        No lessons have been added yet.
                       </p>
                     )}
                   </div>
@@ -518,78 +541,5 @@ function CourseActionDialog({
         </FormikProvider>
       </DialogContent>
     </Dialog>
-  )
-}
-function AddCourseModule({
-  courseId,
-  user,
-  disabled,
-  onAdded,
-}: {
-  courseId: string
-  user: CurrentUser
-  disabled: boolean
-  onAdded: (message: string) => void
-}) {
-  const { dataClients, auth } = useRouter().options.context
-  const { toast } = useToast()
-  const id = useId()
-  const pending = useRef(false)
-  const form = useFormik({
-    initialValues: { title: "" },
-    validationSchema: courseModuleSchema,
-    onSubmit: async (values, helpers) => {
-      if (pending.current) return
-      pending.current = true
-      try {
-        const result = await addCourseModule(
-          dataClients,
-          user,
-          courseId,
-          values.title
-        )
-        const title = result.modules.at(-1)?.title ?? values.title.trim()
-        helpers.resetForm()
-        onAdded(`${title} added.`)
-      } catch (error) {
-        if (auth.getUser() === user)
-          toast({
-            title: "Section could not be added",
-            description: libraryActionError(error),
-            status: "error",
-          })
-      } finally {
-        pending.current = false
-        helpers.setSubmitting(false)
-      }
-    },
-  })
-  return (
-    <FormikProvider value={form}>
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1 space-y-2">
-          <label htmlFor={`${id}-section`} className="font-medium">
-            Section title
-          </label>
-          <FormInput
-            id={`${id}-section`}
-            name="title"
-            required
-            maxLength={200}
-            autoComplete="off"
-            placeholder="Foundations"
-            disabled={disabled || form.isSubmitting}
-          />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || form.isSubmitting}
-          onClick={() => void form.submitForm()}
-        >
-          {form.isSubmitting ? "Adding..." : "Add section"}
-        </Button>
-      </div>
-    </FormikProvider>
   )
 }
