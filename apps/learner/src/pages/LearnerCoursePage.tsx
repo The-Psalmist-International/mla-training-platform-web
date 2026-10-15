@@ -354,7 +354,9 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                   )}
                 </div>
                 {content.isPending ? (
-                  <BrandLoader label="Loading lesson…" />
+                  <div className="flex min-h-72 items-center justify-center">
+                    <BrandLoader label="Loading lesson…" className="py-6" />
+                  </div>
                 ) : content.isError || !lesson ? (
                   <div className="py-8">
                     <ErrorState
@@ -405,6 +407,7 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                     )}
                   </div>
                 )}
+                {!content.isPending && !content.isError && lesson && (
                 <nav
                   aria-label="Lesson navigation"
                   className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-6"
@@ -451,6 +454,7 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                     </p>
                   )}
                 </nav>
+                )}
               </>
             )}
           </div>

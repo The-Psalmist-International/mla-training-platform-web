@@ -19,7 +19,6 @@ import {
   emailDeliveryErrorMessage,
   emailDeliveryTone,
   emailPurposeLabel,
-  emailStatusDescriptions,
 } from "../../workspace/emails/email-delivery"
 import { formatPeopleCreatedAt } from "../../workspace/people/people"
 
@@ -48,13 +47,6 @@ export function EmailDeliveryDetails({
           </span>
         </div>
       </div>
-      <Alert
-        variant={
-          emailDeliveryTone(email.status) === "destructive" ? "warning" : "info"
-        }
-      >
-        {emailStatusDescriptions[email.status]}
-      </Alert>
       <dl className="grid gap-4 text-sm">
         {[
           ["Failure code", email.failureCode],
@@ -64,7 +56,7 @@ export function EmailDeliveryDetails({
         ].map(([label, value]) => (
           <div key={label} className="space-y-1">
             <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="font-medium break-all">{value ?? "Not recorded"}</dd>
+            <dd className="font-medium break-all">{value ?? "N/A"}</dd>
           </div>
         ))}
       </dl>
@@ -84,7 +76,7 @@ export function EmailDeliveryDetails({
                 {at ? (
                   <time dateTime={at}>{formatPeopleCreatedAt(at)}</time>
                 ) : (
-                  "Not recorded"
+                  "N/A"
                 )}
               </dd>
             </div>

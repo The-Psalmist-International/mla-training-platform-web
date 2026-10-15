@@ -258,7 +258,7 @@ export function DataTable<TRow>({
         ) : (
           <table
             className={cn(
-              "w-full border-separate border-spacing-0 text-left",
+              "w-full min-w-max border-separate border-spacing-0 text-left",
               (hasError || (!isLoading && rows.length === 0)) && "h-full"
             )}
             aria-busy={!hasError && (isLoading || isFetching)}
@@ -271,7 +271,7 @@ export function DataTable<TRow>({
                     key={column.id}
                     scope="col"
                     className={cn(
-                      "bg-muted px-3 py-2 font-medium first:rounded-l-md last:rounded-r-md",
+                      "bg-muted px-3 py-2 font-medium whitespace-nowrap first:rounded-l-md last:rounded-r-md",
                       column.className
                     )}
                   >
@@ -335,7 +335,10 @@ export function DataTable<TRow>({
                     {columns.map((column) => (
                       <td
                         key={column.id}
-                        className={cn("px-3 py-2.5", column.className)}
+                        className={cn(
+                          "px-3 py-2.5 whitespace-nowrap",
+                          column.className
+                        )}
                       >
                         {column.cell(row)}
                       </td>

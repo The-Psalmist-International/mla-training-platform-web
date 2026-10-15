@@ -283,7 +283,7 @@ describe("email delivery diagnostics", () => {
     expect(html).toContain("provider-id")
     expect(html).toContain(`dateTime="${message.deliveredAt}"`)
     expect(html).toContain(`dateTime="${message.bouncedAt}"`)
-    expect(html).toContain("Not recorded")
+    expect(html).toContain("N/A")
     expect(emailOutcomeAt(message)).toBe(message.bouncedAt)
     expect(emailOutcomeAt({ ...message, status: "failed" })).toBeNull()
     expect(
