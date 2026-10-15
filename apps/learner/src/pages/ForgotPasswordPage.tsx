@@ -93,12 +93,13 @@ export function ForgotPasswordPage() {
           </Form>
         </FormikProvider>
       )}
-      <Link
-        to="/sign-in"
-        className="auth-link mt-6 inline-block text-sm font-medium text-primary hover:underline"
+      <Button
+        variant="outline"
+        className="mt-6 h-10 w-full"
+        render={<Link to="/sign-in" />}
       >
         Back to sign in
-      </Link>
+      </Button>
     </AuthLayout>
   )
 }

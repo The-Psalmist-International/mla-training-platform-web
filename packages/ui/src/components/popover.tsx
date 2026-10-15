@@ -23,7 +23,7 @@ function PopoverContent({
         <PopoverPrimitive.Popup
           {...props}
           className={cn(
-            "flex max-h-(--available-height) w-[min(448px,calc(100vw-36px))] origin-(--transform-origin) flex-col overflow-hidden rounded-[20px] bg-popover text-popover-foreground ring-1 ring-border/70 transition-[opacity,transform] duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 motion-reduce:transform-none motion-reduce:transition-none",
+            "flex max-h-(--available-height) w-[min(448px,calc(100vw-36px))] origin-(--transform-origin) flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground ring-1 ring-border/70 transition-[opacity,transform] duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 motion-reduce:transform-none motion-reduce:transition-none",
             className
           )}
         >

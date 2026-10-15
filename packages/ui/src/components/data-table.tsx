@@ -209,7 +209,7 @@ export function DataTable<TRow>({
         role="region"
         aria-label={`${ariaLabel} ${view} scroll area`}
         tabIndex={0}
-        className="min-h-0 min-w-0 flex-1 overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+        className="min-h-0 min-w-0 flex-1 overflow-auto outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-ring/25 [&::-webkit-scrollbar]:hidden"
       >
         {view === "grid" && layout.mode !== "table" ? (
           hasError ? (

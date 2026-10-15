@@ -124,14 +124,19 @@ export function ResetPasswordPage() {
           </Form>
         </FormikProvider>
       )}
-      <Link
-        to={ready && !token && !complete ? "/forgot-password" : "/sign-in"}
-        className="auth-link mt-6 inline-block text-sm font-medium text-primary hover:underline"
+      <Button
+        variant="outline"
+        className="mt-6 h-10 w-full"
+        render={
+          <Link
+            to={ready && !token && !complete ? "/forgot-password" : "/sign-in"}
+          />
+        }
       >
         {ready && !token && !complete
           ? "Request a new link"
           : "Back to sign in"}
-      </Link>
+      </Button>
     </AuthLayout>
   )
 }

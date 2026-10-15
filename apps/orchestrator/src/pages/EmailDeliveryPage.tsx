@@ -49,7 +49,9 @@ const columns: DataTableColumn<EmailDeliveryListItem>[] = [
     id: "purpose",
     header: "Purpose",
     className: "min-w-40",
-    cell: (email) => emailPurposeLabel(email.purpose),
+    cell: (email) => (
+      <StatusBadge tone="neutral">{emailPurposeLabel(email.purpose)}</StatusBadge>
+    ),
   },
   {
     id: "status",
@@ -64,7 +66,7 @@ const columns: DataTableColumn<EmailDeliveryListItem>[] = [
     id: "failure",
     header: "Failure code",
     cell: (email) => (
-      <span className="text-xs break-all">{email.failureCode ?? "—"}</span>
+      <span className="text-xs break-all">{email.failureCode ?? "N/A"}</span>
     ),
   },
   {
@@ -88,7 +90,7 @@ const columns: DataTableColumn<EmailDeliveryListItem>[] = [
           {formatPeopleCreatedAt(at)}
         </time>
       ) : (
-        "—"
+        "N/A"
       )
     },
   },

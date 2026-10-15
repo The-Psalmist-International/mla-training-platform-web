@@ -42,9 +42,9 @@ export function EmailDeliveryDetails({
           <StatusBadge tone={emailDeliveryTone(email.status)}>
             {email.status}
           </StatusBadge>
-          <span className="text-xs text-muted-foreground">
+          <StatusBadge tone="neutral">
             {emailPurposeLabel(email.purpose)}
-          </span>
+          </StatusBadge>
         </div>
       </div>
       <dl className="grid gap-4 text-sm">
@@ -82,10 +82,10 @@ export function EmailDeliveryDetails({
             </div>
           ))}
         </dl>
-        <p className="text-xs leading-5 text-muted-foreground">
-          Delivery timestamps are retained even when a later bounce or complaint
-          changes the final status.
-        </p>
+        <Alert className="text-xs leading-5">
+          Delivery timestamps are retained even when a later bounce or
+          complaint changes the final status.
+        </Alert>
       </div>
     </div>
   )
