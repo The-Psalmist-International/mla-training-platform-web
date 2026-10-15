@@ -9,7 +9,7 @@ import { ConfirmationDialog } from "@workspace/ui/components/confirmation-dialog
 import { Alert } from "@workspace/ui/components/alert"
 import { StarIcon } from "@phosphor-icons/react/dist/csr/Star"
 import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { FormFeedback, FormInput } from "@workspace/ui/components/form-input"
 import { FileInput } from "@workspace/ui/components/file-input"
@@ -93,11 +93,7 @@ export function CourseLibraryDialog({
         </DialogHeader>
         <DialogBody>
           {query.isPending ? (
-            <div role="status" className="space-y-3">
-              <span className="sr-only">Loading course details</span>
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-24 w-full" />
-            </div>
+            <BrandLoader label="Loading course details" className="py-6" />
           ) : (
             <Alert variant="warning">{libraryActionError(query.error)}</Alert>
           )}

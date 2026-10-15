@@ -9,7 +9,7 @@ import {
 } from "@workspace/data/apollo/learner-course/query"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import {
   learnerResource,
   learnerMutation,
@@ -200,15 +200,14 @@ export function VideoLesson({
   return (
     <section className="space-y-4 pt-6">
       {query.isPending ? (
-        <Skeleton className="aspect-video w-full" />
+        <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-muted">
+          <BrandLoader label="Loading video…" className="py-6" />
+        </div>
       ) : url ? (
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
           {!ready && (
-            <div
-              role="status"
-              className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground"
-            >
-              Loading video…
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <BrandLoader label="Loading video…" className="py-6" />
             </div>
           )}
           <iframe

@@ -11,7 +11,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ConfirmationDialog } from "@workspace/ui/components/confirmation-dialog"
 import { Alert } from "@workspace/ui/components/alert"
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { FormFeedback } from "@workspace/ui/components/form-input"
 import { SelectInput } from "@workspace/ui/components/select"
 import {
@@ -120,17 +120,7 @@ export function PeopleSelectionDialog({
         </DialogHeader>
         <DialogBody>
           {isLoading ? (
-            <div role="status" className="space-y-3">
-              <span className="sr-only">Loading selected person</span>
-              <Skeleton
-                aria-hidden
-                className="h-10 w-full motion-reduce:animate-none"
-              />
-              <Skeleton
-                aria-hidden
-                className="h-16 w-full motion-reduce:animate-none"
-              />
-            </div>
+            <BrandLoader label="Loading selected person" className="py-6" />
           ) : (
             <Alert variant="warning">
               {isError

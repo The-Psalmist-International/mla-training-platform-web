@@ -17,6 +17,7 @@ import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import {
   Dialog,
   DialogContent,
@@ -367,7 +368,7 @@ export function CourseLearnerDialog({
               This enrollment is not available in the selected course page.
             </Alert>
           ) : query.isPending ? (
-            <p role="status">Loading learner progress...</p>
+            <BrandLoader label="Loading learner progress…" className="py-6" />
           ) : query.isError || !safe ? (
             <Alert variant="warning">
               Learner details could not be loaded.{" "}

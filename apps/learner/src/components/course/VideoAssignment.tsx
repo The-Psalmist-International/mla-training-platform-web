@@ -12,9 +12,22 @@ import {
 } from "@workspace/data/apollo/learner-course/query"
 import { Markdown } from "@workspace/ui/components/markdown"
 import { FileInput } from "@workspace/ui/components/file-input"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
+import { EmptyState } from "@workspace/ui/components/empty-state"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
+import { HourglassMediumIcon } from "@phosphor-icons/react/dist/csr/HourglassMedium"
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info"
+import { StopIcon } from "@phosphor-icons/react/dist/csr/Stop"
+import { VideoCameraIcon } from "@phosphor-icons/react/dist/csr/VideoCamera"
+import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple"
+import { formatDuration, formatRemaining } from "./AssessmentLesson"
 import {
   learnerResource,
   learnerMutation,
@@ -173,21 +186,39 @@ export function VideoAssignment({
   }
   const canUpload =
     !latest || ["uploading", "needs_revision", "failed"].includes(latest.status)
+  const [method, setMethod] = useState<"upload" | "record">("upload")
+  const maxDurationSeconds = lesson.videoPrompt?.maxDurationSeconds ?? 300
+  const useRecording = async (file: File) => {
+    await form.setFieldValue("file", file)
+    await form.setFieldTouched("file", true, false)
+    await form.submitForm()
+  }
   return (
     <section className="space-y-5 pt-6">
       <Markdown value={lesson.videoPrompt?.instructions ?? ""} />
-      <p className="text-sm text-muted-foreground">
-        Maximum video length:{" "}
-        {Math.ceil((lesson.videoPrompt?.maxDurationSeconds ?? 300) / 60)}{" "}
-        minutes.
-        {lesson.videoPrompt?.requiresReview
-          ? " Your instructor will review your submission."
-          : "This lesson completes after the video passes processing."}
-      </p>
-      {query.isPending ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading your submissions…
+      <div className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3">
+        <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <HourglassMediumIcon
+              aria-hidden
+              className="size-4 shrink-0 text-muted-foreground"
+            />
+            <dt className="text-muted-foreground">Maximum length</dt>
+            <dd className="font-medium tabular-nums">
+              {formatDuration(
+                lesson.videoPrompt?.maxDurationSeconds ?? 300
+              )}
+            </dd>
+          </div>
+        </dl>
+      </div>
+      {!lesson.videoPrompt?.requiresReview && (
+        <p className="text-sm text-muted-foreground">
+          This lesson completes after the video passes processing.
         </p>
+      )}
+      {query.isPending ? (
+        <BrandLoader label="Loading your submissions…" />
       ) : query.isError ? (
         <Alert variant="warning">
           Your submission could not be loaded.
@@ -279,6 +310,39 @@ export function VideoAssignment({
           )}
           {canUpload && (
             <form noValidate onSubmit={form.handleSubmit} className="space-y-4">
+              <div
+                role="group"
+                aria-label="Submission method"
+                className="flex w-fit items-center gap-1 rounded-lg border border-border p-1"
+              >
+                <Button
+                  type="button"
+                  variant={method === "upload" ? "secondary" : "ghost"}
+                  aria-pressed={method === "upload"}
+                  disabled={form.isSubmitting}
+                  onClick={() => setMethod("upload")}
+                >
+                  <UploadSimpleIcon aria-hidden />
+                  Upload video
+                </Button>
+                <Button
+                  type="button"
+                  variant={method === "record" ? "secondary" : "ghost"}
+                  aria-pressed={method === "record"}
+                  disabled={form.isSubmitting}
+                  onClick={() => setMethod("record")}
+                >
+                  <VideoCameraIcon aria-hidden />
+                  Record video
+                </Button>
+              </div>
+              {method === "record" ? (
+                <InAppRecorder
+                  maxDurationSeconds={maxDurationSeconds}
+                  disabled={form.isSubmitting}
+                  onUse={(file) => void useRecording(file)}
+                />
+              ) : (
               <FileInput
                 aria-label="Assignment video"
                 file={form.values.file}
@@ -306,6 +370,7 @@ export function VideoAssignment({
                   void form.setFieldValue("file", null)
                 }}
               />
+              )}
               {form.touched.file && form.errors.file && (
                 <p
                   id="submission-file-error"
@@ -351,5 +416,358 @@ export function VideoAssignment({
       )}
       {error && <Alert variant="warning">{error}</Alert>}
     </section>
+  )
+}
+
+type RecorderPhase =
+  | "idle"
+  | "preview"
+  | "recording"
+  | "recorded"
+  | "denied"
+  | "unsupported"
+
+function pickRecordingMimeType() {
+  if (
+    typeof MediaRecorder === "undefined" ||
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices?.getUserMedia
+  )
+    return null
+  const candidates = [
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+    "video/mp4",
+  ]
+  try {
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? null
+  } catch {
+    return null
+  }
+}
+
+function InAppRecorder({
+  maxDurationSeconds,
+  disabled,
+  onUse,
+}: {
+  maxDurationSeconds: number
+  disabled: boolean
+  onUse: (file: File) => void
+}) {
+  const [phase, setPhase] = useState<RecorderPhase>("idle")
+  const [problem, setProblem] = useState("")
+  const [elapsed, setElapsed] = useState(0)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const liveRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const takeRef = useRef<Blob | null>(null)
+  const mimeRef = useRef("")
+  const startedAtRef = useRef(0)
+  const stopTimerRef = useRef<number | null>(null)
+  const tickRef = useRef<number | null>(null)
+
+  // The preview <video> only mounts once we leave idle, so (re)attach the
+  // live stream whenever it is rendered while a stream is active.
+  useEffect(() => {
+    if (
+      (phase === "preview" || phase === "recording") &&
+      streamRef.current &&
+      liveRef.current &&
+      liveRef.current.srcObject !== streamRef.current
+    ) {
+      liveRef.current.srcObject = streamRef.current
+      void liveRef.current.play().catch(() => {})
+    }
+  }, [phase])
+
+  const stopTracks = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    if (liveRef.current) liveRef.current.srcObject = null
+  }
+  const clearTimers = () => {
+    if (stopTimerRef.current !== null) {
+      window.clearTimeout(stopTimerRef.current)
+      stopTimerRef.current = null
+    }
+    if (tickRef.current !== null) {
+      window.clearInterval(tickRef.current)
+      tickRef.current = null
+    }
+  }
+  useEffect(
+    () => () => {
+      clearTimers()
+      try {
+        recorderRef.current?.state !== "inactive" &&
+          recorderRef.current?.stop()
+      } catch {
+        /* Recorder already settled. */
+      }
+      stopTracks()
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
+  const startCamera = async () => {
+    setProblem("")
+    const mimeType = pickRecordingMimeType()
+    if (!mimeType) {
+      setPhase("unsupported")
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 1280 } },
+        audio: true,
+      })
+      mimeRef.current = mimeType
+      streamRef.current = stream
+      if (liveRef.current) {
+        liveRef.current.srcObject = stream
+        await liveRef.current.play().catch(() => {})
+      }
+      setPhase("preview")
+    } catch (error) {
+      setPhase(
+        error instanceof DOMException && error.name === "NotAllowedError"
+          ? "denied"
+          : "idle"
+      )
+      setProblem(
+        error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Camera and microphone access was blocked. Allow access in your browser, then try again."
+          : "The camera could not be started. Check that nothing else is using it, then try again."
+      )
+    }
+  }
+
+  const finishRecording = () => {
+    clearTimers()
+    try {
+      if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop()
+    } catch {
+      setPhase("preview")
+    }
+  }
+
+  const startRecording = () => {
+    const stream = streamRef.current
+    if (!stream) return
+    chunksRef.current = []
+    try {
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeRef.current,
+        videoBitsPerSecond: 2_500_000,
+      })
+      recorderRef.current = recorder
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data)
+      }
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mimeRef.current })
+        chunksRef.current = []
+        if (blob.size === 0) {
+          setProblem("Nothing was captured. Try recording again.")
+          setPhase("preview")
+          return
+        }
+        takeRef.current = blob
+        setPreviewUrl((previous) => {
+          if (previous) URL.revokeObjectURL(previous)
+          return URL.createObjectURL(blob)
+        })
+        setPhase("recorded")
+      }
+      recorder.onerror = () => {
+        setProblem("Recording was interrupted. Try again.")
+        setPhase("preview")
+      }
+      startedAtRef.current = Date.now()
+      setElapsed(0)
+      recorder.start(250)
+      setPhase("recording")
+      tickRef.current = window.setInterval(
+        () => setElapsed(Date.now() - startedAtRef.current),
+        500
+      )
+      stopTimerRef.current = window.setTimeout(
+        finishRecording,
+        maxDurationSeconds * 1000
+      )
+    } catch {
+      setProblem("Recording could not start on this device. Try uploading instead.")
+    }
+  }
+
+  const retake = () => {
+    takeRef.current = null
+    setPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous)
+      return null
+    })
+    setElapsed(0)
+    setPhase(streamRef.current ? "preview" : "idle")
+  }
+
+  const useTake = () => {
+    const blob = takeRef.current
+    if (!blob || blob.size === 0) {
+      setProblem("This recording could not be attached. Try again.")
+      return
+    }
+    const extension = (blob.type || mimeRef.current).includes("mp4")
+      ? "mp4"
+      : "webm"
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-")
+    onUse(
+      new File([blob], `recording-${stamp}.${extension}`, {
+        type: blob.type || mimeRef.current,
+      })
+    )
+  }
+
+  const remaining = Math.max(0, maxDurationSeconds * 1000 - elapsed)
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      {phase === "unsupported" ? (
+        <Alert variant="warning">
+          In-app recording is not supported in this browser. Upload a video
+          file instead.
+        </Alert>
+      ) : (
+        <>
+          {(phase === "preview" || phase === "recording") && (
+            <div className="relative aspect-video overflow-hidden rounded-md bg-black">
+              <video
+                ref={liveRef}
+                muted
+                playsInline
+                aria-label="Camera preview"
+                className="h-full w-full object-cover"
+              />
+              {phase === "recording" && (
+                <p
+                  role="timer"
+                  aria-live="off"
+                  className="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white tabular-nums"
+                >
+                  <span
+                    aria-hidden
+                    className="size-2 animate-pulse rounded-full bg-red-500"
+                  />
+                  {formatRemaining(remaining)} left
+                </p>
+              )}
+            </div>
+          )}
+          {phase === "recorded" && previewUrl && (
+            <div className="space-y-2">
+              <video
+                src={previewUrl}
+                controls
+                playsInline
+                aria-label="Recorded video preview"
+                className="aspect-video w-full rounded-md bg-black"
+              />
+            </div>
+          )}
+          {problem && <Alert variant="warning">{problem}</Alert>}
+          <div className="flex flex-wrap gap-3">
+            {phase === "idle" || phase === "denied" ? (
+              <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border/70 px-6 py-10">
+                <EmptyState
+                  icon={VideoCameraIcon}
+                  title="Record your answer"
+                  description={
+                    phase === "denied"
+                      ? "Camera access was blocked. Allow it in your browser, then enable the camera to record up to the maximum length."
+                      : `Record up to ${formatDuration(maxDurationSeconds)} with your camera and microphone, then submit it as your answer.`
+                  }
+                  action={
+                    <Button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => void startCamera()}
+                    >
+                      <VideoCameraIcon aria-hidden />
+                      Enable camera
+                    </Button>
+                  }
+                />
+              </div>
+            ) : phase === "preview" ? (
+              <>
+                <Button
+                  type="button"
+                  disabled={disabled}
+                  onClick={startRecording}
+                  className="w-full"
+                >
+                  <VideoCameraIcon aria-hidden />
+                  Start recording
+                </Button>
+                <p className="flex w-full items-center justify-center">
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label={`Recording stops automatically at ${formatDuration(maxDurationSeconds)}`}
+                          className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      }
+                    >
+                      <InfoIcon aria-hidden className="size-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Recording stops automatically at{" "}
+                      {formatDuration(maxDurationSeconds)}.
+                    </TooltipContent>
+                  </Tooltip>
+                </p>
+              </>
+            ) : phase === "recording" ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={finishRecording}
+                className="w-full bg-destructive text-white hover:bg-destructive/90 hover:text-white dark:bg-destructive dark:hover:bg-destructive/90"
+              >
+                <StopIcon aria-hidden weight="fill" />
+                Stop recording
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  disabled={disabled}
+                  onClick={useTake}
+                  className="w-full"
+                >
+                  <UploadSimpleIcon aria-hidden />
+                  Use this recording
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={retake}
+                  className="w-full"
+                >
+                  Retake
+                </Button>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   )
 }

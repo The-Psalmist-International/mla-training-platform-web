@@ -3,7 +3,7 @@ import { Link, useRouter } from "@tanstack/react-router"
 import type { CurrentUser, EmailDeliveryListItem } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
 import {
   Dialog,
@@ -127,16 +127,7 @@ export function EmailDeliveryDetailsDialog({
         </DialogHeader>
         <DialogBody>
           {query.isPending ? (
-            <div role="status" className="space-y-4">
-              <span className="sr-only">Loading email delivery details</span>
-              {[0, 1, 2].map((item) => (
-                <Skeleton
-                  key={item}
-                  aria-hidden
-                  className="h-16 w-full motion-reduce:animate-none"
-                />
-              ))}
-            </div>
+            <BrandLoader label="Loading email delivery details" className="py-6" />
           ) : query.isError ? (
             <Alert variant="warning">
               {emailDeliveryErrorMessage(query.error)}

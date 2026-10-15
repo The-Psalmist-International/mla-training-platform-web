@@ -23,6 +23,7 @@ import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import {
   Tooltip,
   TooltipContent,
@@ -319,7 +320,7 @@ export function CourseReviewDialog({
           </>
         ) : query.isPending ? (
           <DialogBody>
-            <p role="status">Loading review...</p>
+            <BrandLoader label="Loading review…" className="py-6" />
           </DialogBody>
         ) : query.isError ? (
           <>

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { FileInput } from "@workspace/ui/components/file-input"
 import {
   Dialog,
@@ -173,9 +173,8 @@ export function VideoLibraryDialog({
         </DialogHeader>
         <DialogBody className="space-y-4">
           {query.isPending ? (
-            <div role="status">
-              <span className="sr-only">Loading video details</span>
-              <Skeleton className="aspect-video w-full" />
+            <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-muted">
+              <BrandLoader label="Loading video details" className="py-6" />
             </div>
           ) : query.isError ? (
             <Alert variant="warning">{libraryActionError(query.error)}</Alert>

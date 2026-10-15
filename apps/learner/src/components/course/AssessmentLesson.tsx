@@ -19,7 +19,7 @@ import { HourglassMediumIcon } from "@phosphor-icons/react/dist/csr/HourglassMed
 import { RepeatIcon } from "@phosphor-icons/react/dist/csr/Repeat"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import {
   learnerResource,
   learnerMutation,
@@ -156,7 +156,7 @@ export function AssessmentLesson({
     }
   }
   if (list.isPending || (id && query.isPending))
-    return <Skeleton className="mt-6 h-64 w-full" />
+    return <BrandLoader label="Loading assessment…" className="mt-6" />
   if (list.isError || query.isError)
     return (
       <Alert variant="warning" className="mt-6">

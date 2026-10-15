@@ -17,12 +17,14 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft"
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/csr/ArrowRight"
 import { ListIcon } from "@phosphor-icons/react/dist/csr/List"
 import { CheckCircleIcon } from "@phosphor-icons/react/dist/csr/CheckCircle"
+import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
 import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info"
 import { WarningCircleIcon } from "@phosphor-icons/react/dist/csr/WarningCircle"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
 import {
   Sheet,
@@ -240,14 +242,14 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
         </Sheet>
         <div id="lesson-scroll" className="min-w-0 flex-1 overflow-y-auto">
           {enrollment &&
-            lesson?.type === "assessment" &&
-            (quizExpired || quizResult?.status === "needs_grading") && (
+            ((lesson?.type === "assessment" &&
+              (quizExpired || quizResult?.status === "needs_grading")) ||
+              (lesson?.type === "video_prompt" &&
+                lesson.videoPrompt?.requiresReview)) && (
               <div
                 role="status"
-                className={`w-full ${
-                  quizExpired
-                    ? "bg-amber-600"
-                    : "bg-blue-600"
+                className={`sticky top-0 z-10 w-full ${
+                  quizExpired ? "bg-amber-600" : "bg-blue-600"
                 } text-white`}
               >
                 <p className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3 text-sm font-medium sm:px-8 lg:px-12">
@@ -257,8 +259,14 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                       weight="fill"
                       className="size-5 shrink-0"
                     />
-                  ) : (
+                  ) : lesson?.type === "assessment" ? (
                     <InfoIcon
+                      aria-hidden
+                      weight="fill"
+                      className="size-5 shrink-0"
+                    />
+                  ) : (
+                    <EyeIcon
                       aria-hidden
                       weight="fill"
                       className="size-5 shrink-0"
@@ -266,7 +274,9 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                   )}
                   {quizExpired
                     ? "Time is up. Your answers were submitted automatically — your result will appear here in a moment."
-                    : "Your answers have been submitted. Your result will appear here after grading."}
+                    : lesson?.type === "assessment"
+                      ? "Your answers have been submitted. Your result will appear here after grading."
+                      : "Your instructor will review your submission."}
                 </p>
               </div>
             )}
@@ -344,7 +354,7 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                   )}
                 </div>
                 {content.isPending ? (
-                  <Skeleton className="mt-8 h-64 w-full" />
+                  <BrandLoader label="Loading lesson…" />
                 ) : content.isError || !lesson ? (
                   <div className="py-8">
                     <ErrorState

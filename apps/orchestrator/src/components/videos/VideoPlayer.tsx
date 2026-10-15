@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { VideoThumbnail } from "./VideoThumbnail"
 
 export function VideoPlayer({
@@ -38,9 +38,7 @@ export function VideoPlayer({
             className="size-full rounded-none"
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-            <div className="flex size-12 items-center justify-center rounded-full bg-background/95 shadow-sm">
-              <Spinner label="Loading video" />
-            </div>
+            <BrandLoader label="Loading video" className="py-0 text-white [&_span:last-child]:text-white/80" />
           </div>
         </div>
       )}

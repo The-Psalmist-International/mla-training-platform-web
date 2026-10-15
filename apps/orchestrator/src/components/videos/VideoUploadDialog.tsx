@@ -4,7 +4,7 @@ import { Form, FormikProvider, useFormik } from "formik"
 import type { CurrentUser } from "@workspace/data"
 import { useQuery } from "@tanstack/react-query"
 import { FileInput } from "@workspace/ui/components/file-input"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { SelectInput } from "@workspace/ui/components/select"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
@@ -231,9 +231,7 @@ export function VideoUploadDialog({
           <Form noValidate className="flex min-h-0 flex-1 flex-col">
             <DialogBody className="space-y-4">
               {details.isPending && assetId ? (
-                <div className="flex min-h-32 items-center justify-center">
-                  <Spinner label="Loading video" />
-                </div>
+                <BrandLoader label="Loading video" className="py-6" />
               ) : !available ? (
                 <Alert variant="warning">
                   {details.isError
