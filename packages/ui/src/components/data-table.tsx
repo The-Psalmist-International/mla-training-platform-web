@@ -66,6 +66,8 @@ export interface DataTableProps<TRow> {
   className?: string
   /** Omit for the standard table; grid and toggle modes require a card renderer. */
   layout?: DataTableLayout<TRow>
+  /** Responsive card columns and gaps; applied to both cards and their loading placeholders. */
+  gridClassName?: string
 }
 
 export function DataTable<TRow>({
@@ -83,6 +85,7 @@ export function DataTable<TRow>({
   errorState,
   className,
   layout = { mode: "table" },
+  gridClassName = "grid-cols-1 gap-4 @xl/data-table:grid-cols-2 @4xl/data-table:grid-cols-3 @6xl/data-table:grid-cols-4",
 }: DataTableProps<TRow>) {
   const id = useId()
   const [localView, setLocalView] = useState<DataTableView>(
@@ -216,10 +219,7 @@ export function DataTable<TRow>({
           ) : isLoading ? (
             <div role="status">
               <span className="sr-only">Loading {ariaLabel}</span>
-              <ul
-                aria-hidden
-                className="grid grid-cols-1 gap-4 @xl/data-table:grid-cols-2 @4xl/data-table:grid-cols-3 @6xl/data-table:grid-cols-4"
-              >
+              <ul aria-hidden className={cn("grid", gridClassName)}>
                 {Array.from({ length: Math.min(pageSize, 6) }, (_, index) => (
                   <li
                     key={index}
@@ -246,7 +246,7 @@ export function DataTable<TRow>({
             <ul
               aria-label={ariaLabel}
               aria-busy={isFetching}
-              className="grid grid-cols-1 gap-4 pb-1 @xl/data-table:grid-cols-2 @4xl/data-table:grid-cols-3 @6xl/data-table:grid-cols-4"
+              className={cn("grid pb-1", gridClassName)}
             >
               {rows.map((row) => (
                 <li key={getRowId(row)} className="min-w-0">

@@ -13,6 +13,8 @@ import {
   type CourseSubmissionReviewQuery,
 } from "@workspace/data"
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
+import { CheckCircleIcon } from "@phosphor-icons/react/dist/csr/CheckCircle"
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info"
 import { Button } from "@workspace/ui/components/button"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { SelectInput } from "@workspace/ui/components/select"
@@ -21,6 +23,11 @@ import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -245,7 +252,7 @@ export function CourseReviewsPanel({
   )
 }
 
-function CourseReviewDialog({
+export function CourseReviewDialog({
   workspace,
   available,
   video,
@@ -419,28 +426,71 @@ function AssessmentReviewForm({
             const shortIndex = short.findIndex(
               (entry) => entry.question.id === answer.question.id
             )
+            const learnerAnswer =
+              answer.textAnswer ??
+              answer.question.options.find(
+                (option) => option.id === answer.selectedOptionId
+              )?.label ??
+              "No answer submitted"
+            const auto = shortIndex < 0
+            const awarded = answer.awardedPoints ?? 0
             return (
               <section
                 key={answer.question.id}
                 className="space-y-3 rounded-lg border border-border p-4"
               >
-                <h3 className="font-semibold">
-                  {index + 1}. {answer.question.prompt}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {answer.question.points} points
-                </p>
-                <p className="text-sm whitespace-pre-wrap">
-                  {answer.textAnswer ??
-                    answer.question.options.find(
-                      (option) => option.id === answer.selectedOptionId
-                    )?.label ??
-                    "No answer submitted"}
-                </p>
-                {answer.referenceAnswer && (
-                  <p className="text-sm text-muted-foreground">
-                    Reference answer: {answer.referenceAnswer}
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="min-w-0 flex-1 font-semibold">
+                    {index + 1}. {answer.question.prompt}
+                  </h3>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground tabular-nums">
+                    {auto && (
+                      <CheckCircleIcon
+                        aria-hidden
+                        weight="fill"
+                        className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                      />
+                    )}
+                    {answer.question.points}{" "}
+                    {answer.question.points === 1 ? "point" : "points"}
+                  </span>
+                  {auto && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <button
+                            type="button"
+                            aria-label={`Automatically awarded ${awarded} ${awarded === 1 ? "point" : "points"}`}
+                            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                        }
+                      >
+                        <InfoIcon aria-hidden className="size-4" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Automatically awarded {awarded}{" "}
+                        {awarded === 1 ? "point" : "points"}.
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+                <div className="border-l-2 border-primary/60 bg-muted/40 px-3 py-2">
+                  <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                    Learner answer
                   </p>
+                  <p className="mt-1 text-sm whitespace-pre-wrap">
+                    {learnerAnswer}
+                  </p>
+                </div>
+                {answer.referenceAnswer && (
+                  <div className="px-3 py-2">
+                    <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                      Reference answer
+                    </p>
+                    <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
+                      {answer.referenceAnswer}
+                    </p>
+                  </div>
                 )}
                 {shortIndex >= 0 ? (
                   <>
@@ -468,11 +518,7 @@ function AssessmentReviewForm({
                       />
                     </label>
                   </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Automatically awarded {answer.awardedPoints ?? 0} points.
-                  </p>
-                )}
+                ) : null}
               </section>
             )
           })}

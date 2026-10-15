@@ -4,6 +4,7 @@ import type {
 } from "../../src/generated/graphql"
 
 export {
+  MyEnrollmentsPageDocument as MY_ENROLLMENTS_PAGE_QUERY,
   MyEnrollmentsDocument as MY_ENROLLMENTS_QUERY,
   CourseEnrollmentsDocument as COURSE_ENROLLMENTS_QUERY,
 } from "../../src/generated/graphql"

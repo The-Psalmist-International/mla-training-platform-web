@@ -1,5 +1,5 @@
-import { WorkspaceCollectionPage } from "../components/layout/WorkspaceCollectionPage"
+import { ReviewsCollectionPage } from "../components/reviews/ReviewsCollectionPage"
 
 export function AssessmentReviewsPage() {
-  return <WorkspaceCollectionPage view="assessments" />
+  return <ReviewsCollectionPage queue="assessment" />
 }

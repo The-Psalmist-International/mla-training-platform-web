@@ -39,7 +39,7 @@ import {
 } from "@workspace/ui/components/sidebar"
 import { useTheme } from "@workspace/ui/components/theme-provider"
 import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon"
-import { ChalkboardTeacherIcon } from "@phosphor-icons/react/dist/csr/ChalkboardTeacher"
+import { BoulesIcon } from "@phosphor-icons/react/dist/csr/Boules"
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus"
 import { CaretUpDownIcon } from "@phosphor-icons/react/dist/csr/CaretUpDown"
@@ -194,7 +194,7 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
           aria-label="Martyrs Orchestrator overview"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <ChalkboardTeacherIcon aria-hidden size={20} weight="fill" />
+            <BoulesIcon aria-hidden size={20} weight="fill" />
           </span>
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block text-sm font-semibold">

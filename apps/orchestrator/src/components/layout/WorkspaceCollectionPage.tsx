@@ -1,5 +1,5 @@
 import { useId, useSyncExternalStore } from "react"
-import { useNavigate, useRouter, useSearch } from "@tanstack/react-router"
+import { Link, useNavigate, useRouter, useSearch } from "@tanstack/react-router"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import type { CurrentUser } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
@@ -196,33 +196,80 @@ function CollectionContent({
         </div>
       ) : (
         <ul className="divide-y divide-border/60" aria-label="Records">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex min-w-0 flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                {item.avatarUrl !== undefined && (
-                  <UserAvatar
-                    name={item.title}
-                    avatarUrl={item.avatarUrl}
-                    className="shrink-0"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium break-words">{item.title}</p>
-                  {item.description && (
-                    <p className="mt-1 text-sm leading-6 break-words text-muted-foreground">
-                      {item.description}
-                    </p>
+          {items.map((item) => {
+            const reviewLink =
+              scoped && courseId && (view === "assessments" || view === "submissions")
+                ? {
+                    to: "/workspace/courses/$courseId" as const,
+                    params: { courseId },
+                    search:
+                      view === "assessments"
+                        ? {
+                            tab: "reviews" as const,
+                            action: "review-assessment" as const,
+                            selection: item.id,
+                          }
+                        : {
+                            tab: "reviews" as const,
+                            reviewType: "video" as const,
+                            action: "review-video" as const,
+                            selection: item.id,
+                          },
+                  }
+                : null
+            return (
+              <li
+                key={item.id}
+                className="flex min-w-0 flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  {item.avatarUrl !== undefined && (
+                    <UserAvatar
+                      name={item.title}
+                      avatarUrl={item.avatarUrl}
+                      className="shrink-0"
+                    />
                   )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium break-words">
+                      {reviewLink ? (
+                        <Link
+                          to={reviewLink.to}
+                          params={reviewLink.params}
+                          search={reviewLink.search}
+                          className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {item.title}
+                        </Link>
+                      ) : (
+                        item.title
+                      )}
+                    </p>
+                    {item.description && (
+                      <p className="mt-1 text-sm leading-6 break-words text-muted-foreground">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <span className="w-fit shrink-0 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground capitalize">
-                {item.status.replaceAll("_", " ")}
-              </span>
-            </li>
-          ))}
+                <span className="flex shrink-0 items-center gap-3">
+                  <span className="w-fit rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground capitalize">
+                    {item.status.replaceAll("_", " ")}
+                  </span>
+                  {reviewLink && (
+                    <Link
+                      to={reviewLink.to}
+                      params={reviewLink.params}
+                      search={reviewLink.search}
+                      className="inline-flex min-h-9 items-center rounded-md border border-border px-3 text-xs font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {view === "assessments" ? "Grade" : "Review"}
+                    </Link>
+                  )}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
       {!error && !loading && (offset > 0 || listQuery.data?.hasNextPage) && (

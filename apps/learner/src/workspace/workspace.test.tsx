@@ -8,7 +8,14 @@ import {
   firstName,
 } from "./navigation"
 import { LearnerWorkspace } from "../components/LearnerWorkspace"
-import { CourseCard, DataState } from "../components/LearnerWorkspaceContent"
+import {
+  CourseCard,
+  DataState,
+  enrollmentGridLayout,
+} from "../components/LearnerWorkspaceContent"
+import { DataTable } from "@workspace/ui/components/data-table"
+import { formatRemaining, timerTone } from "../components/course/AssessmentLesson"
+import type { EnrollmentListItem } from "@workspace/data/apollo/enrollment/query"
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -81,6 +88,129 @@ describe("learner horizontal workspace", () => {
     expect(html).not.toContain('aria-label="Switch theme"')
     expect(html).not.toContain("learner-auth-background")
     expect(html).not.toContain('data-slot="sidebar"')
+  })
+
+  it("preserves enrollment search and page size in validated URL state", () => {
+    expect(
+      learnerSearch({ tab: "learning", page: "4", pageSize: "50", q: "Safety" })
+    ).toEqual({ tab: "learning", page: 4, pageSize: 50, q: "Safety" })
+    for (const pageSize of [0, -1, 12, 101, "bad"])
+      expect(
+        learnerSearch({ tab: "learning", pageSize }).pageSize
+      ).toBeUndefined()
+    expect(
+      learnerSearch({ tab: "learning", q: "x".repeat(300) }).q
+    ).toHaveLength(200)
+    expect(
+      learnerSearch({ tab: "library", pageSize: 50, q: "Safety" })
+    ).toEqual({ tab: "library", page: 1 })
+  })
+
+  it("renders enrollment metadata in a grid only with no table or view toggle", () => {
+    const course = {
+      id: "course-1",
+      ownerId: "instructor-1",
+      title: "Workplace safety",
+      description: "Essential training",
+      thumbnailUrl: null,
+      status: "published" as const,
+      certificateEnabled: true,
+      publishedAt: null,
+      createdAt: "2026-10-15T00:00:00Z",
+      updatedAt: "2026-10-15T00:00:00Z",
+    }
+    const rows: EnrollmentListItem[] = [
+      {
+        id: "e1",
+        userId: "learner-1",
+        courseId: course.id,
+        enrolledBy: "admin-1",
+        createdAt: "2026-10-01T00:00:00Z",
+        completedAt: null,
+        learningProgress: {
+          completedRequiredItems: 2,
+          totalRequiredItems: 5,
+          percentage: 40,
+        },
+        course,
+      },
+      {
+        id: "e2",
+        userId: "learner-1",
+        courseId: "course-2",
+        enrolledBy: "admin-1",
+        createdAt: "2026-10-01T00:00:00Z",
+        completedAt: "2026-10-14T00:00:00Z",
+        learningProgress: {
+          completedRequiredItems: 5,
+          totalRequiredItems: 5,
+          percentage: 100,
+        },
+        course: {
+          ...course,
+          id: "course-2",
+          title: "First aid",
+          certificateEnabled: false,
+        },
+      },
+    ]
+    const html = renderToStaticMarkup(
+      createElement(DataTable<EnrollmentListItem>, {
+        rows,
+        columns: [],
+        layout: enrollmentGridLayout,
+        gridClassName: "grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3",
+        getRowId: (row) => row.id,
+        ariaLabel: "enrollments",
+        search: { value: "", onChange: vi.fn() },
+        onRefresh: vi.fn(),
+        pagination: {
+          pageIndex: 0,
+          pageSize: 20,
+          totalCount: 2,
+          onPageChange: vi.fn(),
+          onPageSizeChange: vi.fn(),
+        },
+      })
+    )
+    for (const content of [
+      "Workplace safety",
+      "First aid",
+      "In progress",
+      "Enrolled",
+      "Completed",
+      "40%",
+      "100%",
+      "2 of 5 required lessons completed",
+      'aria-label="Certificate included"',
+      "Showing 1 to 2 out of 2",
+      'data-slot="data-table"',
+      'aria-label="Refresh enrollments"',
+    ])
+      expect(html).toContain(content)
+    expect(html).not.toContain("Issued")
+    expect(html).toContain("<progress")
+    expect(html).toContain('value="40" max="100"')
+    expect(html).not.toContain("<dl")
+    expect(html).not.toContain("Enrolled on")
+    expect(html).toContain("lg:grid-cols-3")
+    expect(html).not.toContain("@6xl/data-table:grid-cols-4")
+    expect(html).not.toContain("<table")
+    expect(html).not.toContain('aria-label="Table view"')
+    expect(html).not.toContain('aria-label="Grid view"')
+    expect(html).toContain('aria-label="enrollments grid scroll area"')
+  })
+
+  it("stages the quiz timer green to amber to red by elapsed share", () => {
+    const total = 8 * 60 * 1000
+    expect(timerTone(total, total)).toBe("ok")
+    expect(timerTone(total * 0.6, total)).toBe("ok")
+    expect(timerTone(total * 0.5, total)).toBe("warning")
+    expect(timerTone(total * 0.29, total)).toBe("critical")
+    expect(timerTone(0, total)).toBe("critical")
+    expect(timerTone(null, total)).toBe("critical")
+    expect(formatRemaining(150000)).toBe("2:30")
+    expect(formatRemaining(3723000)).toBe("1:02:03")
   })
 
   it("provides safe personalisation fallbacks", () => {

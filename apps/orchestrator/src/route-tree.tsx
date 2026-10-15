@@ -11,6 +11,8 @@ import { validateNotificationsSearch } from "./workspace/notifications/notificat
 import { validateAnalyticsSearch } from "./workspace/analytics/analytics"
 import { validateInvitationsSearch } from "./workspace/invitations/invitations-search"
 import { validateCollectionSearch } from "./workspace/collection-search"
+import { validateEnrollmentsSearch } from "./workspace/enrollments/enrollments-search"
+import { validateReviewsSearch } from "./workspace/reviews/reviews-search"
 import { validateCourseSearch } from "./workspace/course/course-search"
 import { validateEmailDeliverySearch } from "./workspace/emails/email-delivery-search"
 import {
@@ -151,7 +153,7 @@ const videosRoute = createRoute({
 const enrollmentsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "enrollments",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateEnrollmentsSearch,
   component: lazyRouteComponent(
     () => import("./pages/EnrollmentsPage"),
     "EnrollmentsPage"
@@ -161,7 +163,7 @@ const enrollmentsRoute = createRoute({
 const assessmentsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "assessment-reviews",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateReviewsSearch,
   component: lazyRouteComponent(
     () => import("./pages/AssessmentReviewsPage"),
     "AssessmentReviewsPage"
@@ -173,7 +175,7 @@ const assessmentsRoute = createRoute({
 const submissionsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "video-submissions",
-  validateSearch: validateCollectionSearch,
+  validateSearch: validateReviewsSearch,
   component: lazyRouteComponent(
     () => import("./pages/VideoSubmissionsPage"),
     "VideoSubmissionsPage"

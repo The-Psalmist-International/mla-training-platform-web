@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { Form, FormikProvider, useFormik } from "formik"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
-import { GoogleLogoIcon } from "@phosphor-icons/react/dist/csr/GoogleLogo"
 import { Button } from "@workspace/ui/components/button"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { useToast } from "@workspace/ui/components/toaster"
@@ -103,7 +102,12 @@ export function SignInPage() {
         onClick={() => void google()}
         aria-busy={googlePending}
       >
-        <GoogleLogoIcon aria-hidden className="size-5" />
+        <img
+          src="/images/google.png"
+          alt=""
+          aria-hidden
+          className="size-5 object-contain"
+        />
         {googlePending ? "Connecting to Google…" : "Sign in with Google"}
       </Button>
       <div className="my-6 flex items-center gap-4 text-xs text-muted-foreground">

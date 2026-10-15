@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react"
-import { GraduationCapIcon } from "@phosphor-icons/react/dist/csr/GraduationCap"
+import { BoulesIcon } from "@phosphor-icons/react/dist/csr/Boules"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
 export function LearnerAuthLayout({
@@ -43,7 +43,7 @@ export function LearnerAuthLayout({
               className="flex items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <GraduationCapIcon aria-hidden className="size-6" />
+                <BoulesIcon aria-hidden className="size-6" />
               </span>
               <span className="text-sm font-semibold tracking-tight">
                 MLA Learners

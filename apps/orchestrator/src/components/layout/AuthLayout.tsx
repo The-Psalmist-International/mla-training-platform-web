@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { ChalkboardTeacherIcon } from "@phosphor-icons/react/dist/csr/ChalkboardTeacher"
+import { BoulesIcon } from "@phosphor-icons/react/dist/csr/Boules"
 import { CopyrightIcon } from "@phosphor-icons/react/dist/csr/Copyright"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
@@ -21,7 +21,7 @@ export function AuthLayout({
         <section className="w-full max-w-96" aria-labelledby="auth-title">
           <header className="mb-7">
             <div className="mb-3 flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground ring-1 ring-primary/25 ring-offset-2 ring-offset-background">
-              <ChalkboardTeacherIcon size={22} weight="fill" aria-hidden />
+              <BoulesIcon size={22} weight="fill" aria-hidden />
             </div>
             <h1
               id="auth-title"

@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
-import { GraduationCapIcon } from "@phosphor-icons/react/dist/csr/GraduationCap"
+import { BoulesIcon } from "@phosphor-icons/react/dist/csr/Boules"
 import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut"
 import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle"
 import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown"
@@ -27,6 +27,7 @@ export function LearnerWorkspace({
   onSignOut,
   onAccountClick,
   children,
+  courseMode = false,
 }: {
   user: CurrentUser
   tab: LearnerTab
@@ -34,6 +35,7 @@ export function LearnerWorkspace({
   onSignOut: () => void
   onAccountClick: () => void
   children: ReactNode
+  courseMode?: boolean
 }) {
   useEffect(() => {
     const frame = requestAnimationFrame(() =>
@@ -42,14 +44,16 @@ export function LearnerWorkspace({
     return () => cancelAnimationFrame(frame)
   }, [tab])
   return (
-    <div className="flex min-h-svh min-w-0 flex-col bg-background">
+    <div
+      className={`flex min-h-svh min-w-0 flex-col bg-background ${courseMode ? "h-svh overflow-hidden" : ""}`}
+    >
       <a
         href="#learner-content"
         className="sr-only fixed top-4 left-4 z-50 rounded-md bg-background p-3 text-sm focus:not-sr-only focus:ring-2 focus:ring-ring"
       >
         Skip to content
       </a>
-      <header className="border-b border-border/70 bg-background">
+      <header className="shrink-0 border-b border-border/70 bg-background">
         <div className="flex min-h-20 items-center justify-between gap-4 px-4 sm:px-8 lg:px-12">
           <Link
             to="/"
@@ -58,7 +62,7 @@ export function LearnerWorkspace({
             aria-label="MLA Learners overview"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <GraduationCapIcon aria-hidden className="size-6" />
+              <BoulesIcon aria-hidden className="size-6" />
             </span>
             <span className="truncate text-sm font-semibold tracking-tight">
               MLA Learners
@@ -129,29 +133,35 @@ export function LearnerWorkspace({
             </DropdownMenu>
           </div>
         </div>
-        <nav
-          aria-label="Learner workspace"
-          className="overflow-x-auto px-4 sm:px-8 lg:px-12"
-        >
-          <div className="flex w-max min-w-full gap-6 sm:gap-8">
-            {learnerTabs.map((item) => (
-              <Link
-                key={item.id}
-                to="/"
-                search={{ tab: item.id, page: 1 }}
-                aria-current={item.id === tab ? "page" : undefined}
-                className={`flex min-h-12 shrink-0 items-center border-b-2 px-1 text-sm transition-colors duration-150 outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${item.id === tab ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
+        {!courseMode && (
+          <nav
+            aria-label="Learner workspace"
+            className="overflow-x-auto px-4 sm:px-8 lg:px-12"
+          >
+            <div className="flex w-max min-w-full gap-6 sm:gap-8">
+              {learnerTabs.map((item) => (
+                <Link
+                  key={item.id}
+                  to="/"
+                  search={{ tab: item.id, page: 1 }}
+                  aria-current={item.id === tab ? "page" : undefined}
+                  className={`flex min-h-12 shrink-0 items-center border-b-2 px-1 text-sm transition-colors duration-150 outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${item.id === tab ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
       </header>
       <main
         id="learner-content"
         tabIndex={-1}
-        className="flex flex-1 flex-col px-4 py-8 outline-none sm:px-8 lg:px-12 lg:py-10"
+        className={
+          courseMode
+            ? "flex min-h-0 flex-1 flex-col outline-none"
+            : "flex flex-1 flex-col px-4 py-8 outline-none sm:px-8 lg:px-12 lg:py-10"
+        }
       >
         {children}
       </main>

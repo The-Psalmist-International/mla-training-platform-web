@@ -9,6 +9,7 @@ import {
   validateCoursesSearch,
   validateVideosSearch,
 } from "../../workspace/library/library-search"
+import { validateEnrollmentsSearch } from "../../workspace/enrollments/enrollments-search"
 
 export function WorkspacePageAction({
   view,
@@ -68,7 +69,14 @@ export function WorkspacePageAction({
   if (view === "enrollments" && role === "admin") {
     return (
       <Button
-        render={<Link to="/workspace/enrollments" search={{ modal: "assign" }} />}
+        render={
+          <Link
+            to="/workspace/enrollments"
+            search={(previous) =>
+              validateEnrollmentsSearch({ ...previous, modal: "assign" })
+            }
+          />
+        }
         className={className}
         aria-label="Assign course"
         title="Assign course"

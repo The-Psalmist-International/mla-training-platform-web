@@ -1,3 +1,25 @@
+query MyEnrollmentsPage($limit: Int! = 20, $offset: Int! = 0, $search: String) {
+  myEnrollmentsPage(limit: $limit, offset: $offset, search: $search) {
+    totalCount
+    items {
+      id
+      userId
+      courseId
+      enrolledBy
+      createdAt
+      completedAt
+      learningProgress {
+        completedRequiredItems
+        totalRequiredItems
+        percentage
+      }
+      course {
+        ...CourseListFields
+      }
+    }
+  }
+}
+
 query MyEnrollments($limit: Int! = 20, $offset: Int! = 0) {
   myEnrollments(limit: $limit, offset: $offset) {
     id
@@ -6,6 +28,11 @@ query MyEnrollments($limit: Int! = 20, $offset: Int! = 0) {
     enrolledBy
     createdAt
     completedAt
+    learningProgress {
+      completedRequiredItems
+      totalRequiredItems
+      percentage
+    }
     course {
       ...CourseListFields
     }

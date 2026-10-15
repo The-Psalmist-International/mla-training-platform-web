@@ -6,7 +6,12 @@ export const learnerTabs = [
 ] as const
 
 export type LearnerTab = (typeof learnerTabs)[number]["id"]
-export type LearnerSearch = { tab: LearnerTab; page: number }
+export type LearnerSearch = {
+  tab: LearnerTab
+  page: number
+  pageSize?: number
+  q?: string
+}
 
 export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
   const tab =
@@ -15,6 +20,7 @@ export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
     typeof search.page === "string" && /^\d+$/.test(search.page)
       ? Number(search.page)
       : search.page
+  const size = Number(search.pageSize)
   return {
     tab,
     page:
@@ -25,6 +31,12 @@ export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
       page <= 100000
         ? page
         : 1,
+    ...(tab === "learning" && [10, 50, 100].includes(size)
+      ? { pageSize: size }
+      : {}),
+    ...(tab === "learning" && typeof search.q === "string" && search.q
+      ? { q: search.q.slice(0, 200) }
+      : {}),
   }
 }
 

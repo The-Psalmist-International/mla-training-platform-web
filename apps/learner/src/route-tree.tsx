@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-router"
 import { rootRoute } from "./root"
 import { learnerSearch } from "./workspace/navigation"
+import { learnerCourseSearch } from "./workspace/course"
 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -20,6 +21,25 @@ const homeRoute = createRoute({
     if (!context.auth.getUser()) throw redirect({ to: "/sign-in" })
   },
   component: lazyRouteComponent(() => import("./pages/HomePage"), "HomePage"),
+})
+const courseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/courses/$courseId",
+  validateSearch: learnerCourseSearch,
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    try {
+      await context.auth.restore()
+    } catch {
+      throw redirect({ to: "/sign-in" })
+    }
+    if (!context.auth.getUser()) throw redirect({ to: "/sign-in" })
+  },
+  component: lazyRouteComponent(
+    () => import("./pages/LearnerCoursePage"),
+    "LearnerCoursePage"
+  ),
+  head: () => ({ meta: [{ title: "Course | MLA Learners" }] }),
 })
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -73,6 +93,7 @@ const acceptInvitationRoute = createRoute({
 })
 export const routeTree = rootRoute.addChildren([
   homeRoute,
+  courseRoute,
   signInRoute,
   forgotRoute,
   resetRoute,

@@ -1,0 +1,211 @@
+query LearnerCourseState($courseId: ID!) {
+  courseOutline(id: $courseId) {
+    id
+    title
+    description
+    status
+    modules {
+      id
+      title
+      position
+      items {
+        id
+        title
+        type
+        position
+        required
+      }
+    }
+  }
+  myCourseEnrollment(courseId: $courseId) {
+    id
+    userId
+    courseId
+    createdAt
+    completedAt
+    learningProgress {
+      percentage
+      completedRequiredItems
+      totalRequiredItems
+    }
+    progress {
+      itemId
+      status
+      resumePositionSeconds
+      watchedPercentage
+      completedAt
+      updatedAt
+    }
+  }
+}
+
+query LearnerCourseContent($courseId: ID!) {
+  course(id: $courseId) {
+    id
+    title
+    certificateEnabled
+    modules {
+      id
+      title
+      position
+      items {
+        id
+        title
+        type
+        position
+        required
+        body
+        videoLesson {
+          completionThreshold
+          videoAssetId
+          videoAsset {
+            id
+            status
+            durationSeconds
+          }
+        }
+        assessment {
+          passMark
+          attemptLimit
+          timeLimitSeconds
+        }
+        videoPrompt {
+          instructions
+          maxDurationSeconds
+          requiresReview
+        }
+      }
+    }
+  }
+}
+
+mutation JoinLearnerCourse($courseId: ID!) {
+  enrollInCourse(courseId: $courseId) {
+    id
+  }
+}
+mutation MarkLearnerTextRead($enrollmentId: ID!, $itemId: ID!) {
+  completeTextLesson(enrollmentId: $enrollmentId, itemId: $itemId) {
+    itemId
+    status
+    completedAt
+  }
+}
+query LearnerLessonPlayback($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
+  lessonPlayback(courseId: $courseId, moduleId: $moduleId, itemId: $itemId) {
+    url
+    expires
+  }
+}
+mutation StartLearnerVideoProgress($input: StartVideoProgressInput!) {
+  startVideoProgress(input: $input) {
+    sessionId
+    durationSeconds
+    completionThreshold
+    heartbeatIntervalSeconds
+  }
+}
+mutation ReportLearnerVideoProgress($input: RecordVideoProgressInput!) {
+  recordVideoProgress(input: $input) {
+    accepted
+    buffered
+  }
+}
+
+fragment LearnerAttemptFields on AssessmentAttempt {
+  id
+  enrollmentId
+  assessmentId
+  attemptNumber
+  status
+  passMark
+  attemptLimit
+  timeLimitSeconds
+  maxScore
+  score
+  passed
+  version
+  startedAt
+  deadlineAt
+  submittedAt
+  answers {
+    question {
+      id
+      type
+      prompt
+      points
+      options {
+        id
+        label
+        position
+      }
+    }
+    selectedOptionId
+    textAnswer
+    awardedPoints
+    feedback
+    explanation
+  }
+}
+query LearnerAssessmentAttempt($id: ID!) {
+  assessmentAttempt(id: $id) {
+    ...LearnerAttemptFields
+  }
+}
+mutation StartLearnerAssessment($input: StartAssessmentAttemptInput!) {
+  startAssessmentAttempt(input: $input) {
+    ...LearnerAttemptFields
+  }
+}
+mutation SaveLearnerAssessment($input: SaveAssessmentAnswersInput!) {
+  saveAssessmentAnswers(input: $input) {
+    ...LearnerAttemptFields
+  }
+}
+mutation SubmitLearnerAssessment($input: SubmitAssessmentAttemptInput!) {
+  submitAssessmentAttempt(input: $input) {
+    ...LearnerAttemptFields
+  }
+}
+
+mutation StartLearnerSubmission($input: VideoSubmissionUploadInput!) {
+  startVideoSubmission(input: $input) {
+    submission {
+      id
+      asset {
+        id
+      }
+    }
+    upload {
+      endpoint
+      videoId
+      libraryId
+      signature
+      expires
+    }
+  }
+}
+mutation ResumeLearnerSubmission($id: ID!) {
+  refreshVideoSubmissionUpload(id: $id) {
+    submission {
+      id
+      asset {
+        id
+      }
+    }
+    upload {
+      endpoint
+      videoId
+      libraryId
+      signature
+      expires
+    }
+  }
+}
+mutation SyncLearnerSubmission($id: ID!) {
+  syncVideoSubmission(id: $id) {
+    id
+    status
+    feedback
+  }
+}

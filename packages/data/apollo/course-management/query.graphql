@@ -255,6 +255,7 @@ query CourseLearners(
       id
       userId
       learnerName
+      learnerEmail
       learnerAvatarUrl
       createdAt
       completedAt
@@ -266,6 +267,7 @@ query CourseLearnerDetails($id: ID!) {
     id
     courseId
     userId
+    createdAt
     completedAt
     progress {
       itemId

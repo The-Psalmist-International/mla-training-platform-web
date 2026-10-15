@@ -195,8 +195,12 @@ export function CourseLearnersPanel({
             "Learner"
           }
           learnerAvatarUrl={
-            rows.find((row) => row.id === search.selection)
-              ?.learnerAvatarUrl ?? null
+            rows.find((row) => row.id === search.selection)?.learnerAvatarUrl ??
+            null
+          }
+          learnerEmail={
+            rows.find((row) => row.id === search.selection)?.learnerEmail ??
+            null
           }
         />
       )}
@@ -309,16 +313,18 @@ function CourseEnrollmentDialog({ workspace }: { workspace: CourseWorkspace }) {
   )
 }
 
-function CourseLearnerDialog({
+export function CourseLearnerDialog({
   workspace,
   available,
   learnerName,
   learnerAvatarUrl,
+  learnerEmail,
 }: {
   workspace: CourseWorkspace
   available: boolean
   learnerName: string
   learnerAvatarUrl: string | null
+  learnerEmail: string | null
 }) {
   const query = useQuery({
     ...courseResourceOptions(
@@ -350,12 +356,9 @@ function CourseLearnerDialog({
     >
       <DialogContent className="sm:max-w-3xl" showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <UserAvatar name={learnerName} avatarUrl={learnerAvatarUrl} />
-            {learnerName}
-          </DialogTitle>
+          <DialogTitle>Enrollment details</DialogTitle>
           <DialogDescription>
-            Current lesson progress and issued certificate.
+            Review the learner, course progress, and certificate.
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-6">
@@ -374,15 +377,61 @@ function CourseLearnerDialog({
             </Alert>
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                <StatusBadge
-                  tone={data.enrollment.completedAt ? "success" : "neutral"}
-                >
-                  {data.enrollment.completedAt
-                    ? "Course completed"
-                    : "In progress"}
-                </StatusBadge>
-                <span className="text-sm text-muted-foreground">
+              <dl className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Learner</dt>
+                  <dd className="mt-2 flex items-center gap-3">
+                    <UserAvatar
+                      name={learnerName}
+                      email={learnerEmail ?? undefined}
+                      avatarUrl={learnerAvatarUrl}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium">{learnerName}</p>
+                      {learnerEmail && (
+                        <p className="mt-1 text-xs break-words text-muted-foreground">
+                          {learnerEmail}
+                        </p>
+                      )}
+                    </div>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Status</dt>
+                  <dd className="mt-2">
+                    <StatusBadge
+                      tone={data.enrollment.completedAt ? "success" : "neutral"}
+                    >
+                      {data.enrollment.completedAt
+                        ? "Completed"
+                        : "In progress"}
+                    </StatusBadge>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Course</dt>
+                  <dd className="mt-2 font-medium">{workspace.course.title}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Enrolled on</dt>
+                  <dd className="mt-2 tabular-nums">
+                    {formatPeopleCreatedAt(data.enrollment.createdAt)}
+                  </dd>
+                </div>
+                {data.enrollment.completedAt && (
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Completed on
+                    </dt>
+                    <dd className="mt-2 tabular-nums">
+                      {formatPeopleCreatedAt(data.enrollment.completedAt)}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              <section className="space-y-3 border-t border-border pt-4">
+                <h3 className="font-semibold">Lesson progress</h3>
+                <p className="text-sm text-muted-foreground">
                   {
                     lessonRows.filter(
                       (lesson) =>
@@ -392,31 +441,31 @@ function CourseLearnerDialog({
                   }{" "}
                   of {lessonRows.filter((lesson) => lesson.required).length}{" "}
                   current required lessons completed
-                </span>
-              </div>
-              <ul className="divide-y divide-border">
-                {lessonRows.map((lesson) => (
-                  <li
-                    key={lesson.id}
-                    className="flex items-center justify-between gap-3 py-3"
-                  >
-                    <div>
-                      <p className="font-medium">{lesson.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {lesson.moduleTitle}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground capitalize">
-                      {(
-                        progress.get(lesson.id)?.status ?? "not_started"
-                      ).replaceAll("_", " ")}
-                      {lesson.type === "video_lesson"
-                        ? ` · ${progress.get(lesson.id)?.watchedPercentage ?? 0}% watched`
-                        : ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                </p>
+                <ul className="divide-y divide-border">
+                  {lessonRows.map((lesson) => (
+                    <li
+                      key={lesson.id}
+                      className="flex items-center justify-between gap-3 py-3"
+                    >
+                      <div>
+                        <p className="font-medium">{lesson.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {lesson.moduleTitle}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {(
+                          progress.get(lesson.id)?.status ?? "not_started"
+                        ).replaceAll("_", " ")}
+                        {lesson.type === "video_lesson"
+                          ? ` · ${progress.get(lesson.id)?.watchedPercentage ?? 0}% watched`
+                          : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
               <section className="space-y-3 border-t border-border pt-4">
                 <h3 className="font-semibold">Certificate</h3>
                 {certificate ? (

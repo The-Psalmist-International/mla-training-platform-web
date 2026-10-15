@@ -1,6 +1,7 @@
 export const routeFiles = {
   __root__: "src/root.tsx",
   "/": "src/pages/HomePage.tsx",
+  "/courses/$courseId": "src/pages/LearnerCoursePage.tsx",
   "/sign-in": "src/pages/SignInPage.tsx",
   "/forgot-password": "src/pages/ForgotPasswordPage.tsx",
   "/reset-password": "src/pages/ResetPasswordPage.tsx",

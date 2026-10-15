@@ -375,25 +375,6 @@ export function OverviewDashboard({
               )}
             </div>
           )}
-          {hasAttention && (
-            <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2 border-t border-border/70 px-5 py-3 text-xs text-muted-foreground">
-              {!!data.incompleteDrafts && (
-                <span>{number(data.incompleteDrafts)} drafts need content</span>
-              )}
-              {!!data.failedVideos && (
-                <Link
-                  to="/workspace/videos"
-                  search={{ status: "failed" }}
-                  className="hover:text-foreground hover:underline"
-                >
-                  {number(data.failedVideos)} failed videos in your library
-                </Link>
-              )}
-              {!!data.pendingReviews && (
-                <span>{number(data.pendingReviews)} reviews pending</span>
-              )}
-            </div>
-          )}
         </section>
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
           <section
