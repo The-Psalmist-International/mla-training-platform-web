@@ -18,6 +18,15 @@ export const workspaceViews = {
       "Stay up to date with assessment reviews, video submissions, and course completion.",
     scope: "Your notification inbox and email preferences will appear here.",
   },
+  analytics: {
+    path: "/workspace/analytics",
+    title: "Analytics",
+    group: "Workspace",
+    description:
+      "Understand learner progress, course outcomes, and review performance.",
+    scope:
+      "Training completion, assessment understanding, and review performance for your course scope.",
+  },
   courses: {
     path: "/workspace/courses",
     title: "Courses",
@@ -109,7 +118,7 @@ export const workspaceViews = {
 export type WorkspaceView = keyof typeof workspaceViews
 export type WorkspacePath = (typeof workspaceViews)[WorkspaceView]["path"]
 export const navigationGroups = [
-  { title: "Workspace", items: ["overview", "notifications"] },
+  { title: "Workspace", items: ["overview", "analytics", "notifications"] },
   { title: "Learning", items: ["courses", "videos", "enrollments"] },
   { title: "Review", items: ["assessments", "submissions"] },
   {

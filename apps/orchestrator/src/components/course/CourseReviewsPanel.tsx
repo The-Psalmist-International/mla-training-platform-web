@@ -17,6 +17,7 @@ import { Button } from "@workspace/ui/components/button"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { SelectInput } from "@workspace/ui/components/select"
 import { DataTable } from "@workspace/ui/components/data-table"
+import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
@@ -29,11 +30,11 @@ import {
   DialogBody,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { formatPeopleCreatedAt } from "../../workspace/people"
+import { formatPeopleCreatedAt } from "../../workspace/people/people"
 import {
   courseMutation,
   courseResourceOptions,
-} from "../../workspace/course-management"
+} from "../../workspace/course/course-management"
 import {
   useCourseTask,
   useCourseTableSearch,
@@ -82,6 +83,7 @@ export function CourseReviewsPanel({
     title: string
     date: string
     learnerName: string
+    learnerAvatarUrl: string | null
     attemptNumber: number
   }[] = video
     ? (submissions.data?.videoSubmissionReviewQueuePage.items ?? []).map(
@@ -176,7 +178,13 @@ export function CourseReviewsPanel({
             id: "learner",
             header: "Learner",
             cell: (row) => (
-              <span className="font-medium">{row.learnerName}</span>
+              <span className="flex items-center gap-3">
+                <UserAvatar
+                  name={row.learnerName}
+                  avatarUrl={row.learnerAvatarUrl}
+                />
+                <span className="font-medium">{row.learnerName}</span>
+              </span>
             ),
           },
           {

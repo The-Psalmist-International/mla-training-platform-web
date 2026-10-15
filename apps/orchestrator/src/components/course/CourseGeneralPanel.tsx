@@ -4,13 +4,13 @@ import { FileInput } from "@workspace/ui/components/file-input"
 import { FormInput } from "@workspace/ui/components/form-input"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { courseFormSchema, saveCourse } from "../../workspace/library-actions"
+import { courseFormSchema, saveCourse } from "../../workspace/library/library-actions"
 import {
   uploadCourseThumbnail,
   validateThumbnailFile,
   ThumbnailUploadError,
-} from "../../workspace/course-thumbnail"
-import { CourseThumbnail } from "../CourseThumbnail"
+} from "../../workspace/course/course-thumbnail"
+import { CourseThumbnail } from "./CourseThumbnail"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 export function CourseGeneralPanel({

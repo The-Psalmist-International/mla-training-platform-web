@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react"
 import { useBlocker, useRouter } from "@tanstack/react-router"
 import { useToast } from "@workspace/ui/components/toaster"
 import type { CurrentUser, DataClients } from "@workspace/data"
-import type { ManagedCourse } from "../../workspace/course-management"
-import { courseManagementError } from "../../workspace/course-management"
+import type { ManagedCourse } from "../../workspace/course/course-management"
+import { courseManagementError } from "../../workspace/course/course-management"
 import type {
   CoursePageAction,
   CourseSearchState,
-} from "../../workspace/course-search"
+} from "../../workspace/course/course-search"
 
 export interface CourseWorkspace {
   course: ManagedCourse

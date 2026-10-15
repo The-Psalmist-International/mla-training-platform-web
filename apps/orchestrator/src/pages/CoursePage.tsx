@@ -16,7 +16,7 @@ import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { useToast } from "@workspace/ui/components/toaster"
-import { CourseLibraryDialog } from "../components/CourseLibraryDialog"
+import { CourseLibraryDialog } from "../components/course/CourseLibraryDialog"
 import { CourseGeneralPanel } from "../components/course/CourseGeneralPanel"
 import { CourseSettingsPanel } from "../components/course/CourseSettingsPanel"
 import { CourseModulesPanel } from "../components/course/CourseModulesPanel"
@@ -30,14 +30,14 @@ import {
 import { CourseLearnersPanel } from "../components/course/CourseLearnersPanel"
 import { CourseReviewsPanel } from "../components/course/CourseReviewsPanel"
 import type { CourseWorkspace } from "../components/course/course-workspace"
-import { courseManagementOptions } from "../workspace/course-management"
+import { courseManagementOptions } from "../workspace/course/course-management"
 import {
   courseTabs,
   validateCourseSearch,
   courseListSearch,
   type CourseSearchState,
   type CoursePageAction,
-} from "../workspace/course-search"
+} from "../workspace/course/course-search"
 
 export function CoursePage() {
   const { auth } = useRouter().options.context

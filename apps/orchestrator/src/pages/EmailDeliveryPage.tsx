@@ -17,7 +17,7 @@ import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { SelectInput } from "@workspace/ui/components/select"
-import { WorkspacePageFrame } from "../components/WorkspacePageFrame"
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame"
 import { workspaceIcons } from "../workspace/icons"
 import {
   emailDeliveryTableOptions,
@@ -27,16 +27,16 @@ import {
   emailStatusOptions,
   emailPurposeOptions,
   validEmailRecipient,
-} from "../workspace/email-delivery"
-import { formatPeopleCreatedAt } from "../workspace/people"
-import { EmailDeliveryDetailsDialog } from "../components/EmailDeliveryDetailsDialog"
+} from "../workspace/emails/email-delivery"
+import { formatPeopleCreatedAt } from "../workspace/people/people"
+import { EmailDeliveryDetailsDialog } from "../components/emails/EmailDeliveryDetailsDialog"
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import {
   emailDeliveryParamsFromSearch,
   updateEmailDeliverySearch,
   type EmailDeliverySearchState,
-} from "../workspace/email-delivery-search"
+} from "../workspace/emails/email-delivery-search"
 
 const columns: DataTableColumn<EmailDeliveryListItem>[] = [
   {

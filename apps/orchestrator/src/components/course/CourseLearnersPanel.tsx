@@ -14,6 +14,7 @@ import { Combobox } from "@workspace/ui/components/combobox"
 import { DataTable } from "@workspace/ui/components/data-table"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
+import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { Alert } from "@workspace/ui/components/alert"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import {
@@ -25,11 +26,11 @@ import {
   DialogBody,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { formatPeopleCreatedAt } from "../../workspace/people"
+import { formatPeopleCreatedAt } from "../../workspace/people/people"
 import {
   courseMutation,
   courseResourceOptions,
-} from "../../workspace/course-management"
+} from "../../workspace/course/course-management"
 import {
   useCourseTask,
   useCourseTableSearch,
@@ -133,7 +134,13 @@ export function CourseLearnersPanel({
             id: "name",
             header: "Learner",
             cell: (row) => (
-              <span className="font-medium">{row.learnerName}</span>
+              <span className="flex items-center gap-3">
+                <UserAvatar
+                  name={row.learnerName}
+                  avatarUrl={row.learnerAvatarUrl}
+                />
+                <span className="font-medium">{row.learnerName}</span>
+              </span>
             ),
           },
           {
@@ -186,6 +193,10 @@ export function CourseLearnersPanel({
           learnerName={
             rows.find((row) => row.id === search.selection)?.learnerName ??
             "Learner"
+          }
+          learnerAvatarUrl={
+            rows.find((row) => row.id === search.selection)
+              ?.learnerAvatarUrl ?? null
           }
         />
       )}
@@ -259,6 +270,7 @@ function CourseEnrollmentDialog({ workspace }: { workspace: CourseWorkspace }) {
                       value: person.id,
                       label: person.name,
                       description: person.email,
+                      avatarUrl: person.avatarUrl,
                     })),
                   ]}
                 />
@@ -301,10 +313,12 @@ function CourseLearnerDialog({
   workspace,
   available,
   learnerName,
+  learnerAvatarUrl,
 }: {
   workspace: CourseWorkspace
   available: boolean
   learnerName: string
+  learnerAvatarUrl: string | null
 }) {
   const query = useQuery({
     ...courseResourceOptions(
@@ -336,7 +350,10 @@ function CourseLearnerDialog({
     >
       <DialogContent className="sm:max-w-3xl" showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{learnerName}</DialogTitle>
+          <DialogTitle className="flex items-center gap-3">
+            <UserAvatar name={learnerName} avatarUrl={learnerAvatarUrl} />
+            {learnerName}
+          </DialogTitle>
           <DialogDescription>
             Current lesson progress and issued certificate.
           </DialogDescription>

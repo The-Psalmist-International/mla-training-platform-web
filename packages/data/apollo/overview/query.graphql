@@ -1,0 +1,45 @@
+query WorkspaceOverview {
+  workspaceOverview {
+    publishedCourses
+    draftCourses
+    activeLearners
+    totalEnrollments
+    completedEnrollments
+    pendingReviews
+    pendingAssessments
+    pendingVideoReviews
+    failedVideos
+    incompleteDrafts
+    pendingInvitations
+    emailIssues
+    generatedAt
+    recentCourses {
+      id
+      title
+      thumbnailUrl
+      status
+      updatedAt
+    }
+    draftsNeedingWork {
+      id
+      title
+      thumbnailUrl
+      status
+      updatedAt
+    }
+    assessmentReviews {
+      courseId
+      title
+      totalCount
+    }
+    videoReviews {
+      courseId
+      title
+      totalCount
+    }
+    failedVideoItems {
+      id
+      title
+    }
+  }
+}

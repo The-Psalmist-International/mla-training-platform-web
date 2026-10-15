@@ -14,26 +14,26 @@ import {
   type DataTableColumn,
 } from "@workspace/ui/components/data-table"
 import { Button } from "@workspace/ui/components/button"
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { SelectInput } from "@workspace/ui/components/select"
-import { WorkspacePageFrame } from "../components/WorkspacePageFrame"
-import { WorkspacePageAction } from "../components/WorkspacePageAction"
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame"
+import { WorkspacePageAction } from "../components/layout/WorkspacePageAction"
 import { workspaceIcons } from "../workspace/icons"
-import { peopleTableOptions, formatPeopleCreatedAt } from "../workspace/people"
+import { peopleTableOptions, formatPeopleCreatedAt } from "../workspace/people/people"
 import {
   PeopleRowActions,
   PeopleSelectionDialog,
   type PeopleAction,
-} from "../components/PeopleRowActions"
+} from "../components/people/PeopleRowActions"
 
 import {
   peopleParamsFromSearch,
   updatePeopleSearch,
   type PeopleSearchState,
-} from "../workspace/people-search"
+} from "../workspace/people/people-search"
 
 const columns: DataTableColumn<UserListItem>[] = [
   {
@@ -41,17 +41,12 @@ const columns: DataTableColumn<UserListItem>[] = [
     header: "Name",
     cell: (user) => (
       <div className="flex items-center gap-3">
-        <Avatar size="lg" aria-hidden className="after:border-0">
-          <AvatarFallback>
-            {user.name
-              .trim()
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((part) => part[0])
-              .join("")
-              .toUpperCase() || user.email.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          name={user.name}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+          size="lg"
+        />
         <div className="min-w-0">
           <p className="font-medium">{user.name}</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{user.email}</p>

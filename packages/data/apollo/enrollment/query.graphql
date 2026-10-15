@@ -17,6 +17,7 @@ query CourseEnrollments($courseId: ID!, $limit: Int! = 20, $offset: Int! = 0) {
     id
     userId
     learnerName
+    learnerAvatarUrl
     createdAt
     completedAt
   }

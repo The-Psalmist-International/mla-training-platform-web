@@ -28,12 +28,12 @@ import {
 import {
   courseMutation,
   courseResourceOptions,
-} from "../../workspace/course-management"
-import { syncVideo } from "../../workspace/library-actions"
-import { formatVideoDuration } from "../../workspace/library"
-import { VideoUploadDialog } from "../VideoUploadDialog"
-import { VideoThumbnail } from "../VideoThumbnail"
-import { VideoPlayer } from "../VideoPlayer"
+} from "../../workspace/course/course-management"
+import { syncVideo } from "../../workspace/library/library-actions"
+import { formatVideoDuration } from "../../workspace/library/library"
+import { VideoUploadDialog } from "../videos/VideoUploadDialog"
+import { VideoThumbnail } from "../videos/VideoThumbnail"
+import { VideoPlayer } from "../videos/VideoPlayer"
 import {
   useCourseTask,
   useCourseTableSearch,

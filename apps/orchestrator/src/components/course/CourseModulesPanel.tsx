@@ -43,7 +43,7 @@ import {
   reorderTo,
   type ManagedModule,
   type ManagedLesson,
-} from "../../workspace/course-management"
+} from "../../workspace/course/course-management"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 type Task = ReturnType<typeof useCourseTask>

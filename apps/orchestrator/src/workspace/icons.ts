@@ -1,5 +1,6 @@
 import type { Icon } from "@phosphor-icons/react"
 import { HouseIcon } from "@phosphor-icons/react/dist/csr/House"
+import { ChartBarIcon } from "@phosphor-icons/react/dist/csr/ChartBar"
 import { BellIcon } from "@phosphor-icons/react/dist/csr/Bell"
 import { BookOpenIcon } from "@phosphor-icons/react/dist/csr/BookOpen"
 import { FilmStripIcon } from "@phosphor-icons/react/dist/csr/FilmStrip"
@@ -15,6 +16,7 @@ import type { WorkspaceView } from "./navigation"
 
 export const workspaceIcons = {
   overview: HouseIcon,
+  analytics: ChartBarIcon,
   notifications: BellIcon,
   courses: BookOpenIcon,
   videos: FilmStripIcon,

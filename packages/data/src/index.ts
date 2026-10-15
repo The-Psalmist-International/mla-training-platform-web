@@ -19,7 +19,10 @@ export type {
   CoursesQueryResult,
   CoursesQueryVariables,
 } from "../apollo/course/query"
-export { MY_VIDEO_ASSETS_QUERY, MY_VIDEO_ASSETS_PAGE_QUERY } from "../apollo/media/query"
+export {
+  MY_VIDEO_ASSETS_QUERY,
+  MY_VIDEO_ASSETS_PAGE_QUERY,
+} from "../apollo/media/query"
 export {
   VIDEO_ASSET_DETAILS_QUERY,
   PREVIEW_LESSON_VIDEO_QUERY,
@@ -131,6 +134,9 @@ export {
   REQUEST_PASSWORD_RESET_MUTATION,
   RESET_PASSWORD_MUTATION,
 } from "../apollo/auth/query"
-export type { CurrentUser, AuthPayload } from "../apollo/auth/query"
+export type { CurrentUser, AuthPayload, MyAccountQuery } from "../apollo/auth/query"
 export { backendHealthOptions } from "./health"
 export * from "../apollo/course-management/query"
+export * from "../apollo/overview/query"
+export * from "../apollo/notification/query"
+export * from "../apollo/analytics/query"

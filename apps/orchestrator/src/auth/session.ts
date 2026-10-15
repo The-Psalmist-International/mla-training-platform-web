@@ -3,7 +3,7 @@ import {
   LOGIN_MUTATION,
   LOGOUT_MUTATION,
 } from "@workspace/data/apollo/auth/query"
-import type { CurrentUser, DataClients } from "@workspace/data"
+import type { AuthPayload, CurrentUser, DataClients } from "@workspace/data"
 
 export function authErrorMessage(error: unknown) {
   if (CombinedGraphQLErrors.is(error)) {
@@ -18,7 +18,10 @@ export function authErrorMessage(error: unknown) {
 }
 
 /** Request/router scoped. Never persist access tokens or credentials. */
-export function createAuthSession(clients: DataClients, onExpired?: () => void) {
+export function createAuthSession(
+  clients: DataClients,
+  onExpired?: () => void
+) {
   let user: CurrentUser | null = null
   let deadline = 0
   let generation = 0
@@ -74,6 +77,35 @@ export function createAuthSession(clients: DataClients, onExpired?: () => void) 
   })
   return {
     clearSession,
+    updateProfile(profile: { id: string; name: string; phone?: string | null; avatarUrl?: string | null }) {
+      if (!user || user.id !== profile.id || Date.now() >= deadline) return
+      user = { ...user, name: profile.name, phone: profile.phone, avatarUrl: profile.avatarUrl }
+      notify()
+    },
+    async establish(payload: AuthPayload) {
+      const clearing = clearSession(),
+        current = generation
+      await clearing
+      if (current !== generation) return
+      if (payload.user.role !== "admin" && payload.user.role !== "instructor")
+        throw new Error("LEARNER_ACCOUNT")
+      if (
+        !payload.accessToken ||
+        !Number.isFinite(payload.expiresIn) ||
+        payload.expiresIn <= 0
+      )
+        throw new Error("Invalid session response")
+      deadline = Date.now() + payload.expiresIn * 1000
+      await clients.setAccessToken(payload.accessToken)
+      if (current !== generation) return
+      if (Date.now() >= deadline) {
+        await clearSession()
+        return
+      }
+      user = payload.user
+      watchExpiry()
+      notify()
+    },
     getUser: () => {
       expireIfNeeded()
       return user
@@ -104,7 +136,10 @@ export function createAuthSession(clients: DataClients, onExpired?: () => void) 
       if (!payload) throw new Error("Missing sign-in response")
       if (payload.user.role === "learner") {
         try {
-          await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION, context: { toast: false } })
+          await clients.apolloClient.mutate({
+            mutation: LOGOUT_MUTATION,
+            context: { toast: false },
+          })
         } finally {
           if (signInGeneration === generation) await clearSession()
         }
@@ -127,7 +162,10 @@ export function createAuthSession(clients: DataClients, onExpired?: () => void) 
     async signOut() {
       // Local logout must succeed even when the logout endpoint is unavailable.
       await clearSession()
-      await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION, context: { toast: false } })
+      await clients.apolloClient.mutate({
+        mutation: LOGOUT_MUTATION,
+        context: { toast: false },
+      })
     },
   }
 }

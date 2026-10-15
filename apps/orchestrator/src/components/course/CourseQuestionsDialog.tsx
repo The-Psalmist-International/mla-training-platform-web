@@ -17,7 +17,7 @@ import {
   DialogBody,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { courseMutation } from "../../workspace/course-management"
+import { courseMutation } from "../../workspace/course/course-management"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 type Question = {

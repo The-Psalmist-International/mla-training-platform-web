@@ -1,0 +1,33 @@
+fragment NotificationFields on Notification {
+  id
+  type
+  entityId
+  createdAt
+  readAt
+}
+query MyNotificationsPage(
+  $limit: Int! = 20
+  $offset: Int! = 0
+  $unreadOnly: Boolean! = false
+) {
+  myNotificationsPage(limit: $limit, offset: $offset, unreadOnly: $unreadOnly) {
+    totalCount
+    unreadCount
+    items {
+      ...NotificationFields
+    }
+  }
+}
+mutation MarkNotificationRead($id: ID!) {
+  markNotificationRead(id: $id) {
+    ...NotificationFields
+  }
+}
+mutation MarkAllNotificationsRead {
+  markAllNotificationsRead
+}
+
+query MyNotificationEmailOptOuts { myNotificationEmailOptOuts }
+mutation SetNotificationEmailEnabled($type: NotificationType!, $enabled: Boolean!) {
+  setNotificationEmailEnabled(type: $type, enabled: $enabled)
+}

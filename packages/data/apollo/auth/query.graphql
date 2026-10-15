@@ -7,6 +7,22 @@ query CurrentUser {
   }
 }
 
+query MyAccount {
+  me { id name email role phone avatarUrl hasPassword }
+}
+
+mutation UpdateMyProfile($name: String!, $phone: String, $avatarUrl: String) {
+  updateMyProfile(name: $name, phone: $phone, avatarUrl: $avatarUrl) {
+    id name email role phone avatarUrl hasPassword
+  }
+}
+
+mutation ChangePassword($input: ChangePasswordInput!) {
+  changePassword(input: $input)
+}
+
+mutation LogoutAll { logoutAll }
+
 mutation Login($input: LoginInput!) {
   login(input: $input) {
     accessToken
@@ -16,6 +32,8 @@ mutation Login($input: LoginInput!) {
       name
       email
       role
+      avatarUrl
+      phone
     }
   }
 }
@@ -24,8 +42,38 @@ mutation Logout {
   logout
 }
 
-mutation RequestPasswordReset($email: String!) {
-  requestPasswordReset(email: $email)
+mutation RefreshSession {
+  refreshSession {
+    accessToken
+    expiresIn
+    user {
+      id
+      name
+      email
+      role
+      avatarUrl
+      phone
+    }
+  }
+}
+
+mutation AcceptInvitation($input: AcceptInvitationInput!) {
+  acceptInvitation(input: $input) {
+    accessToken
+    expiresIn
+    user {
+      id
+      name
+      email
+      role
+      avatarUrl
+      phone
+    }
+  }
+}
+
+mutation RequestPasswordReset($email: String!, $appUrl: String) {
+  requestPasswordReset(email: $email, appUrl: $appUrl)
 }
 
 mutation ResetPassword($input: ResetPasswordInput!) {

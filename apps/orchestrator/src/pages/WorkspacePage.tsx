@@ -1,5 +1,5 @@
-import { WorkspacePlaceholder } from "../components/WorkspacePlaceholder"
+import { WorkspaceOverview } from "../components/overview/WorkspaceOverview"
 
 export function WorkspacePage() {
-  return <WorkspacePlaceholder view="overview" />
+  return <WorkspaceOverview />
 }

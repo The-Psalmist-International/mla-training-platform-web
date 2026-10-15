@@ -17,6 +17,7 @@ query UsersPage(
       id
       email
       name
+      avatarUrl
       role
       emailVerifiedAt
       disabledAt
@@ -31,6 +32,7 @@ mutation SetUserRole($id: ID!, $role: UserRole!) {
     id
     name
     email
+    avatarUrl
     role
     emailVerifiedAt
     disabledAt
@@ -44,6 +46,7 @@ mutation SetUserDisabled($id: ID!, $disabled: Boolean!) {
     id
     name
     email
+    avatarUrl
     role
     emailVerifiedAt
     disabledAt
@@ -57,6 +60,7 @@ query Users($limit: Int! = 30, $offset: Int! = 0) {
     id
     email
     name
+    avatarUrl
     role
     emailVerifiedAt
     disabledAt

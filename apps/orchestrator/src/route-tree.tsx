@@ -6,15 +6,17 @@ import {
 import { rootRoute } from "./root"
 import { routePaths } from "./route-definitions"
 import { canAccessView } from "./workspace/navigation"
-import { validatePeopleSearch } from "./workspace/people-search"
-import { validateInvitationsSearch } from "./workspace/invitations-search"
+import { validatePeopleSearch } from "./workspace/people/people-search"
+import { validateNotificationsSearch } from "./workspace/notifications/notifications-search"
+import { validateAnalyticsSearch } from "./workspace/analytics/analytics"
+import { validateInvitationsSearch } from "./workspace/invitations/invitations-search"
 import { validateCollectionSearch } from "./workspace/collection-search"
-import { validateCourseSearch } from "./workspace/course-search"
-import { validateEmailDeliverySearch } from "./workspace/email-delivery-search"
+import { validateCourseSearch } from "./workspace/course/course-search"
+import { validateEmailDeliverySearch } from "./workspace/emails/email-delivery-search"
 import {
   validateCoursesSearch,
   validateVideosSearch,
-} from "./workspace/library-search"
+} from "./workspace/library/library-search"
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -48,6 +50,31 @@ const resetPasswordRoute = createRoute({
     "ResetPasswordPage"
   ),
 })
+const acceptInvitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: routePaths.acceptInvitation,
+  component: lazyRouteComponent(
+    () => import("./pages/AcceptInvitationPage"),
+    "AcceptInvitationPage"
+  ),
+  head: () => ({ meta: [{ title: "Accept invitation | Martyrs Academy" }] }),
+})
+const authCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: routePaths.authCallback,
+  ssr: false,
+  validateSearch: (
+    search: Record<string, unknown>
+  ): { status?: "success"; error?: string } => ({
+    status: search.status === "success" ? "success" : undefined,
+    error:
+      typeof search.error === "string" ? search.error.slice(0, 80) : undefined,
+  }),
+  component: lazyRouteComponent(
+    () => import("./pages/AuthCallbackPage"),
+    "AuthCallbackPage"
+  ),
+})
 const workspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: routePaths.workspace,
@@ -57,7 +84,7 @@ const workspaceRoute = createRoute({
       throw redirect({ to: routePaths.signIn })
   },
   component: lazyRouteComponent(
-    () => import("./components/WorkspaceLayout"),
+    () => import("./components/layout/WorkspaceLayout"),
     "WorkspaceLayout"
   ),
 })
@@ -71,9 +98,20 @@ const overviewRoute = createRoute({
   ),
   head: () => ({ meta: [{ title: "Overview | Martyrs Orchestrator" }] }),
 })
+const analyticsRoute = createRoute({
+  getParentRoute: () => workspaceRoute,
+  path: "analytics",
+  validateSearch: validateAnalyticsSearch,
+  component: lazyRouteComponent(
+    () => import("./pages/AnalyticsPage"),
+    "AnalyticsPage"
+  ),
+  head: () => ({ meta: [{ title: "Analytics | Martyrs Orchestrator" }] }),
+})
 const notificationsRoute = createRoute({
   getParentRoute: () => workspaceRoute,
   path: "notifications",
+  validateSearch: validateNotificationsSearch,
   component: lazyRouteComponent(
     () => import("./pages/NotificationsPage"),
     "NotificationsPage"
@@ -215,8 +253,11 @@ export const routeTree = rootRoute.addChildren([
   signInRoute,
   forgotPasswordRoute,
   resetPasswordRoute,
+  acceptInvitationRoute,
+  authCallbackRoute,
   workspaceRoute.addChildren([
     overviewRoute,
+    analyticsRoute,
     notificationsRoute,
     coursesRoute,
     courseRoute,

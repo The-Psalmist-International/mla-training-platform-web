@@ -25,6 +25,22 @@ describe("collection pagination URL state", () => {
       })
     }
   })
+  it("opens and closes the assign dialog without touching pagination", () => {
+    expect(
+      validateCollectionSearch({ modal: "assign", course: "course-id" })
+    ).toEqual({ modal: "assign", course: "course-id" })
+    expect(validateCollectionSearch({ modal: "create" }).modal).toBeUndefined()
+    expect(
+      validateCollectionSearch({ modal: "assign", course: "course-id", page: 2 })
+    ).toMatchObject({ modal: "assign", page: 2 })
+    expect(
+      validateCollectionSearch({
+        modal: undefined,
+        course: "course-id",
+        page: 2,
+      })
+    ).toEqual({ modal: undefined, course: "course-id", page: 2 })
+  })
   it("keeps size and course while changing pages and resets pages on course changes", () => {
     const previous = validateCollectionSearch({
       page: 3,

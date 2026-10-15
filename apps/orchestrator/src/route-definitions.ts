@@ -2,6 +2,8 @@ export const routePaths = {
   signIn: "/sign-in",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  acceptInvitation: "/accept-invitation",
+  authCallback: "/auth/callback",
   workspace: "/workspace",
 } as const
 
@@ -11,7 +13,9 @@ export const routeFiles = {
   [routePaths.signIn]: "src/pages/SignInPage.tsx",
   [routePaths.forgotPassword]: "src/pages/ForgotPasswordPage.tsx",
   [routePaths.resetPassword]: "src/pages/ResetPasswordPage.tsx",
-  [routePaths.workspace]: "src/components/WorkspaceLayout.tsx",
+  [routePaths.acceptInvitation]: "src/pages/AcceptInvitationPage.tsx",
+  [routePaths.authCallback]: "src/pages/AuthCallbackPage.tsx",
+  [routePaths.workspace]: "src/components/layout/WorkspaceLayout.tsx",
   "/workspace/": "src/pages/WorkspacePage.tsx",
   "/workspace/notifications": "src/pages/NotificationsPage.tsx",
   "/workspace/courses": "src/pages/CoursesPage.tsx",

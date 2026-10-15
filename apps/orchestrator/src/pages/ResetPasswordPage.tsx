@@ -7,7 +7,7 @@ import { Button } from "@workspace/ui/components/button"
 import { useToast } from "@workspace/ui/components/toaster"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { resetPasswordSchema } from "../auth/validation"
-import { AuthLayout } from "../components/AuthLayout"
+import { AuthLayout } from "../components/layout/AuthLayout"
 import { authErrorMessage } from "../auth/session"
 
 export function ResetPasswordPage() {

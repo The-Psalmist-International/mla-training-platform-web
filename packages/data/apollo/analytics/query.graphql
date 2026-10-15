@@ -1,0 +1,79 @@
+query WorkspaceAnalytics($input: AnalyticsFilter!) {
+  workspaceAnalytics(input: $input) {
+    from
+    to
+    generatedAt
+    enrolled
+    learners
+    notStarted
+    inProgress
+    completed
+    firstAttempts
+    passed
+    gradedAttempts
+    pendingAssessments
+    pendingVideos
+    courses {
+      id
+      title
+    }
+    coursePerformance {
+      id
+      title
+      enrolled
+      completed
+      completionRate
+      firstAttempts
+      passed
+      passRate
+    }
+    trend {
+      date
+      enrolled
+      completed
+    }
+    scoreDistribution {
+      label
+      count
+    }
+    retries {
+      attemptNumber
+      passed
+      total
+      passRate
+    }
+    reviewAge {
+      label
+      count
+    }
+    lessons {
+      id
+      title
+      courseTitle
+      enrolled
+      completed
+      completionRate
+      firstAttempts
+      passRate
+    }
+    questions {
+      id
+      title
+      assessmentTitle
+      attemptNumber
+      answers
+      belowFullCredit
+      difficultyRate
+    }
+      followUps {
+        id
+        learnerName
+        learnerAvatarUrl
+        learnerEmail
+      courseId
+      courseTitle
+      reason
+    }
+    followUpCount
+  }
+}

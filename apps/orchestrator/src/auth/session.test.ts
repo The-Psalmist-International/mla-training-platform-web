@@ -59,6 +59,13 @@ afterEach(async () => {
 })
 
 describe("auth session expiry", () => {
+  it("establishes invited staff sessions directly without another login or token persistence", async () => {
+    const { session, request } = setup()
+    await session.establish({ accessToken: "invited-staff-token", expiresIn: 900, user: { ...user, role: "instructor" } })
+    expect(session.getUser()?.role).toBe("instructor"); expect(request).not.toHaveBeenCalled()
+    await expect(session.establish({ accessToken: "learner-token", expiresIn: 900, user: { ...user, role: "learner" } })).rejects.toThrow("LEARNER_ACCOUNT")
+    expect(session.getUser()).toBeNull()
+  })
   it.each(["graphql", "http"])(
     "clears and notifies synchronously on confirmed %s expiry",
     async (kind) => {

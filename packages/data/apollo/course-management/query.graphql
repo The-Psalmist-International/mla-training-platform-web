@@ -255,6 +255,7 @@ query CourseLearners(
       id
       userId
       learnerName
+      learnerAvatarUrl
       createdAt
       completedAt
     }
@@ -300,6 +301,7 @@ query CourseAssessmentReviews(
       id
       assessmentTitle
       learnerName
+      learnerAvatarUrl
       attemptNumber
       submittedAt
       status
@@ -323,6 +325,7 @@ query CourseVideoReviews(
       id
       promptTitle
       learnerName
+      learnerAvatarUrl
       attemptNumber
       createdAt
       status

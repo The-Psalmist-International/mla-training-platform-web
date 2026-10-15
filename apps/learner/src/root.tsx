@@ -6,12 +6,16 @@ import {
 import type { ApolloClientIntegration } from "@apollo/client-integration-tanstack-start"
 import type { QueryClient } from "@tanstack/react-query"
 import type { ReactNode } from "react"
+import type { DataClients } from "@workspace/data"
+import type { LearnerSession } from "./auth/session"
 import appCss from "@workspace/ui/globals.css?url"
 import { themeInitScript } from "@workspace/ui/components/theme-provider"
 
 interface RouterContext extends ApolloClientIntegration.RouterContext {
   queryClient: QueryClient
   graphqlUrl: string
+  dataClients: DataClients
+  auth: LearnerSession
 }
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -19,7 +23,7 @@ export const rootRoute = createRootRouteWithContext<RouterContext>()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Martyrs | Learner" },
+      { title: "MLA Learners" },
     ],
     links: [
       {

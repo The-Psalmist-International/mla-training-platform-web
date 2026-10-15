@@ -2,6 +2,7 @@ export interface CollectionSearchState {
   page?: number
   pageSize?: number
   course?: string
+  modal?: "assign"
 }
 
 export function validateCollectionSearch(
@@ -22,5 +23,6 @@ export function validateCollectionSearch(
       search.course.length <= 128
         ? search.course.trim()
         : undefined,
+    modal: search.modal === "assign" ? "assign" : undefined,
   }
 }

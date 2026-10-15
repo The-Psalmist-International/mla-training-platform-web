@@ -12,7 +12,7 @@ import { Alert } from "@workspace/ui/components/alert"
 import {
   courseMutation,
   courseResourceOptions,
-} from "../../workspace/course-management"
+} from "../../workspace/course/course-management"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 export function CourseSettingsPanel({

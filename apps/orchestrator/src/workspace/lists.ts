@@ -31,6 +31,7 @@ export interface WorkspaceRow {
   title: string
   description: string
   status: string
+  avatarUrl?: string | null
 }
 export interface WorkspaceList {
   items: WorkspaceRow[]
@@ -163,6 +164,7 @@ export function workspaceListOptions(
             title: item.learnerName,
             description: "Course enrollment",
             status: item.completedAt ? "completed" : "in_progress",
+            avatarUrl: item.learnerAvatarUrl,
           }))
           break
         }
@@ -178,6 +180,7 @@ export function workspaceListOptions(
             title: item.assessmentTitle,
             description: `${item.learnerName} · Attempt ${item.attemptNumber}`,
             status: item.status,
+            avatarUrl: item.learnerAvatarUrl,
           }))
           break
         }
@@ -193,6 +196,7 @@ export function workspaceListOptions(
             title: item.promptTitle,
             description: `${item.learnerName} · Attempt ${item.attemptNumber}`,
             status: item.status,
+            avatarUrl: item.learnerAvatarUrl,
           }))
           break
         }

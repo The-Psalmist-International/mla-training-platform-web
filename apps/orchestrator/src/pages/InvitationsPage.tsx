@@ -18,24 +18,24 @@ import { StatusBadge } from "@workspace/ui/components/status-badge"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { SelectInput } from "@workspace/ui/components/select"
-import { WorkspacePageFrame } from "../components/WorkspacePageFrame"
-import { WorkspacePageAction } from "../components/WorkspacePageAction"
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame"
+import { WorkspacePageAction } from "../components/layout/WorkspacePageAction"
 import { workspaceIcons } from "../workspace/icons"
 import {
   invitationsTableOptions,
   getInvitationStatus,
-} from "../workspace/invitations"
-import { formatPeopleCreatedAt as formatInvitationsCreatedAt } from "../workspace/people"
+} from "../workspace/invitations/invitations"
+import { formatPeopleCreatedAt as formatInvitationsCreatedAt } from "../workspace/people/people"
 import {
   InvitationRowActions,
   InvitationDialog,
-} from "../components/InvitationDialogs"
+} from "../components/invitations/InvitationDialogs"
 
 import {
   invitationsParamsFromSearch,
   updateInvitationsSearch,
   type InvitationsSearchState,
-} from "../workspace/invitations-search"
+} from "../workspace/invitations/invitations-search"
 
 const columns: DataTableColumn<InvitationListItem>[] = [
   {

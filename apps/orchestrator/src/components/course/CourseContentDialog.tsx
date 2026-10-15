@@ -22,8 +22,9 @@ import {
   CourseLessonPlaybackDocument,
 } from "@workspace/data"
 import { Button } from "@workspace/ui/components/button"
+import { ConfirmationDialog } from "@workspace/ui/components/confirmation-dialog"
 import { Markdown } from "@workspace/ui/components/markdown"
-import { VideoPlayer } from "../VideoPlayer"
+import { VideoPlayer } from "../videos/VideoPlayer"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
@@ -48,19 +49,19 @@ import {
 import {
   courseMutation,
   courseResourceOptions,
-} from "../../workspace/course-management"
+} from "../../workspace/course/course-management"
 import {
   createVideoUpload,
   refreshVideoUpload,
   syncVideo,
   libraryActionError,
-} from "../../workspace/library-actions"
+} from "../../workspace/library/library-actions"
 import {
   videoMimeType,
   uploadLessonFile,
   UploadPausedError,
   VideoTransferError,
-} from "../../workspace/video-upload"
+} from "../../workspace/videos/video-upload"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 export function CourseContentDialog({
@@ -429,6 +430,46 @@ export function CourseContentDialog({
       </div>
     )
   }
+  if (archive)
+    return (
+      <ConfirmationDialog
+        title={title}
+        variant="warning"
+        busy={busy || form.isSubmitting}
+        onClose={workspace.close}
+        description={
+          available ? (
+            <>
+              Archive “{isModule ? module?.title : lesson?.title}”?{" "}
+              {isModule && "Its lessons will also be archived. "}Historical
+              learner records will be retained.
+            </>
+          ) : (
+            "This content or action is no longer available. Close the dialog and refresh the course."
+          )
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              disabled={busy || form.isSubmitting}
+              onClick={workspace.close}
+            >
+              {available ? "Cancel" : "Close"}
+            </Button>
+            {available && (
+              <Button
+                variant="destructive"
+                disabled={busy || form.isSubmitting}
+                onClick={() => void form.submitForm()}
+              >
+                {busy || form.isSubmitting ? "Archiving..." : "Archive"}
+              </Button>
+            )}
+          </>
+        }
+      />
+    )
   if (viewing && lesson && !isModule)
     return (
       <LessonReader
