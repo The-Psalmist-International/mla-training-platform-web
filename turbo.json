@@ -5,7 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": ["VITE_GRAPHQL_URL"],
+      "env": ["VITE_GRAPHQL_URL", "VITE_WORKSPACE_URL", "VITE_LEARNER_URL"],
       "outputs": ["dist/**", ".output/**"]
     },
     "lint": {

@@ -1,0 +1,58 @@
+name: web-deploy
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - app: orchestrator
+            project_secret: VERCEL_ORCHESTRATOR_PROJECT_ID
+          - app: learner
+            project_secret: VERCEL_LEARNER_PROJECT_ID
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TARGET: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+    steps:
+      - name: Verify deployment configuration
+        shell: bash
+        run: |
+          : "${VERCEL_TOKEN:?Missing VERCEL_TOKEN}"
+          : "${VERCEL_ORG_ID:?Missing VERCEL_ORG_ID}"
+          : "${VERCEL_PROJECT_ID:?Missing Vercel project ID for this app}"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Vercel CLI
+        run: npm install --global vercel@50.4.4
+      - name: Pull environment and project settings
+        run: vercel pull --yes --environment="$VERCEL_TARGET" --git-branch="$GITHUB_REF_NAME" --token="$VERCEL_TOKEN"
+      - name: Build with deployment environment
+        shell: bash
+        run: |
+          if [ "$VERCEL_TARGET" = production ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+      - name: Deploy prebuilt application
+        shell: bash
+        run: |
+          if [ "$VERCEL_TARGET" = production ]; then
+            vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          else
+            vercel deploy --prebuilt --target=preview --token="$VERCEL_TOKEN"
+          fi

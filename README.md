@@ -33,6 +33,8 @@ Orchestrator opens at `/sign-in`, with sign-in, forgot-password and reset-passwo
 
 ## Checks and components
 
+See [CI and Vercel deployment](docs/deployment.md) for ordered workflows, backend schema access, and staging/production setup for both apps.
+
 ```sh
 npm run typecheck
 npm run lint
