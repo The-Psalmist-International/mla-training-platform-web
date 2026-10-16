@@ -17,6 +17,8 @@ import {
   DonutChart,
   ChartData,
   ChartDataTable,
+  ChartPanel,
+  chartColors,
 } from "../../components/analytics/AnalyticsCharts"
 import {
   calendarDate,
@@ -133,6 +135,39 @@ describe("analytics URL, data, and presentation", () => {
     expect(table).toContain("Lesson 100")
     expect(table).toContain('scope="col"')
     expect(table).toContain("max-h-[60dvh]")
+  })
+  it("keeps chart explanations in heading tooltips with full-width legends and blue charts", () => {
+    const panel = renderToStaticMarkup(
+      createElement(ChartPanel, {
+        title: "Completion trend",
+        description: "Daily completions for the selected period.",
+        children: createElement(DonutChart, {
+          title: "Completion trend",
+          centerLabel: "Learners",
+          values: [
+            { label: "Completed", value: 3 },
+            { label: "In progress", value: 2 },
+          ],
+        }),
+      })
+    )
+    expect(panel).toContain("aria-label=\"About Completion trend\"")
+    expect(panel).not.toContain("mt-1 text-xs leading-5")
+    expect(panel).toContain("w-full")
+    expect(panel).toContain("View chart data")
+    for (const color of chartColors) {
+      expect(color).not.toContain("var(--border)")
+      expect(color).toContain("var(--primary)")
+    }
+    const axis = renderToStaticMarkup(
+      createElement(AxisChart, {
+        title: "Trend",
+        labels: ["Oct 1", "Oct 2"],
+        series: [{ label: "Completed", values: [1, 2] }],
+      })
+    )
+    expect(axis).toContain("w-full")
+    expect(axis).toContain("View chart data")
   })
   it("preserves valid custom filters and deep pagination, rejecting malformed date ranges", () => {
     expect(

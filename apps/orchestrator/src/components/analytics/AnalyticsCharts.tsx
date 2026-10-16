@@ -1,7 +1,21 @@
-import { createContext, useContext, useId, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { ChartBarIcon } from "@phosphor-icons/react/dist/csr/ChartBar"
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info"
 import { TableIcon } from "@phosphor-icons/react/dist/csr/Table"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 import {
   Dialog,
   DialogTrigger,
@@ -16,8 +30,9 @@ import { EmptyState } from "@workspace/ui/components/empty-state"
 const ChartTitleContext = createContext("Chart data")
 export const chartColors = [
   "var(--primary)",
-  "color-mix(in oklch, var(--primary) 42%, var(--background))",
-  "var(--border)",
+  "color-mix(in oklch, var(--primary) 68%, var(--background))",
+  "color-mix(in oklch, var(--primary) 45%, var(--background))",
+  "color-mix(in oklch, var(--primary) 28%, var(--background))",
 ]
 export const percentage = (value: number | null) =>
   value === null
@@ -39,15 +54,28 @@ export function ChartPanel({
   return (
     <section
       aria-labelledby={id}
-      className={`min-w-0 rounded-xl border border-border/70 bg-card p-6 sm:p-7 ${className}`}
+      className={`flex min-w-0 flex-col rounded-xl border border-border/70 bg-card p-6 sm:p-7 ${className}`}
     >
-      <h2 id={id} className="text-base font-medium">
-        {title}
-      </h2>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-        {description}
-      </p>
-      <div className="mt-7">
+      <div className="flex items-center gap-2">
+        <h2 id={id} className="min-w-0 flex-1 text-base font-medium">
+          {title}
+        </h2>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                aria-label={`About ${title}`}
+                className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            }
+          >
+            <InfoIcon aria-hidden className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent>{description}</TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="mt-7 flex flex-1 flex-col">
         <ChartTitleContext.Provider value={title}>
           {children}
         </ChartTitleContext.Provider>
@@ -78,18 +106,17 @@ export function ChartData({
   const title = useContext(ChartTitleContext)
   return (
     <Dialog>
-      <div className="mt-4">
+      <div className="mt-auto pt-5">
         <DialogTrigger
           render={
             <Button
-              variant="link"
-              size="sm"
-              className="px-0 text-xs text-muted-foreground"
+              variant="outline"
+              className="w-full"
               aria-label={`View chart data for ${title}`}
             />
           }
         >
-          <TableIcon aria-hidden className="size-3.5" />
+          <TableIcon aria-hidden className="size-4" />
           View chart data
         </DialogTrigger>
       </div>
@@ -188,7 +215,7 @@ export function DonutChart({
   let offset = 0
   return (
     <>
-      <div className="flex flex-wrap items-center justify-center gap-6">
+      <div className="flex w-full flex-1 flex-col items-center gap-6">
         <svg
           role="img"
           aria-label={title}
@@ -227,7 +254,7 @@ export function DonutChart({
             x="100"
             y="99"
             textAnchor="middle"
-            className="fill-foreground text-3xl font-semibold tabular-nums"
+            className="fill-foreground text-2xl font-semibold tabular-nums"
           >
             {count(total)}
           </text>
@@ -240,16 +267,21 @@ export function DonutChart({
             {centerLabel}
           </text>
         </svg>
-        <ul className="min-w-36 space-y-3">
+        <ul className="w-full min-w-0 flex-1 divide-y divide-border/60">
           {values.map((entry, index) => (
-            <li key={entry.label} className="flex items-center gap-2 text-xs">
+            <li
+              key={entry.label}
+              className="flex w-full items-center gap-2 py-2 text-xs"
+            >
               <span
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-full"
                 style={{ background: chartColors[index % chartColors.length] }}
               />
-              <span className="text-muted-foreground">{entry.label}</span>
-              <span className="ml-auto pl-3 font-medium tabular-nums">
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                {entry.label}
+              </span>
+              <span className="shrink-0 font-medium tabular-nums">
                 {count(entry.value)}
               </span>
             </li>
@@ -268,6 +300,22 @@ export function DonutChart({
   )
 }
 export type ChartSeries = { label: string; values: number[] }
+// Sizing is measured in screen pixels (not a scaling viewBox) so axis
+// labels stay the same size no matter how wide the panel gets.
+function useChartWidth(fallback = 560) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const element = ref.current
+    if (!element || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver((entries) => {
+      setWidth(entries[0]?.contentRect.width ?? 0)
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  return { ref, width: width > 0 ? width : fallback }
+}
 export function AxisChart({
   title,
   labels,
@@ -292,8 +340,8 @@ export function AxisChart({
     )
   )
     return <ChartEmpty />
-  const width = 560,
-    height = 240,
+  const { ref, width } = useChartWidth()
+  const height = 240,
     left = 38,
     right = 12,
     top = 12,
@@ -308,11 +356,13 @@ export function AxisChart({
   const y = (value: number) => top + (1 - value / maximum) * plotHeight
   return (
     <>
+      <div ref={ref} className="w-full">
       <svg
         role="img"
         aria-label={title}
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full overflow-visible"
+        width={width}
+        height={height}
+        className="block max-w-full overflow-visible"
       >
         <title>{title}. Exact values are available in View chart data.</title>
         {[0, 0.5, 1].map((fraction) => (
@@ -329,7 +379,7 @@ export function AxisChart({
               x={left - 7}
               y={y(maximum * fraction) + 4}
               textAnchor="end"
-              className="fill-muted-foreground text-[11px]"
+              className="fill-muted-foreground text-xs"
             >
               {Math.round(maximum * fraction)}
               {percent ? "%" : ""}
@@ -397,25 +447,29 @@ export function AxisChart({
               x={x(index)}
               y={height - 15}
               textAnchor="middle"
-              className="fill-muted-foreground text-[11px]"
+              className="fill-muted-foreground text-xs"
             >
               {label.length > 13 ? `${label.slice(0, 11)}…` : label}
             </text>
           ) : null
         )}
       </svg>
-      <div className="mt-1 flex flex-wrap gap-4 text-xs text-muted-foreground">
+      </div>
+      <ul className="mt-3 grid w-full gap-0 text-xs text-muted-foreground">
         {series.map((entry, index) => (
-          <span key={entry.label} className="flex items-center gap-2">
+          <li
+            key={entry.label}
+            className="flex w-full items-center gap-2 border-t border-border/40 py-2 first:border-t-0 first:pt-0 last:pb-0"
+          >
             <span
               aria-hidden
-              className="h-0.5 w-4"
+              className="h-1 w-5 shrink-0 rounded-full"
               style={{ background: chartColors[index % chartColors.length] }}
             />
-            {entry.label}
-          </span>
+            <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+          </li>
         ))}
-      </div>
+      </ul>
       <ChartData
         headers={
           table?.headers ?? [
@@ -456,13 +510,25 @@ export function ScatterChart({
         description="Courses need both enrollments and graded first attempts to appear here."
       />
     )
+  const { ref, width } = useChartWidth(560)
+  const height = 250
+  const plotLeft = 45,
+    plotRight = Math.max(plotLeft + 40, Math.min(400, width - 20)),
+    plotTop = 27,
+    plotBottom = 207
+  const px = (rate: number) =>
+    plotLeft + (rate / 100) * (plotRight - plotLeft)
+  const py = (rate: number) =>
+    plotBottom - (rate / 100) * (plotBottom - plotTop)
   return (
     <>
+      <div ref={ref} className="w-full">
       <svg
         role="img"
         aria-label="Course completion versus first-attempt pass rate"
-        viewBox="0 0 420 250"
-        className="w-full"
+        width={width}
+        height={height}
+        className="block max-w-full"
       >
         <title>
           Each point represents a course. Horizontal position is completion
@@ -471,55 +537,55 @@ export function ScatterChart({
         {[0, 50, 100].map((value) => (
           <g key={value}>
             <line
-              x1="45"
-              x2="400"
-              y1={207 - value * 1.8}
-              y2={207 - value * 1.8}
+              x1={plotLeft}
+              x2={plotRight}
+              y1={py(value)}
+              y2={py(value)}
               stroke="var(--border)"
               strokeDasharray="3 4"
             />
             <line
-              x1={45 + value * 3.55}
-              x2={45 + value * 3.55}
-              y1="27"
-              y2="207"
+              x1={px(value)}
+              x2={px(value)}
+              y1={plotTop}
+              y2={plotBottom}
               stroke="var(--border)"
               strokeDasharray="3 4"
             />
             <text
-              x="38"
-              y={211 - value * 1.8}
+              x={plotLeft - 7}
+              y={py(value) + 4}
               textAnchor="end"
-              className="fill-muted-foreground text-[11px]"
+              className="fill-muted-foreground text-xs"
             >
               {value}%
             </text>
             <text
-              x={45 + value * 3.55}
+              x={px(value)}
               y="225"
               textAnchor="middle"
-              className="fill-muted-foreground text-[11px]"
+              className="fill-muted-foreground text-xs"
             >
               {value}%
             </text>
           </g>
         ))}
-        <text x="45" y="15" className="fill-muted-foreground text-[11px]">
+        <text x={plotLeft} y="15" className="fill-muted-foreground text-xs">
           First-attempt pass rate
         </text>
         <text
-          x="220"
+          x={(plotLeft + plotRight) / 2}
           y="247"
           textAnchor="middle"
-          className="fill-muted-foreground text-[11px]"
+          className="fill-muted-foreground text-xs"
         >
           Course completion rate
         </text>
         {points.map((point, index) => (
           <circle
             key={index}
-            cx={45 + point.completionRate * 3.55}
-            cy={207 - point.passRate * 1.8}
+            cx={px(point.completionRate)}
+            cy={py(point.passRate)}
             r="6"
             fill="var(--primary)"
             fillOpacity=".7"
@@ -534,6 +600,7 @@ export function ScatterChart({
           </circle>
         ))}
       </svg>
+      </div>
       <ChartData
         headers={[
           "Course",

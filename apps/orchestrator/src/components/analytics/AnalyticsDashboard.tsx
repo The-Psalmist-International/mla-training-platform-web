@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router"
-import { Button } from "@workspace/ui/components/button"
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
+import {
+  DataTable,
+  type DataTableColumn,
+} from "@workspace/ui/components/data-table"
 import {
   ChartPanel,
   ChartEmpty,
@@ -13,6 +16,58 @@ import {
 } from "./AnalyticsCharts"
 import type { AnalyticsData } from "../../workspace/analytics/analytics"
 
+export type FollowUpRow = AnalyticsData["followUps"][number]
+
+const followUpColumns: DataTableColumn<FollowUpRow>[] = [
+  {
+    id: "learner",
+    header: "Learner",
+    className: "min-w-56",
+    cell: (entry) => (
+      <span className="flex items-center gap-2">
+        <UserAvatar
+          name={entry.learnerName}
+          email={entry.learnerEmail}
+          avatarUrl={entry.learnerAvatarUrl}
+          className="shrink-0"
+        />
+        <span className="min-w-0">
+          {entry.learnerName}
+          <span className="block text-xs break-words text-muted-foreground">
+            {entry.learnerEmail}
+          </span>
+        </span>
+      </span>
+    ),
+  },
+  {
+    id: "course",
+    header: "Course",
+    className: "min-w-48",
+    cell: (entry) => <span className="line-clamp-2">{entry.courseTitle}</span>,
+  },
+  {
+    id: "signal",
+    header: "Support signal",
+    className: "min-w-40",
+    cell: (entry) => entry.reason,
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    className: "w-32 text-right",
+    cell: (entry) => (
+      <Link
+        className="rounded text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+        to="/workspace/enrollments"
+        search={{ course: entry.courseId }}
+      >
+        View enrollments
+      </Link>
+    ),
+  },
+]
+
 export function AnalyticsDashboard({
   data,
   courseId,
@@ -20,6 +75,8 @@ export function AnalyticsDashboard({
   page,
   onCourse,
   onPage,
+  onRefresh,
+  fetching = false,
 }: {
   data: AnalyticsData
   courseId?: string
@@ -27,6 +84,8 @@ export function AnalyticsDashboard({
   page: number
   onCourse: (id: string) => void
   onPage: (page: number) => void
+  onRefresh?: () => void
+  fetching?: boolean
 }) {
   const course = data.courses.find((entry) => entry.id === courseId)
   const points = data.coursePerformance
@@ -38,7 +97,7 @@ export function AnalyticsDashboard({
     }))
   return (
     <div className="space-y-8">
-      <div className="grid items-start gap-8 lg:grid-cols-5">
+      <div className="grid items-stretch gap-8 lg:grid-cols-5">
         <ChartPanel
           title="Training progress"
           description="Current progress of enrollments created in the selected period. Each enrollment is counted once."
@@ -75,7 +134,7 @@ export function AnalyticsDashboard({
           />
         </ChartPanel>
       </div>
-      <div className="grid items-start gap-8 xl:grid-cols-2">
+      <div className="grid items-stretch gap-8 xl:grid-cols-2">
         <ChartPanel
           title={
             course ? "Assessment understanding" : "Completion & understanding"
@@ -167,7 +226,7 @@ export function AnalyticsDashboard({
         )}
       </ChartPanel>
       {course ? (
-        <div className="grid items-start gap-8 xl:grid-cols-2">
+        <div className="grid items-stretch gap-8 xl:grid-cols-2">
           <ChartPanel
             title="Lesson progress"
             description={`Completion for ${course.title}, in curriculum order. Includes lessons, assessments, and submission activities.`}
@@ -217,7 +276,7 @@ export function AnalyticsDashboard({
           assessment questions.
         </div>
       )}
-      <div className="grid items-start gap-8 lg:grid-cols-2">
+      <div className="grid items-stretch gap-8 lg:grid-cols-2">
         <ChartPanel
           title="Success across retries"
           description={`Cumulative pass rate for ${count(data.firstAttempts)} assessment/enrollment pairs whose first attempt was graded in the selected period, followed through subsequent attempts (up to attempt 10).`}
@@ -250,32 +309,6 @@ export function AnalyticsDashboard({
               { label: "Videos", value: data.pendingVideos },
             ]}
           />
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <Link
-                  to="/workspace/assessment-reviews"
-                  search={courseId ? { course: courseId } : {}}
-                />
-              }
-            >
-              Review assessments
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <Link
-                  to="/workspace/video-submissions"
-                  search={courseId ? { course: courseId } : {}}
-                />
-              }
-            >
-              Review videos
-            </Button>
-          </div>
         </ChartPanel>
         <ChartPanel
           title="Assessment review age"
@@ -304,95 +337,23 @@ export function AnalyticsDashboard({
             description="There are no not-started enrollments, outstanding reviews, or assessment/revision support signals in this cohort."
           />
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
-                  <tr>
-                    {["Learner", "Course", "Support signal", "Action"].map(
-                      (label) => (
-                        <th
-                          key={label}
-                          scope="col"
-                          className="px-2 py-3 text-xs font-medium text-muted-foreground"
-                        >
-                          {label}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.followUps.map((entry) => (
-                    <tr key={entry.id} className="border-t border-border/50">
-                      <td className="px-2 py-3">
-                        <span className="flex items-center gap-2">
-                          <UserAvatar
-                            name={entry.learnerName}
-                            email={entry.learnerEmail}
-                            avatarUrl={entry.learnerAvatarUrl}
-                            className="shrink-0"
-                          />
-                          <span className="min-w-0">
-                            {entry.learnerName}
-                            <span className="block text-xs text-muted-foreground">
-                              {entry.learnerEmail}
-                            </span>
-                          </span>
-                        </span>
-                      </td>
-                      <td className="max-w-64 px-2 py-3">
-                        <span className="line-clamp-2">
-                          {entry.courseTitle}
-                        </span>
-                      </td>
-                      <td className="px-2 py-3 text-xs">{entry.reason}</td>
-                      <td className="px-2 py-3">
-                        <Link
-                          className="rounded text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                          to="/workspace/enrollments"
-                          search={{
-                            course: entry.courseId,
-                          }}
-                        >
-                          View enrollments
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {!data.followUps.length && (
-              <p className="py-4 text-sm text-muted-foreground">
-                No learners on this page. Go back to a previous page.
-              </p>
-            )}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-              <span>
-                {count(data.followUpCount)} enrollments needing follow-up · Page{" "}
-                {page} of {Math.ceil(data.followUpCount / 10)}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={page <= 1}
-                  onClick={() => onPage(page - 1)}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={page * 10 >= data.followUpCount}
-                  onClick={() => onPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </>
+          <DataTable
+            rows={data.followUps}
+            columns={followUpColumns}
+            getRowId={(entry) => entry.id}
+            ariaLabel="Learners needing follow-up"
+            onRefresh={() => onRefresh?.()}
+            pagination={{
+              pageIndex: page - 1,
+              pageSize: 10,
+              pageSizeOptions: [10],
+              totalCount: data.followUpCount,
+              onPageChange: (index) => onPage(index + 1),
+              onPageSizeChange: () => {},
+            }}
+            isFetching={fetching}
+            emptyState="No learners on this page. Go back to a previous page."
+          />
         )}
       </ChartPanel>
     </div>

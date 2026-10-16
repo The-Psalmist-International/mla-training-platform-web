@@ -59,7 +59,7 @@ function OverviewContent({ user }: { user: CurrentUser }) {
   const query = useQuery(overviewOptions(dataClients, user))
   return (
     <WorkspacePageFrame view="overview">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6">
+      <div className="flex w-full flex-1 flex-col gap-6">
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
           <OverviewGreeting name={user.name} />
           <div className="flex flex-wrap items-center gap-2">

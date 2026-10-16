@@ -43,7 +43,7 @@ export interface DataTableProps<TRow> {
   columns: DataTableColumn<TRow>[]
   getRowId: (row: TRow) => string
   ariaLabel: string
-  search: {
+  search?: {
     value: string
     onChange: (value: string) => void
     placeholder?: string
@@ -135,23 +135,25 @@ export function DataTable<TRow>({
       )}
     >
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
-        <div className="relative w-full sm:w-72">
-          <label htmlFor={`${id}-search`} className="sr-only">
-            {search.label ?? "Search"}
-          </label>
-          <MagnifyingGlassIcon
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            id={`${id}-search`}
-            type="search"
-            value={search.value}
-            onChange={(event) => search.onChange(event.target.value)}
-            placeholder={search.placeholder ?? "Search…"}
-            className="pl-9"
-          />
-        </div>
+        {search && (
+          <div className="relative w-full sm:w-72">
+            <label htmlFor={`${id}-search`} className="sr-only">
+              {search.label ?? "Search"}
+            </label>
+            <MagnifyingGlassIcon
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              id={`${id}-search`}
+              type="search"
+              value={search.value}
+              onChange={(event) => search.onChange(event.target.value)}
+              placeholder={search.placeholder ?? "Search…"}
+              className="pl-9"
+            />
+          </div>
+        )}
         <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
           {filters}
           {layout.mode === "toggle" && (

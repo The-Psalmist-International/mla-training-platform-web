@@ -36,7 +36,7 @@ function AnalyticsContent({ user }: { user: CurrentUser }) {
     })
   return (
     <WorkspacePageFrame view="analytics">
-      <div className="mx-auto w-full max-w-7xl space-y-10">
+      <div className="w-full space-y-10">
         <div className="flex flex-wrap items-end gap-x-6 gap-y-5">
           <div className="flex max-w-full flex-col gap-3">
             <label
@@ -154,6 +154,8 @@ function AnalyticsContent({ user }: { user: CurrentUser }) {
               page={search.page ?? 1}
               onCourse={(courseId) => update({ courseId, page: 1 })}
               onPage={(page) => update({ page })}
+              onRefresh={() => void query.refetch()}
+              fetching={query.isFetching}
             />
           </>
         )}
