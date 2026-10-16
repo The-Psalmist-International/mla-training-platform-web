@@ -15,7 +15,7 @@ import { FileInput } from "@workspace/ui/components/file-input"
 import { BrandLoader } from "@workspace/ui/components/brand-loader"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
-import { StatusBadge } from "@workspace/ui/components/status-badge"
+import { VideoSubmissionConfirmation } from "./VideoSubmissionConfirmation"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import {
   Tooltip,
@@ -53,7 +53,7 @@ export function VideoAssignment({
   const { dataClients } = useRouter().options.context
   const [error, setError] = useState("")
   const [percentage, setPercentage] = useState(0)
-  const [checking, setChecking] = useState(false)
+  const [uploadedId, setUploadedId] = useState<string | null>(null)
   const controller = useRef<AbortController | null>(null)
   const pending = useRef(false)
   const requestKey = useRef<string | null>(null)
@@ -74,6 +74,10 @@ export function VideoAssignment({
         : false,
   })
   const latest = query.data?.myVideoSubmissions.at(0)
+  const submissionStatus =
+    latest?.status === "uploading" && latest.id === uploadedId
+      ? "processing"
+      : (latest?.status ?? (uploadedId ? "processing" : undefined))
   const form = useFormik<{ file: File | null }>({
     initialValues: { file: null },
     validationSchema: yup.object({
@@ -142,14 +146,18 @@ export function VideoAssignment({
           signal: abort.signal,
           onProgress: setPercentage,
         })
-        await learnerMutation(dataClients, SyncLearnerSubmissionDocument, {
-          id: target.submission.id,
-        })
+        setUploadedId(target.submission.id)
         uploadId.current = null
         requestKey.current = null
         form.resetForm()
-        await query.refetch()
-        await refresh()
+        // The transfer succeeded. Reconcile quietly; webhooks and the worker
+        // sweep also recover processing if this request cannot reach the API.
+        void learnerMutation(dataClients, SyncLearnerSubmissionDocument, {
+          id: target.submission.id,
+        })
+          .then(() => query.refetch())
+          .then(() => refresh())
+          .catch(() => undefined)
       } catch (failure) {
         setError(
           failure instanceof Error && /Upload|upload/.test(failure.message)
@@ -168,24 +176,9 @@ export function VideoAssignment({
     shouldBlockFn: () => pending.current,
     enableBeforeUnload: form.isSubmitting,
   })
-  const check = async () => {
-    if (!latest || checking) return
-    setChecking(true)
-    setError("")
-    try {
-      await learnerMutation(dataClients, SyncLearnerSubmissionDocument, {
-        id: latest.id,
-      })
-      await query.refetch()
-      await refresh()
-    } catch (failure) {
-      setError(learnerCourseError(failure))
-    } finally {
-      setChecking(false)
-    }
-  }
   const canUpload =
-    !latest || ["uploading", "needs_revision", "failed"].includes(latest.status)
+    !submissionStatus ||
+    ["uploading", "needs_revision", "failed"].includes(submissionStatus)
   const [method, setMethod] = useState<"upload" | "record">("upload")
   const maxDurationSeconds = lesson.videoPrompt?.maxDurationSeconds ?? 300
   const useRecording = async (file: File) => {
@@ -205,21 +198,14 @@ export function VideoAssignment({
             />
             <dt className="text-muted-foreground">Maximum length</dt>
             <dd className="font-medium tabular-nums">
-              {formatDuration(
-                lesson.videoPrompt?.maxDurationSeconds ?? 300
-              )}
+              {formatDuration(lesson.videoPrompt?.maxDurationSeconds ?? 300)}
             </dd>
           </div>
         </dl>
       </div>
-      {!lesson.videoPrompt?.requiresReview && (
-        <p className="text-sm text-muted-foreground">
-          This lesson completes after the video passes processing.
-        </p>
-      )}
       {query.isPending ? (
         <BrandLoader label="Loading your submissions…" />
-      ) : query.isError ? (
+      ) : query.isError && !latest && !uploadedId ? (
         <Alert variant="warning">
           Your submission could not be loaded.
           <Button variant="outline" onClick={() => void query.refetch()}>
@@ -228,85 +214,12 @@ export function VideoAssignment({
         </Alert>
       ) : (
         <>
-          {latest && (
-            <div className="space-y-3 rounded-lg border border-border/70 bg-muted/40 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <StatusBadge
-                  tone={
-                    latest.status === "approved"
-                      ? "success"
-                      : latest.status === "failed"
-                        ? "destructive"
-                        : "neutral"
-                  }
-                >
-                  {latest.status.replaceAll("_", " ")}
-                </StatusBadge>
-                {["processing", "pending_review"].includes(latest.status) && (
-                  <span role="status" className="text-xs text-muted-foreground">
-                    Checking automatically…{" "}
-                    <button
-                      type="button"
-                      disabled={checking || form.isSubmitting}
-                      onClick={() => void check()}
-                      className="underline underline-offset-2 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:no-underline disabled:opacity-60"
-                    >
-                      {checking ? "Checking…" : "Check now"}
-                    </button>
-                  </span>
-                )}
-              </div>
-              <ol className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <li
-                  aria-current={
-                    latest.status === "uploading" ? "step" : undefined
-                  }
-                  className="font-medium text-foreground"
-                >
-                  1. Submitted
-                </li>
-                <li
-                  aria-current={
-                    ["processing", "pending_review"].includes(latest.status)
-                      ? "step"
-                      : undefined
-                  }
-                  className={
-                    ["processing", "pending_review"].includes(latest.status)
-                      ? "font-medium text-foreground"
-                      : undefined
-                  }
-                >
-                  2.{" "}
-                  {lesson.videoPrompt?.requiresReview
-                    ? "Instructor review"
-                    : "Processing"}
-                </li>
-                <li
-                  className={
-                    ["approved", "needs_revision", "failed"].includes(
-                      latest.status
-                    )
-                      ? "font-medium text-foreground"
-                      : undefined
-                  }
-                >
-                  3. Result
-                </li>
-              </ol>
-              {latest.feedback && (
-                <p className="text-sm leading-6">{latest.feedback}</p>
-              )}
-              {["processing", "pending_review"].includes(latest.status) && (
-                <p className="text-sm text-muted-foreground">
-                  {latest.status === "processing"
-                    ? "Your video is processing. This page updates on its own — no need to refresh."
-                    : lesson.videoPrompt?.requiresReview
-                      ? "Your video is with your instructor for review. This page updates on its own when they respond."
-                      : "Your video is awaiting review. This page updates on its own."}
-                </p>
-              )}
-            </div>
+          {submissionStatus && (
+            <VideoSubmissionConfirmation
+              status={submissionStatus}
+              feedback={latest?.feedback}
+              failureCode={latest?.failureCode}
+            />
           )}
           {canUpload && (
             <form noValidate onSubmit={form.handleSubmit} className="space-y-4">
@@ -343,33 +256,33 @@ export function VideoAssignment({
                   onUse={(file) => void useRecording(file)}
                 />
               ) : (
-              <FileInput
-                aria-label="Assignment video"
-                file={form.values.file}
-                accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv"
-                helperText={
-                  latest?.status === "uploading"
-                    ? "Choose the same video to resume your upload."
-                    : "Choose a video to submit for this lesson."
-                }
-                disabled={form.isSubmitting}
-                aria-invalid={!!(form.touched.file && form.errors.file)}
-                aria-describedby={
-                  form.touched.file && form.errors.file
-                    ? "submission-file-error"
-                    : undefined
-                }
-                onChange={(event) => {
-                  void form.setFieldValue(
-                    "file",
-                    event.currentTarget.files?.[0] ?? null
-                  )
-                  void form.setFieldTouched("file", true, false)
-                }}
-                onRemove={() => {
-                  void form.setFieldValue("file", null)
-                }}
-              />
+                <FileInput
+                  aria-label="Assignment video"
+                  file={form.values.file}
+                  accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv"
+                  helperText={
+                    latest?.status === "uploading"
+                      ? "Choose the same video to resume your upload."
+                      : "Choose a video to submit for this lesson."
+                  }
+                  disabled={form.isSubmitting}
+                  aria-invalid={!!(form.touched.file && form.errors.file)}
+                  aria-describedby={
+                    form.touched.file && form.errors.file
+                      ? "submission-file-error"
+                      : undefined
+                  }
+                  onChange={(event) => {
+                    void form.setFieldValue(
+                      "file",
+                      event.currentTarget.files?.[0] ?? null
+                    )
+                    void form.setFieldTouched("file", true, false)
+                  }}
+                  onRemove={() => {
+                    void form.setFieldValue("file", null)
+                  }}
+                />
               )}
               {form.touched.file && form.errors.file && (
                 <p
@@ -420,12 +333,7 @@ export function VideoAssignment({
 }
 
 type RecorderPhase =
-  | "idle"
-  | "preview"
-  | "recording"
-  | "recorded"
-  | "denied"
-  | "unsupported"
+  "idle" | "preview" | "recording" | "recorded" | "denied" | "unsupported"
 
 function pickRecordingMimeType() {
   if (
@@ -441,7 +349,9 @@ function pickRecordingMimeType() {
     "video/mp4",
   ]
   try {
-    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? null
+    return (
+      candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? null
+    )
   } catch {
     return null
   }
@@ -503,8 +413,7 @@ function InAppRecorder({
     () => () => {
       clearTimers()
       try {
-        recorderRef.current?.state !== "inactive" &&
-          recorderRef.current?.stop()
+        recorderRef.current?.state !== "inactive" && recorderRef.current?.stop()
       } catch {
         /* Recorder already settled. */
       }
@@ -602,7 +511,9 @@ function InAppRecorder({
         maxDurationSeconds * 1000
       )
     } catch {
-      setProblem("Recording could not start on this device. Try uploading instead.")
+      setProblem(
+        "Recording could not start on this device. Try uploading instead."
+      )
     }
   }
 
@@ -638,8 +549,8 @@ function InAppRecorder({
     <div className="space-y-3 rounded-lg border border-border p-4">
       {phase === "unsupported" ? (
         <Alert variant="warning">
-          In-app recording is not supported in this browser. Upload a video
-          file instead.
+          In-app recording is not supported in this browser. Upload a video file
+          instead.
         </Alert>
       ) : (
         <>

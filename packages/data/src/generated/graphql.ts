@@ -920,6 +920,7 @@ export type NotificationType =
   | 'course_assigned'
   | 'course_completed'
   | 'grading_pending'
+  | 'submission_failed'
   | 'submission_pending_review'
   | 'submission_reviewed';
 

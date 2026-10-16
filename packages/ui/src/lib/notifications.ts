@@ -12,6 +12,11 @@ export const notificationCopy: Record<
   NotificationType,
   { title: string; description: string }
 > = {
+  submission_failed: {
+    title: "Please upload your video again",
+    description:
+      "We couldn’t prepare your video response. Check the requirements and try uploading it again.",
+  },
   grading_pending: {
     title: "Assessment ready for review",
     description: "A learner’s submitted answers are waiting for grading.",
