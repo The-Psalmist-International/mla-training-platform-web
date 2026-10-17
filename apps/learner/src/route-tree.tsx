@@ -13,11 +13,7 @@ const homeRoute = createRoute({
   validateSearch: learnerSearch,
   ssr: false,
   beforeLoad: async ({ context }) => {
-    try {
-      await context.auth.restore()
-    } catch {
-      throw redirect({ to: "/sign-in" })
-    }
+    await context.auth.restore()
     if (!context.auth.getUser()) throw redirect({ to: "/sign-in" })
   },
   component: lazyRouteComponent(() => import("./pages/HomePage"), "HomePage"),
@@ -28,11 +24,7 @@ const courseRoute = createRoute({
   validateSearch: learnerCourseSearch,
   ssr: false,
   beforeLoad: async ({ context }) => {
-    try {
-      await context.auth.restore()
-    } catch {
-      throw redirect({ to: "/sign-in" })
-    }
+    await context.auth.restore()
     if (!context.auth.getUser()) throw redirect({ to: "/sign-in" })
   },
   component: lazyRouteComponent(

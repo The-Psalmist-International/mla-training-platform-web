@@ -53,14 +53,20 @@ export function createLearnerSession(
       onExpired?.()
     }
   }
-  const adopt = async (payload: AuthPayload, current: number) => {
+  const adopt = async (
+    payload: AuthPayload,
+    current: number,
+    revokeWrongRole = true
+  ) => {
     if (current !== generation) return
     if (payload.user.role !== "learner") {
       try {
-        await clients.apolloClient.mutate({
-          mutation: LOGOUT_MUTATION,
-          context: { toast: false },
-        })
+        if (revokeWrongRole) {
+          await clients.apolloClient.mutate({
+            mutation: LOGOUT_MUTATION,
+            context: { toast: false },
+          })
+        }
       } finally {
         if (current === generation) await clearSession()
       }
@@ -92,9 +98,19 @@ export function createLearnerSession(
   })
   return {
     clearSession,
-    updateProfile(profile: { id: string; name: string; phone?: string | null; avatarUrl?: string | null }) {
+    updateProfile(profile: {
+      id: string
+      name: string
+      phone?: string | null
+      avatarUrl?: string | null
+    }) {
       if (!user || user.id !== profile.id || Date.now() >= deadline) return
-      user = { ...user, name: profile.name, phone: profile.phone, avatarUrl: profile.avatarUrl }
+      user = {
+        ...user,
+        name: profile.name,
+        phone: profile.phone,
+        avatarUrl: profile.avatarUrl,
+      }
       notify()
     },
     async establish(payload: AuthPayload) {
@@ -140,15 +156,21 @@ export function createLearnerSession(
             context: { toast: false },
           })
           if (!result.data) throw new Error("Missing session response")
-          await adopt(result.data.refreshSession, current)
+          // Opening this app must not revoke a staff session in the other app.
+          await adopt(result.data.refreshSession, current, false)
         } catch (error) {
           if (current !== generation) return
           const unauthenticated =
             CombinedGraphQLErrors.is(error) &&
-            error.errors.some(
-              (entry) => entry.extensions?.code === "UNAUTHENTICATED"
+            error.errors.some((entry) =>
+              ["UNAUTHENTICATED", "SESSION_REUSED"].includes(
+                String(entry.extensions?.code)
+              )
             )
-          if (unauthenticated) {
+          if (
+            unauthenticated ||
+            (error instanceof Error && error.message === "STAFF_ACCOUNT")
+          ) {
             await clearSession()
             return
           }

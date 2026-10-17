@@ -23,8 +23,12 @@ import {
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: routePaths.signIn })
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    await context.auth.restore()
+    throw redirect({
+      to: context.auth.getUser() ? routePaths.workspace : routePaths.signIn,
+    })
   },
 })
 const signInRoute = createRoute({
@@ -80,7 +84,9 @@ const authCallbackRoute = createRoute({
 const workspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: routePaths.workspace,
-  beforeLoad: ({ context }) => {
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    await context.auth.restore()
     const user = context.auth.getUser()
     if (!canAccessView(user?.role, "overview"))
       throw redirect({ to: routePaths.signIn })
