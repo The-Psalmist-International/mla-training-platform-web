@@ -2,6 +2,7 @@ import { CombinedGraphQLErrors } from "@apollo/client/errors"
 import {
   LOGIN_MUTATION,
   LOGOUT_MUTATION,
+  RefreshSessionDocument,
 } from "@workspace/data/apollo/auth/query"
 import type { AuthPayload, CurrentUser, DataClients } from "@workspace/data"
 
@@ -25,6 +26,8 @@ export function createAuthSession(
   let user: CurrentUser | null = null
   let deadline = 0
   let generation = 0
+  let initialized = false
+  let restoring: Promise<void> | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
   let stopWatching: (() => void) | undefined
   const listeners = new Set<() => void>()
@@ -75,36 +78,50 @@ export function createAuthSession(
       onExpired?.()
     }
   })
+  const adopt = async (payload: AuthPayload, current: number) => {
+    if (current !== generation) return
+    if (payload.user.role !== "admin" && payload.user.role !== "instructor")
+      throw new Error("LEARNER_ACCOUNT")
+    if (
+      !payload.accessToken ||
+      !Number.isFinite(payload.expiresIn) ||
+      payload.expiresIn <= 0
+    )
+      throw new Error("Invalid session response")
+    deadline = Date.now() + payload.expiresIn * 1000
+    await clients.setAccessToken(payload.accessToken)
+    if (current !== generation) return
+    if (Date.now() >= deadline) {
+      await clearSession()
+      return
+    }
+    user = payload.user
+    watchExpiry()
+    notify()
+  }
   return {
     clearSession,
-    updateProfile(profile: { id: string; name: string; phone?: string | null; avatarUrl?: string | null }) {
+    updateProfile(profile: {
+      id: string
+      name: string
+      phone?: string | null
+      avatarUrl?: string | null
+    }) {
       if (!user || user.id !== profile.id || Date.now() >= deadline) return
-      user = { ...user, name: profile.name, phone: profile.phone, avatarUrl: profile.avatarUrl }
+      user = {
+        ...user,
+        name: profile.name,
+        phone: profile.phone,
+        avatarUrl: profile.avatarUrl,
+      }
       notify()
     },
     async establish(payload: AuthPayload) {
+      initialized = true
       const clearing = clearSession(),
         current = generation
       await clearing
-      if (current !== generation) return
-      if (payload.user.role !== "admin" && payload.user.role !== "instructor")
-        throw new Error("LEARNER_ACCOUNT")
-      if (
-        !payload.accessToken ||
-        !Number.isFinite(payload.expiresIn) ||
-        payload.expiresIn <= 0
-      )
-        throw new Error("Invalid session response")
-      deadline = Date.now() + payload.expiresIn * 1000
-      await clients.setAccessToken(payload.accessToken)
-      if (current !== generation) return
-      if (Date.now() >= deadline) {
-        await clearSession()
-        return
-      }
-      user = payload.user
-      watchExpiry()
-      notify()
+      await adopt(payload, current)
     },
     getUser: () => {
       expireIfNeeded()
@@ -121,6 +138,7 @@ export function createAuthSession(
       }
     },
     async signIn(email: string, password: string) {
+      initialized = true
       // Public auth operations must not send an old/expired bearer token.
       const clearing = clearSession()
       const signInGeneration = generation
@@ -159,7 +177,45 @@ export function createAuthSession(
       watchExpiry()
       notify()
     },
+    restore() {
+      if (restoring) return restoring
+      if (initialized) return Promise.resolve()
+      initialized = true
+      const current = generation
+      restoring = (async () => {
+        try {
+          const result = await clients.apolloClient.mutate({
+            mutation: RefreshSessionDocument,
+            context: { toast: false },
+          })
+          if (!result.data) throw new Error("Missing session response")
+          await adopt(result.data.refreshSession, current)
+        } catch (error) {
+          if (current !== generation) return
+          const rejected =
+            CombinedGraphQLErrors.is(error) &&
+            error.errors.some((entry) =>
+              ["UNAUTHENTICATED", "SESSION_REUSED"].includes(
+                String(entry.extensions?.code)
+              )
+            )
+          if (
+            rejected ||
+            (error instanceof Error && error.message === "LEARNER_ACCOUNT")
+          ) {
+            await clearSession()
+            return
+          }
+          initialized = false
+          throw error
+        }
+      })().finally(() => {
+        restoring = undefined
+      })
+      return restoring
+    },
     async signOut() {
+      initialized = true
       // Local logout must succeed even when the logout endpoint is unavailable.
       await clearSession()
       await clients.apolloClient.mutate({

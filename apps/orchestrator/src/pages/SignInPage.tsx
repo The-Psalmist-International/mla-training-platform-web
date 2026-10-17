@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Form, FormikProvider, useFormik } from "formik"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
@@ -14,6 +14,7 @@ export function SignInPage() {
   const { auth } = useRouter().options.context
   const navigate = useNavigate()
   const { toast } = useToast()
+  const [restoring, setRestoring] = useState(true)
   const form = useFormik({
     initialValues: { email: "", password: "", remember: false },
     validationSchema: signInSchema,
@@ -33,15 +34,42 @@ export function SignInPage() {
         }
         await navigate({ to: "/workspace", replace: true })
       } catch (failure) {
-        toast({ title: "Unable to sign in", status: "error", description:
-          failure instanceof Error && failure.message === "LEARNER_ACCOUNT"
-            ? "This workspace is for administrators and instructors. Please use the learner app."
-            : authErrorMessage(failure)
+        toast({
+          title: "Unable to sign in",
+          status: "error",
+          description:
+            failure instanceof Error && failure.message === "LEARNER_ACCOUNT"
+              ? "This workspace is for administrators and instructors. Please use the learner app."
+              : authErrorMessage(failure),
         })
       }
     },
   })
-  const { setValues, isSubmitting: pending } = form
+  const { setValues } = form
+  const pending = form.isSubmitting || restoring
+  useEffect(() => {
+    let active = true
+    void auth
+      .restore()
+      .then(() => {
+        if (active && auth.getUser())
+          void navigate({ to: "/workspace", replace: true })
+      })
+      .catch((error) => {
+        if (active)
+          toast({
+            title: "Session could not be restored",
+            description: authErrorMessage(error),
+            status: "error",
+          })
+      })
+      .finally(() => {
+        if (active) setRestoring(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [auth, navigate, toast])
   useEffect(() => {
     try {
       const saved = localStorage.getItem(emailKey)

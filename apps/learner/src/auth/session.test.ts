@@ -81,6 +81,19 @@ describe("learner authentication", () => {
     ).toBe("RefreshSession")
     expect(request.mock.calls[0]?.[1]?.credentials).toBe("include")
   })
+  it("does not revoke a staff session when the learner app is opened", async () => {
+    const { session, request } = setup()
+    request.mockResolvedValueOnce(
+      Response.json({
+        data: {
+          refreshSession: { ...payload(), user: { ...user, role: "admin" } },
+        },
+      })
+    )
+    await session.restore()
+    expect(session.getUser()).toBeNull()
+    expect(request).toHaveBeenCalledTimes(1)
+  })
   it("treats a missing cookie as signed out but permits retry after a network outage", async () => {
     const first = setup()
     first.request.mockResolvedValueOnce(
@@ -135,14 +148,12 @@ describe("learner authentication", () => {
     ).resolves.toBeDefined()
   })
   it("starts Google sign-in with credentials and a learner return URL", async () => {
-    const request = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        Response.json({
-          authorizationUrl:
-            "https://accounts.google.com/o/oauth2/v2/auth?state=opaque",
-        })
-      )
+    const request = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        authorizationUrl:
+          "https://accounts.google.com/o/oauth2/v2/auth?state=opaque",
+      })
+    )
     const url = await googleAuthorizationUrl(
       "http://localhost:4000/graphql",
       "http://localhost:5001",

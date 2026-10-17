@@ -59,11 +59,115 @@ afterEach(async () => {
 })
 
 describe("auth session expiry", () => {
+  it("restores the staff session after reload and single-flights concurrent guards", async () => {
+    const { session, request } = setup()
+    request.mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: {
+            accessToken: "restored-token",
+            expiresIn: 900,
+            user,
+          },
+        },
+      })
+    )
+    await Promise.all([session.restore(), session.restore()])
+    await session.restore()
+    expect(session.getUser()).toEqual(user)
+    expect(request).toHaveBeenCalledTimes(1)
+    const options = request.mock.calls[0]![1]!
+    expect(options.credentials).toBe("include")
+    expect(new Headers(options.headers).get("authorization")).toBe("")
+    expect(JSON.parse(String(options.body)).operationName).toBe(
+      "RefreshSession"
+    )
+  })
+  it("does not refresh again after a successful interactive login", async () => {
+    const { session, request } = setup()
+    await session.signIn(user.email, "password")
+    await session.restore()
+    expect(request).toHaveBeenCalledTimes(1)
+    expect(session.getUser()).toEqual(user)
+  })
+  it("permits restoration retry after an outage without treating it as rejected credentials", async () => {
+    const { session, request } = setup()
+    request.mockRejectedValueOnce(new Error("Offline")).mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: { accessToken: "restored", expiresIn: 900, user },
+        },
+      })
+    )
+    await expect(session.restore()).rejects.toThrow("Offline")
+    await session.restore()
+    expect(session.getUser()).toEqual(user)
+  })
+  it.each(["UNAUTHENTICATED", "SESSION_REUSED"])(
+    "requires sign-in after confirmed session rejection: %s",
+    async (code) => {
+      const { session, request } = setup()
+      request.mockResolvedValueOnce(
+        json({ errors: [{ message: "Rejected", extensions: { code } }] })
+      )
+      await session.restore()
+      await session.restore()
+      expect(session.getUser()).toBeNull()
+      expect(request).toHaveBeenCalledTimes(1)
+    }
+  )
+  it("does not resurrect a session when restoration completes after sign-out", async () => {
+    const { session, request } = setup()
+    const response = deferred<Response>()
+    request
+      .mockImplementationOnce(() => response.promise)
+      .mockResolvedValueOnce(json({ data: { logout: true } }))
+    const restoring = session.restore()
+    await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(1))
+    await session.signOut()
+    response.resolve(
+      json({
+        data: {
+          refreshSession: { accessToken: "stale", expiresIn: 900, user },
+        },
+      })
+    )
+    await restoring
+    expect(session.getUser()).toBeNull()
+  })
+  it("does not log a learner out of the shared API when restoring the staff app", async () => {
+    const { session, request } = setup()
+    request.mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: {
+            accessToken: "learner-token",
+            expiresIn: 900,
+            user: { ...user, role: "learner" },
+          },
+        },
+      })
+    )
+    await session.restore()
+    expect(session.getUser()).toBeNull()
+    expect(request).toHaveBeenCalledTimes(1)
+  })
   it("establishes invited staff sessions directly without another login or token persistence", async () => {
     const { session, request } = setup()
-    await session.establish({ accessToken: "invited-staff-token", expiresIn: 900, user: { ...user, role: "instructor" } })
-    expect(session.getUser()?.role).toBe("instructor"); expect(request).not.toHaveBeenCalled()
-    await expect(session.establish({ accessToken: "learner-token", expiresIn: 900, user: { ...user, role: "learner" } })).rejects.toThrow("LEARNER_ACCOUNT")
+    await session.establish({
+      accessToken: "invited-staff-token",
+      expiresIn: 900,
+      user: { ...user, role: "instructor" },
+    })
+    expect(session.getUser()?.role).toBe("instructor")
+    expect(request).not.toHaveBeenCalled()
+    await expect(
+      session.establish({
+        accessToken: "learner-token",
+        expiresIn: 900,
+        user: { ...user, role: "learner" },
+      })
+    ).rejects.toThrow("LEARNER_ACCOUNT")
     expect(session.getUser()).toBeNull()
   })
   it.each(["graphql", "http"])(
