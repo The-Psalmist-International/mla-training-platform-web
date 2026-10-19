@@ -228,48 +228,106 @@ describe("auth session expiry", () => {
     }
   )
 
-  it("expires an idle session at its deadline and clears private caches", async () => {
+  it("renews before expiry without clearing private caches", async () => {
     vi.useFakeTimers()
     browser()
-    const { session, clients } = setup(2)
+    const { session, clients, request } = setup(2)
     await session.signIn(user.email, "password")
+    request.mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: { accessToken: "renewed", expiresIn: 900, user },
+        },
+      })
+    )
     clients.queryClient.setQueryData(["private"], "staff data")
     const listener = vi.fn()
     session.subscribe(listener)
     await vi.advanceTimersByTimeAsync(1_999)
     expect(session.getUser()).toEqual(user)
     await vi.advanceTimersByTimeAsync(1)
+    expect(session.getUser()).toEqual(user)
+    expect(listener).not.toHaveBeenCalled()
+    expect(clients.queryClient.getQueryData(["private"])).toBe("staff data")
+    expect(
+      JSON.parse(String(request.mock.calls[1]?.[1]?.body)).operationName
+    ).toBe("RefreshSession")
+  })
+
+  it("retries a background renewal outage without signing out or spinning", async () => {
+    vi.useFakeTimers()
+    browser()
+    const { session, clients, request } = setup(2)
+    await session.signIn(user.email, "password")
+    const identity = session.getUser()
+    clients.queryClient.setQueryData(["private"], "staff data")
+    request
+      .mockRejectedValueOnce(new Error("Offline"))
+      .mockResolvedValueOnce(
+        json({
+          data: {
+            refreshSession: { accessToken: "renewed", expiresIn: 900, user },
+          },
+        })
+      )
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(session.getUser()).toBe(identity)
+    expect(request).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(14_000)
+    expect(request).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(request).toHaveBeenCalledTimes(3)
+    expect(session.getUser()).toBe(identity)
+    expect(clients.queryClient.getQueryData(["private"])).toBe("staff data")
+  })
+
+  it("ends a background session only when refresh credentials are rejected", async () => {
+    vi.useFakeTimers()
+    browser()
+    const { session, request } = setup(2)
+    await session.signIn(user.email, "password")
+    request.mockResolvedValueOnce(expired())
+    await vi.advanceTimersByTimeAsync(2_000)
     expect(session.getUser()).toBeNull()
-    expect(listener).toHaveBeenCalledOnce()
-    expect(clients.queryClient.getQueryData(["private"])).toBeUndefined()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(request).toHaveBeenCalledTimes(2)
   })
 
   it.each(["guard", "focus", "visibilitychange"])(
-    "detects an elapsed deadline on %s even before the timer runs",
+    "renews an elapsed deadline on %s even before the timer runs",
     async (check) => {
       vi.useFakeTimers()
       const window = browser()
-      const { session } = setup(2)
+      const { session, request } = setup(2)
       await session.signIn(user.email, "password")
+      request.mockResolvedValueOnce(
+        json({
+          data: {
+            refreshSession: { accessToken: "renewed", expiresIn: 900, user },
+          },
+        })
+      )
       const listener = vi.fn()
       session.subscribe(listener)
       vi.setSystemTime(Date.now() + 2_001)
+      if (check === "guard") await session.restore()
       if (check === "focus") window.dispatchEvent(new Event("focus"))
       if (check === "visibilitychange")
         window.document.dispatchEvent(new Event("visibilitychange"))
-      expect(session.getUser()).toBeNull()
-      expect(listener).toHaveBeenCalledOnce()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(session.getUser()).toEqual(user)
+      expect(listener).not.toHaveBeenCalled()
     }
   )
 
-  it("checks deadlines in SSR without creating browser timers", async () => {
+  it("does not sign out synchronously on clock expiry or create browser timers in SSR", async () => {
     vi.useFakeTimers()
     const { session } = setup(2)
     const timeout = vi.spyOn(globalThis, "setTimeout")
     await session.signIn(user.email, "password")
     expect(timeout).not.toHaveBeenCalledWith(expect.any(Function), 2_000)
     vi.setSystemTime(Date.now() + 2_001)
-    expect(session.getUser()).toBeNull()
+    expect(session.getUser()).toEqual(user)
   })
 
   it("replaces old expiry timers on re-login and tears them down on logout", async () => {
@@ -295,13 +353,20 @@ describe("auth session expiry", () => {
     vi.useFakeTimers()
     browser()
     const timeout = vi.spyOn(globalThis, "setTimeout")
-    const { session } = setup(3_000_000)
+    const { session, request } = setup(3_000_000)
     await session.signIn(user.email, "password")
+    request.mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: { accessToken: "renewed", expiresIn: 900, user },
+        },
+      })
+    )
     expect(timeout).toHaveBeenCalledWith(expect.any(Function), 2_147_483_647)
     await vi.advanceTimersByTimeAsync(2_147_483_647)
     expect(session.getUser()).toEqual(user)
     await vi.advanceTimersByTimeAsync(3_000_000_000 - 2_147_483_647)
-    expect(session.getUser()).toBeNull()
+    expect(session.getUser()).toEqual(user)
   })
 
   it.each(["new-token", "token"])(

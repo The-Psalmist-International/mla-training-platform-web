@@ -1,12 +1,5 @@
 import { CombinedGraphQLErrors } from "@apollo/client/errors"
-import {
-  LOGIN_MUTATION,
-  LOGOUT_MUTATION,
-  type AuthPayload,
-  type CurrentUser,
-  type DataClients,
-} from "@workspace/data"
-import { RefreshSessionDocument } from "@workspace/data/apollo/auth/query"
+import { createBrowserSession, type DataClients } from "@workspace/data"
 
 export function authErrorMessage(error: unknown) {
   if (error instanceof Error && error.message === "STAFF_ACCOUNT")
@@ -24,178 +17,16 @@ export function authErrorMessage(error: unknown) {
   return "We couldn't connect to your account. Please try again."
 }
 
-/** Router-local credentials; refresh tokens remain in the API's HttpOnly cookie. */
+/** Router-local credentials with silent HttpOnly-cookie renewal. */
 export function createLearnerSession(
   clients: DataClients,
   onExpired?: () => void
 ) {
-  let user: CurrentUser | null = null,
-    deadline = 0,
-    generation = 0,
-    initialized = false
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let restoring: Promise<void> | undefined
-  const listeners = new Set<() => void>()
-  const notify = () => listeners.forEach((listener) => listener())
-  const clearSession = async () => {
-    generation += 1
-    clearTimeout(timer)
-    timer = undefined
-    deadline = 0
-    const hadUser = user !== null
-    user = null
-    if (hadUser) notify()
-    await clients.setAccessToken(null)
-  }
-  const expire = () => {
-    if (user && Date.now() >= deadline) {
-      void clearSession().catch(() => {})
-      onExpired?.()
-    }
-  }
-  const adopt = async (
-    payload: AuthPayload,
-    current: number,
-    revokeWrongRole = true
-  ) => {
-    if (current !== generation) return
-    if (payload.user.role !== "learner") {
-      try {
-        if (revokeWrongRole) {
-          await clients.apolloClient.mutate({
-            mutation: LOGOUT_MUTATION,
-            context: { toast: false },
-          })
-        }
-      } finally {
-        if (current === generation) await clearSession()
-      }
-      throw new Error("STAFF_ACCOUNT")
-    }
-    if (
-      !payload.accessToken ||
-      !Number.isFinite(payload.expiresIn) ||
-      payload.expiresIn <= 0
-    )
-      throw new Error("Invalid session response")
-    deadline = Date.now() + payload.expiresIn * 1000
-    await clients.setAccessToken(payload.accessToken)
-    if (current !== generation) return
-    if (Date.now() >= deadline) {
-      await clearSession()
-      throw new Error("Session expired")
-    }
-    user = payload.user
-    if (typeof window !== "undefined")
-      timer = setTimeout(expire, Math.min(deadline - Date.now(), 2147483647))
-    notify()
-  }
-  const stop = clients.subscribeAuthFailure(() => {
-    if (user) {
-      void clearSession().catch(() => {})
-      onExpired?.()
-    }
+  return createBrowserSession(clients, {
+    roles: ["learner"],
+    wrongRole: "STAFF_ACCOUNT",
+    onExpired,
   })
-  return {
-    clearSession,
-    updateProfile(profile: {
-      id: string
-      name: string
-      phone?: string | null
-      avatarUrl?: string | null
-    }) {
-      if (!user || user.id !== profile.id || Date.now() >= deadline) return
-      user = {
-        ...user,
-        name: profile.name,
-        phone: profile.phone,
-        avatarUrl: profile.avatarUrl,
-      }
-      notify()
-    },
-    async establish(payload: AuthPayload) {
-      initialized = true
-      const clearing = clearSession(),
-        current = generation
-      await clearing
-      await adopt(payload, current)
-    },
-    getUser: () => {
-      expire()
-      return user
-    },
-    subscribe(listener: () => void) {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-    async signIn(email: string, password: string) {
-      initialized = true
-      const clearing = clearSession(),
-        current = generation
-      await clearing
-      if (current !== generation) return
-      const result = await clients.apolloClient.mutate({
-        mutation: LOGIN_MUTATION,
-        variables: { input: { email: email.trim().toLowerCase(), password } },
-        context: { toast: false },
-      })
-      if (!result.data) throw new Error("Missing sign-in response")
-      await adopt(result.data.login, current)
-    },
-    restore() {
-      if (restoring) return restoring
-      if (initialized) return Promise.resolve()
-      initialized = true
-      const current = generation
-      restoring = (async () => {
-        try {
-          const result = await clients.apolloClient.mutate({
-            mutation: RefreshSessionDocument,
-            context: { toast: false },
-          })
-          if (!result.data) throw new Error("Missing session response")
-          // Opening this app must not revoke a staff session in the other app.
-          await adopt(result.data.refreshSession, current, false)
-        } catch (error) {
-          if (current !== generation) return
-          const unauthenticated =
-            CombinedGraphQLErrors.is(error) &&
-            error.errors.some((entry) =>
-              ["UNAUTHENTICATED", "SESSION_REUSED"].includes(
-                String(entry.extensions?.code)
-              )
-            )
-          if (
-            unauthenticated ||
-            (error instanceof Error && error.message === "STAFF_ACCOUNT")
-          ) {
-            await clearSession()
-            return
-          }
-          initialized = false
-          throw error
-        }
-      })().finally(() => {
-        restoring = undefined
-      })
-      return restoring
-    },
-    async signOut() {
-      initialized = true
-      await clearSession()
-      await clients.apolloClient.mutate({
-        mutation: LOGOUT_MUTATION,
-        context: { toast: false },
-      })
-    },
-    async dispose() {
-      stop()
-      listeners.clear()
-      await clearSession()
-    },
-  }
 }
 export type LearnerSession = ReturnType<typeof createLearnerSession>
 
