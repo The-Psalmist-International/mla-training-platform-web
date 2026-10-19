@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { createDataClients } from "@workspace/data"
+import { LOGOUT_MUTATION } from "@workspace/data/apollo/auth/query"
 import {
   createLearnerSession,
   googleAuthorizationUrl,
@@ -132,6 +133,82 @@ describe("learner authentication", () => {
     release(Response.json({ data: { refreshSession: payload() } }))
     await restoring
     expect(session.getUser()).toBeNull()
+  })
+  it("renews once before concurrent protected requests after a sleeping tab wakes", async () => {
+    vi.useFakeTimers()
+    const { session, clients, request } = setup()
+    request.mockResolvedValueOnce(Response.json({ data: { login: payload() } }))
+    await session.signIn(user.email, "password")
+    const identity = session.getUser()
+    clients.queryClient.setQueryData(["course-draft"], "unsaved work")
+    vi.setSystemTime(Date.now() + 901_000)
+    request
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            refreshSession: { ...payload(), accessToken: "renewed-token" },
+          },
+        })
+      )
+      .mockImplementation(async () => Response.json({ data: { logout: true } }))
+    await Promise.all([
+      clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION }),
+      clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION }),
+    ])
+    expect(
+      request.mock.calls.map(
+        (call) => JSON.parse(String(call[1]?.body)).operationName
+      )
+    ).toEqual(["Login", "RefreshSession", "Logout", "Logout"])
+    for (const call of request.mock.calls.slice(2))
+      expect(new Headers(call[1]?.headers).get("authorization")).toBe(
+        "Bearer renewed-token"
+      )
+    expect(session.getUser()).toBe(identity)
+    expect(clients.queryClient.getQueryData(["course-draft"])).toBe(
+      "unsaved work"
+    )
+  })
+  it("preserves identity on a renewal outage and renews successfully on retry", async () => {
+    vi.useFakeTimers()
+    const { session, clients, request } = setup()
+    request.mockResolvedValueOnce(Response.json({ data: { login: payload() } }))
+    await session.signIn(user.email, "password")
+    const identity = session.getUser()
+    vi.setSystemTime(Date.now() + 901_000)
+    request.mockRejectedValueOnce(new Error("Offline"))
+    await expect(
+      clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+    ).rejects.toThrow("Offline")
+    expect(session.getUser()).toBe(identity)
+    request
+      .mockResolvedValueOnce(
+        Response.json({ data: { refreshSession: payload() } })
+      )
+      .mockResolvedValueOnce(Response.json({ data: { logout: true } }))
+    await clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+    expect(session.getUser()).toBe(identity)
+  })
+  it("clears private state when renewal confirms the refresh session was revoked", async () => {
+    vi.useFakeTimers()
+    const { session, clients, request } = setup()
+    request.mockResolvedValueOnce(Response.json({ data: { login: payload() } }))
+    await session.signIn(user.email, "password")
+    clients.queryClient.setQueryData(["private"], "learner work")
+    vi.setSystemTime(Date.now() + 901_000)
+    request.mockResolvedValueOnce(
+      Response.json({
+        errors: [
+          { message: "Revoked", extensions: { code: "UNAUTHENTICATED" } },
+        ],
+      })
+    )
+    await expect(
+      clients.apolloClient.mutate({ mutation: LOGOUT_MUTATION })
+    ).rejects.toThrow("Revoked")
+    expect(session.getUser()).toBeNull()
+    expect(clients.queryClient.getQueryData(["private"])).toBeUndefined()
+    expect(request).toHaveBeenCalledTimes(2)
   })
   it("rejects malformed fields and requires matching new passwords", async () => {
     await expect(

@@ -134,8 +134,13 @@ export {
   REQUEST_PASSWORD_RESET_MUTATION,
   RESET_PASSWORD_MUTATION,
 } from "../apollo/auth/query"
-export type { CurrentUser, AuthPayload, MyAccountQuery } from "../apollo/auth/query"
+export type {
+  CurrentUser,
+  AuthPayload,
+  MyAccountQuery,
+} from "../apollo/auth/query"
 export { backendHealthOptions } from "./health"
+export { createBrowserSession } from "./browser-session"
 export * from "../apollo/course-management/query"
 export * from "../apollo/overview/query"
 export * from "../apollo/notification/query"
