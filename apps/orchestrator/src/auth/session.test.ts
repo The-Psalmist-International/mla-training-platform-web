@@ -261,15 +261,13 @@ describe("auth session expiry", () => {
     await session.signIn(user.email, "password")
     const identity = session.getUser()
     clients.queryClient.setQueryData(["private"], "staff data")
-    request
-      .mockRejectedValueOnce(new Error("Offline"))
-      .mockResolvedValueOnce(
-        json({
-          data: {
-            refreshSession: { accessToken: "renewed", expiresIn: 900, user },
-          },
-        })
-      )
+    request.mockRejectedValueOnce(new Error("Offline")).mockResolvedValueOnce(
+      json({
+        data: {
+          refreshSession: { accessToken: "renewed", expiresIn: 900, user },
+        },
+      })
+    )
     await vi.advanceTimersByTimeAsync(2_000)
     expect(session.getUser()).toBe(identity)
     expect(request).toHaveBeenCalledTimes(2)
