@@ -1,17 +1,20 @@
 import { useState } from "react"
 import { Form, FormikProvider, useFormik } from "formik"
 import { useMutation } from "@apollo/client/react"
-import { Link } from "@tanstack/react-router"
+import { Link, useRouter } from "@tanstack/react-router"
 import { RegisterLearnerDocument } from "@workspace/data/apollo/auth/query"
 import { Button } from "@workspace/ui/components/button"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { LearnerAuthLayout } from "../components/LearnerAuthLayout"
+import { GoogleAuthButton } from "../components/GoogleAuthButton"
 import { signUpSchema } from "../auth/validation"
 import { authErrorMessage } from "../auth/session"
 import { VerificationRequestForm } from "./VerifyEmailPage"
 
 export function SignUpPage() {
+  const { graphqlUrl } = useRouter().options.context
   const [sentTo, setSentTo] = useState("")
+  const [googlePending, setGooglePending] = useState(false)
   const [register] = useMutation(RegisterLearnerDocument)
   const form = useFormik({
     initialValues: { name: "", email: "", password: "", confirmation: "" },
@@ -37,13 +40,14 @@ export function SignUpPage() {
       }
     },
   })
+  const pending = form.isSubmitting || googlePending
   return (
     <LearnerAuthLayout
       title={sentTo ? "Check your email" : "Create your learner account"}
       description={
         sentTo
           ? "Verify your email before you start learning."
-          : "Create an account, then verify your email to start learning."
+          : "Continue with Google, or sign up with email and verify your address to start learning."
       }
     >
       {sentTo ? (
@@ -68,7 +72,20 @@ export function SignUpPage() {
         </div>
       ) : (
         <FormikProvider value={form}>
-          <Form noValidate className="space-y-5">
+          <GoogleAuthButton
+            graphqlUrl={graphqlUrl}
+            disabled={pending}
+            pending={googlePending}
+            onPendingChange={setGooglePending}
+          />
+          <Form
+            noValidate
+            className="space-y-5"
+            onSubmit={(event) => {
+              if (pending) event.preventDefault()
+              else form.handleSubmit(event)
+            }}
+          >
             {[
               {
                 name: "name",
@@ -107,6 +124,7 @@ export function SignUpPage() {
                   name={field.name}
                   type={field.type}
                   autoComplete={field.autoComplete}
+                  disabled={pending}
                   required
                 />
                 {field.name === "password" && (
@@ -119,7 +137,7 @@ export function SignUpPage() {
             <FormFeedback />
             <Button
               type="submit"
-              disabled={form.isSubmitting}
+              disabled={pending}
               aria-busy={form.isSubmitting}
               className="h-10 w-full"
             >
