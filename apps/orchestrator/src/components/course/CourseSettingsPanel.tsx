@@ -14,6 +14,7 @@ import {
   courseResourceOptions,
 } from "../../workspace/course/course-management"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
+import { CourseAccessPanel } from "./CourseAccessPanel"
 
 export function CourseSettingsPanel({
   workspace,
@@ -47,6 +48,7 @@ export function CourseSettingsPanel({
   })
   return (
     <div className="w-full space-y-8">
+      <CourseAccessPanel workspace={workspace} />
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="min-w-0 space-y-4">
           <h2 className="text-lg font-semibold">Certificates</h2>

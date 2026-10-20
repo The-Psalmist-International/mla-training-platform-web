@@ -50,6 +50,24 @@ const forgotRoute = createRoute({
     "ForgotPasswordPage"
   ),
 })
+const signUpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-up",
+  component: lazyRouteComponent(
+    () => import("./pages/SignUpPage"),
+    "SignUpPage"
+  ),
+  head: () => ({ meta: [{ title: "Create account | MLA Learners" }] }),
+})
+const verifyEmailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/verify-email",
+  component: lazyRouteComponent(
+    () => import("./pages/VerifyEmailPage"),
+    "VerifyEmailPage"
+  ),
+  head: () => ({ meta: [{ title: "Verify email | MLA Learners" }] }),
+})
 const resetRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/reset-password",
@@ -87,6 +105,8 @@ export const routeTree = rootRoute.addChildren([
   homeRoute,
   courseRoute,
   signInRoute,
+  signUpRoute,
+  verifyEmailRoute,
   forgotRoute,
   resetRoute,
   callbackRoute,

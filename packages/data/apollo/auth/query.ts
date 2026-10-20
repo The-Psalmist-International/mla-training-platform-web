@@ -4,6 +4,9 @@ import type {
 } from "../../src/generated/graphql"
 
 export {
+  RegisterLearnerDocument,
+  RequestEmailVerificationDocument,
+  VerifyLearnerEmailDocument,
   MyAccountDocument,
   UpdateMyProfileDocument,
   ChangePasswordDocument,
@@ -16,6 +19,11 @@ export {
   RequestPasswordResetDocument as REQUEST_PASSWORD_RESET_MUTATION,
   ResetPasswordDocument as RESET_PASSWORD_MUTATION,
 } from "../../src/generated/graphql"
-export type CurrentUser = NonNullable<CurrentUserQuery["me"]> & { phone?: string | null; avatarUrl?: string | null }
+export type CurrentUser = NonNullable<CurrentUserQuery["me"]> & {
+  phone?: string | null
+  avatarUrl?: string | null
+}
 export type { MyAccountQuery } from "../../src/generated/graphql"
-export type AuthPayload = Omit<LoginMutation["login"], "user"> & { user: CurrentUser }
+export type AuthPayload = Omit<LoginMutation["login"], "user"> & {
+  user: CurrentUser
+}

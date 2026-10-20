@@ -1,16 +1,17 @@
-import { useEffect, useId, useState } from "react"
+import { Form, FormikProvider, useFormik } from "formik"
+import * as Yup from "yup"
+import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
+import { AssignCourseByEmailDocument } from "@workspace/data/apollo/course-management/query"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   CourseLearnersDocument,
   CourseLearnerDetailsDocument,
-  AssignCourseLearnerDocument,
   RevokeCourseCertificateDocument,
-  USERS_PAGE_QUERY,
 } from "@workspace/data"
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Combobox } from "@workspace/ui/components/combobox"
 import { DataTable } from "@workspace/ui/components/data-table"
 import { TableRowActions } from "@workspace/ui/components/table-row-actions"
 import { StatusBadge } from "@workspace/ui/components/status-badge"
@@ -85,7 +86,7 @@ export function CourseLearnersPanel({
             Enrollments, current lesson progress, completion, and certificates.
           </p>
         </div>
-        {workspace.user.role === "admin" && (
+        {owns && (
           <Button
             disabled={course.status !== "published"}
             onClick={() => workspace.open("enroll")}
@@ -94,7 +95,7 @@ export function CourseLearnersPanel({
           </Button>
         )}
       </div>
-      {workspace.user.role === "admin" && course.status !== "published" && (
+      {owns && course.status !== "published" && (
         <Alert>Publish this course before assigning learners.</Alert>
       )}
       <DataTable
@@ -210,27 +211,33 @@ export function CourseLearnersPanel({
 }
 
 function CourseEnrollmentDialog({ workspace }: { workspace: CourseWorkspace }) {
-  const [search, setSearch] = useState("")
-  const [learner, setLearner] = useState("")
   const { busy, run } = useCourseTask(workspace)
-  const id = useId()
-  const allowed =
-    workspace.user.role === "admin" && workspace.course.status === "published"
-  const query = useQuery({
-    ...courseResourceOptions(
-      workspace.clients,
-      workspace.user,
-      "learner-picker",
-      USERS_PAGE_QUERY,
-      {
-        limit: 20,
-        offset: 0,
-        role: "learner",
-        disabled: false,
-        search: search.trim() || undefined,
-      }
-    ),
-    enabled: allowed,
+  const allowed = workspace.owns && workspace.course.status === "published"
+  const form = useFormik({
+    initialValues: { email: "" },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .trim()
+        .email("Enter a valid email address.")
+        .max(254)
+        .required("Enter the learner's email address."),
+    }),
+    onSubmit: async ({ email }, helpers) => {
+      helpers.setStatus(undefined)
+      const saved = await run(
+        () =>
+          courseMutation(workspace.clients, AssignCourseByEmailDocument, {
+            courseId: workspace.course.id,
+            email: email.trim().toLowerCase(),
+          }),
+        "Learner assigned.",
+        true
+      )
+      if (!saved)
+        helpers.setStatus(
+          "Check that the learner has signed up and verified their email, then try again."
+        )
+    },
   })
   return (
     <Dialog
@@ -240,75 +247,64 @@ function CourseEnrollmentDialog({ workspace }: { workspace: CourseWorkspace }) {
       }}
     >
       <DialogContent showCloseButton={!busy}>
-        <DialogHeader>
-          <DialogTitle>Assign learner</DialogTitle>
-          <DialogDescription>
-            Assign an active learner to this published course.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody className="space-y-4">
-          {!allowed ? (
-            <Alert variant="warning">
-              Only administrators can assign learners to a published course.
-            </Alert>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <label htmlFor={`${id}-learner`} className="font-medium">
-                  Learner
-                </label>
-                <Combobox
-                  id={`${id}-learner`}
-                  value={learner}
-                  onValueChange={setLearner}
-                  onSearchChange={setSearch}
-                  placeholder="Search and select a learner"
-                  loading={query.isFetching}
-                  error={
-                    query.isError ? "Learners could not be loaded." : undefined
-                  }
-                  onRetry={() => void query.refetch()}
-                  disabled={busy}
-                  className="w-full"
-                  options={[
-                    ...(query.data?.usersPage.items ?? []).map((person) => ({
-                      value: person.id,
-                      label: person.name,
-                      description: person.email,
-                      avatarUrl: person.avatarUrl,
-                    })),
-                  ]}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Showing up to 20 matching learners. Refine the search to find a
-                specific person.
-              </p>
-            </>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            disabled={!allowed || busy || !learner}
-            onClick={() =>
-              void run(
-                () =>
-                  courseMutation(
-                    workspace.clients,
-                    AssignCourseLearnerDocument,
-                    { courseId: workspace.course.id, learnerId: learner }
-                  ),
-                "Learner assigned.",
-                true
-              )
-            }
-          >
-            {busy ? "Assigning..." : "Assign learner"}
-          </Button>
-          <Button variant="outline" disabled={busy} onClick={workspace.close}>
-            Cancel
-          </Button>
-        </DialogFooter>
+        <FormikProvider value={form}>
+          <Form noValidate>
+            <DialogHeader>
+              <DialogTitle>Assign learner</DialogTitle>
+              <DialogDescription>
+                Enroll a verified learner in this published course. Staff
+                enrollment grants access to private courses.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogBody className="space-y-4">
+              {!allowed ? (
+                <Alert variant="warning">
+                  Only this course's instructor or an administrator can assign
+                  learners to a published course.
+                </Alert>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label htmlFor="enroll-email" className="font-medium">
+                      Learner email address
+                    </label>
+                    <FormInput
+                      id="enroll-email"
+                      name="email"
+                      type="email"
+                      autoComplete="off"
+                      required
+                      disabled={busy}
+                    />
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    The learner must sign up and verify their email first.
+                    Individual grants for private lessons in public courses are
+                    managed in Settings.
+                  </p>
+                  <FormFeedback />
+                </>
+              )}
+            </DialogBody>
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={!allowed || busy || form.isSubmitting}
+                aria-busy={busy}
+              >
+                {busy ? "Assigning..." : "Assign learner"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={workspace.close}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </Form>
+        </FormikProvider>
       </DialogContent>
     </Dialog>
   )

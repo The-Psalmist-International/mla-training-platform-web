@@ -76,7 +76,11 @@ export function chooseCourseLesson(
       .filter((row) => row.status === "completed")
       .map((row) => row.itemId)
   )
-  return lessons.find((lesson) => !completed.has(lesson.id)) ?? lessons.at(-1)
+  return (
+    lessons.find((lesson) => !lesson.isLocked && !completed.has(lesson.id)) ??
+    lessons.find((lesson) => lesson.isLocked && lesson.required) ??
+    lessons.at(-1)
+  )
 }
 export function learnerResource<T, V extends OperationVariables>(
   clients: DataClients,
