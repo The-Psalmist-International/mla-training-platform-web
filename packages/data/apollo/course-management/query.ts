@@ -1,4 +1,9 @@
 export {
+  SetCoursePrivacyDocument,
+  SetLessonPrivacyDocument,
+  LessonAccessGrantsDocument,
+  SetLessonAccessDocument,
+  AssignCourseByEmailDocument,
   CreateCourseModuleDocument,
   CourseLessonPlaybackDocument,
   CourseManagementDocument,

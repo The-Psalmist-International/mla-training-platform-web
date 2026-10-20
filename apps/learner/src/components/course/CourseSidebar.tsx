@@ -4,6 +4,7 @@ import { PlayCircleIcon } from "@phosphor-icons/react/dist/csr/PlayCircle"
 import { FileTextIcon } from "@phosphor-icons/react/dist/csr/FileText"
 import { ExamIcon } from "@phosphor-icons/react/dist/csr/Exam"
 import { VideoCameraIcon } from "@phosphor-icons/react/dist/csr/VideoCamera"
+import { LockKeyIcon } from "@phosphor-icons/react/dist/csr/LockKey"
 import {
   orderedCourseLessons,
   type CourseOutline,
@@ -75,16 +76,18 @@ export function CourseSidebar({
                 {lessons
                   .filter((item) => item.moduleId === module.id)
                   .map((item) => {
-                    const done = completed.has(item.id)
-                    const Icon = done
-                      ? CheckCircleIcon
-                      : item.type === "text"
-                        ? FileTextIcon
-                        : item.type === "video_lesson"
-                          ? PlayCircleIcon
-                          : item.type === "assessment"
-                            ? ExamIcon
-                            : VideoCameraIcon
+                    const done = !item.isLocked && completed.has(item.id)
+                    const Icon = item.isLocked
+                      ? LockKeyIcon
+                      : done
+                        ? CheckCircleIcon
+                        : item.type === "text"
+                          ? FileTextIcon
+                          : item.type === "video_lesson"
+                            ? PlayCircleIcon
+                            : item.type === "assessment"
+                              ? ExamIcon
+                              : VideoCameraIcon
                     return (
                       <li key={item.id}>
                         <Link
@@ -108,15 +111,17 @@ export function CourseSidebar({
                             </span>
                             <span className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
                               <span>
-                                {done
-                                  ? "Completed"
-                                  : item.type === "text"
-                                    ? "Reading"
-                                    : item.type === "video_lesson"
-                                      ? "Video"
-                                      : item.type === "assessment"
-                                        ? "Assessment"
-                                        : "Video assignment"}
+                                {item.isLocked
+                                  ? "Private — access required"
+                                  : done
+                                    ? "Completed"
+                                    : item.type === "text"
+                                      ? "Reading"
+                                      : item.type === "video_lesson"
+                                        ? "Video"
+                                        : item.type === "assessment"
+                                          ? "Assessment"
+                                          : "Video assignment"}
                               </span>
                               {!item.required && <span>Optional</span>}
                               {item.id === nextId && (

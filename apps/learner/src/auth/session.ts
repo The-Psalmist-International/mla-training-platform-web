@@ -11,6 +11,8 @@ export function authErrorMessage(error: unknown) {
     if (code === "UNAUTHENTICATED" || code === "FORBIDDEN")
       return "Unable to sign in. Check your email and password."
     if (code === "BAD_USER_INPUT") return "Check your details and try again."
+    if (code === "EMAIL_QUEUE_UNAVAILABLE")
+      return "We couldn't send the verification email. Please try again."
     if (code === "INVALID_TOKEN")
       return "This link has expired or was already used. Please request a new one."
   }

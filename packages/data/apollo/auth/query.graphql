@@ -7,13 +7,48 @@ query CurrentUser {
   }
 }
 
+mutation RegisterLearner($input: RegisterLearnerInput!) {
+  registerLearner(input: $input)
+}
+mutation RequestEmailVerification($email: String!, $appUrl: String!) {
+  requestEmailVerification(email: $email, appUrl: $appUrl)
+}
+mutation VerifyLearnerEmail($token: String!) {
+  verifyLearnerEmail(token: $token) {
+    accessToken
+    expiresIn
+    user {
+      id
+      name
+      email
+      role
+      avatarUrl
+      phone
+    }
+  }
+}
+
 query MyAccount {
-  me { id name email role phone avatarUrl hasPassword }
+  me {
+    id
+    name
+    email
+    role
+    phone
+    avatarUrl
+    hasPassword
+  }
 }
 
 mutation UpdateMyProfile($name: String!, $phone: String, $avatarUrl: String) {
   updateMyProfile(name: $name, phone: $phone, avatarUrl: $avatarUrl) {
-    id name email role phone avatarUrl hasPassword
+    id
+    name
+    email
+    role
+    phone
+    avatarUrl
+    hasPassword
   }
 }
 
@@ -21,7 +56,9 @@ mutation ChangePassword($input: ChangePasswordInput!) {
   changePassword(input: $input)
 }
 
-mutation LogoutAll { logoutAll }
+mutation LogoutAll {
+  logoutAll
+}
 
 mutation Login($input: LoginInput!) {
   login(input: $input) {

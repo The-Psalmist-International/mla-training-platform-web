@@ -14,6 +14,12 @@ import {
   reorderTo,
 } from "./course-management"
 import { questionsSchema } from "../../components/course/CourseQuestionsDialog"
+import {
+  SetCoursePrivacyDocument,
+  SetLessonPrivacyDocument,
+  SetLessonAccessDocument,
+  AssignCourseByEmailDocument,
+} from "@workspace/data/apollo/course-management/query"
 
 const user: CurrentUser = {
   id: "author",
@@ -34,6 +40,62 @@ function fixture(data: object) {
   }
 }
 describe("course management operations", () => {
+  it("targets course privacy, individual lesson grants and assignment without choosing a user role", async () => {
+    const { clients, request } = fixture({
+      setCoursePrivacy: { id: "course" },
+      setLessonPrivacy: { id: "course" },
+      setLessonAccess: true,
+      assignCourseByEmail: { id: "enrollment" },
+    })
+    await courseMutation(clients, SetCoursePrivacyDocument, {
+      id: "course",
+      isPrivate: true,
+    })
+    await courseMutation(clients, SetLessonPrivacyDocument, {
+      courseId: "course",
+      moduleId: "module",
+      itemId: "lesson",
+      isPrivate: true,
+    })
+    await courseMutation(clients, SetLessonAccessDocument, {
+      courseId: "course",
+      moduleId: "module",
+      itemId: "lesson",
+      learnerId: "learner",
+      allowed: true,
+    })
+    await courseMutation(clients, SetLessonAccessDocument, {
+      courseId: "course",
+      moduleId: "module",
+      itemId: "lesson",
+      learnerId: "learner",
+      allowed: false,
+    })
+    await courseMutation(clients, AssignCourseByEmailDocument, {
+      courseId: "course",
+      email: "learner@example.test",
+    })
+    const operations = request.mock.calls.map((call) =>
+      JSON.parse(String(call[1]?.body))
+    )
+    expect(operations.map((operation) => operation.operationName)).toEqual([
+      "SetCoursePrivacy",
+      "SetLessonPrivacy",
+      "SetLessonAccess",
+      "SetLessonAccess",
+      "AssignCourseByEmail",
+    ])
+    expect(operations[2].variables).toMatchObject({
+      itemId: "lesson",
+      learnerId: "learner",
+      allowed: true,
+    })
+    expect(operations[3].variables.allowed).toBe(false)
+    expect(operations[4].variables).toEqual({
+      courseId: "course",
+      email: "learner@example.test",
+    })
+  })
   it("attaches uploaded video IDs to the selected module instead of saving them as course-level media", async () => {
     const { clients, request } = fixture({
       createVideoLesson: { id: "course" },

@@ -89,9 +89,12 @@ export function SignInPage() {
       topRight={
         <p className="rounded-lg border border-border/60 bg-background/95 px-4 py-3 text-right text-xs leading-5 text-muted-foreground sm:text-sm">
           Don't have a learner account?{" "}
-          <span className="font-medium text-foreground">
-            Contact your admin.
-          </span>
+          <Link
+            to="/sign-up"
+            className="font-medium text-primary hover:underline"
+          >
+            Create an account.
+          </Link>
         </p>
       }
     >

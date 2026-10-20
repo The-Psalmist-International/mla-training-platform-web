@@ -7,6 +7,7 @@ query CourseManagement($id: ID!) {
     thumbnailUrl
     status
     certificateEnabled
+    isPrivate
     publishedAt
     createdAt
     updatedAt
@@ -20,6 +21,7 @@ query CourseManagement($id: ID!) {
         type
         position
         required
+        isPrivate
         body
         videoLesson {
           videoAssetId
@@ -58,6 +60,53 @@ query CourseManagement($id: ID!) {
         }
       }
     }
+  }
+}
+mutation SetCoursePrivacy($id: ID!, $isPrivate: Boolean!) {
+  setCoursePrivacy(id: $id, isPrivate: $isPrivate) {
+    id
+  }
+}
+mutation SetLessonPrivacy(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $isPrivate: Boolean!
+) {
+  setLessonPrivacy(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    isPrivate: $isPrivate
+  ) {
+    id
+  }
+}
+query LessonAccessGrants($courseId: ID!, $itemId: ID!) {
+  lessonAccessGrants(courseId: $courseId, itemId: $itemId) {
+    userId
+    name
+    email
+  }
+}
+mutation SetLessonAccess(
+  $courseId: ID!
+  $moduleId: ID!
+  $itemId: ID!
+  $learnerId: ID!
+  $allowed: Boolean!
+) {
+  setLessonAccess(
+    courseId: $courseId
+    moduleId: $moduleId
+    itemId: $itemId
+    learnerId: $learnerId
+    allowed: $allowed
+  )
+}
+mutation AssignCourseByEmail($courseId: ID!, $email: String!) {
+  assignCourseByEmail(courseId: $courseId, email: $email) {
+    id
   }
 }
 mutation ManageModule(
