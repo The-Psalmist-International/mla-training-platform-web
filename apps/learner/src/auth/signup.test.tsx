@@ -14,8 +14,14 @@ import { signUpSchema } from "./validation"
 import { createLearnerSession } from "./session"
 
 vi.mock("@tanstack/react-router", () => ({
+  useRouter: () => ({
+    options: { context: { graphqlUrl: "http://localhost:4000/graphql" } },
+  }),
   Link: ({ to, children, ...props }: { to: string; children: ReactNode }) =>
     createElement("a", { ...props, href: to }, children),
+}))
+vi.mock("@workspace/ui/components/toaster", () => ({
+  useToast: () => ({ toast: vi.fn() }),
 }))
 vi.mock("@workspace/ui/components/theme-toggle", () => ({
   ThemeToggle: () => null,
@@ -53,6 +59,12 @@ describe("verified learner signup", () => {
       </ApolloProvider>
     )
     expect(signup).toContain("Create your learner account")
+    expect(signup).toContain("Continue with Google")
+    expect(signup).toContain('src="/images/google.png"')
+    expect(signup.indexOf("Continue with Google</button>")).toBeLessThan(
+      signup.indexOf("<form")
+    )
+    expect(signup).toContain("or continue with email")
     expect(signup).toContain('autoComplete="new-password"')
     expect(signup).toContain('name="confirmation"')
     expect(signup).toContain('href="/sign-in"')
