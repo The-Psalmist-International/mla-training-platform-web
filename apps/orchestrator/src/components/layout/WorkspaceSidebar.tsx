@@ -7,7 +7,11 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import type { CurrentUser } from "@workspace/data"
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import {
   Collapsible,
@@ -52,6 +56,7 @@ import {
 } from "../../workspace/navigation"
 import { authErrorMessage } from "../../auth/session"
 import { workspaceIcons } from "../../workspace/icons"
+import { orchestratorRelease } from "../../release"
 
 const UserCircleIcon = workspaceIcons.account
 
@@ -191,7 +196,8 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
           to="/workspace"
           className="flex items-center gap-3 rounded-md outline-offset-4"
           onClick={() => setOpenMobile(false)}
-          aria-label="Martyrs Orchestrator overview"
+          aria-label={`Martyrs Orchestrator overview, version ${orchestratorRelease.version}`}
+          title={`Orchestrator v${orchestratorRelease.version}`}
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <BoulesIcon aria-hidden size={20} weight="fill" />
@@ -200,8 +206,11 @@ export function WorkspaceSidebar({ user }: { user: CurrentUser }) {
             <span className="block text-sm font-semibold">
               MLA Platform Console
             </span>
-            <span className="block text-xs text-muted-foreground uppercase">
-              Orchestrator
+            <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              <span className="uppercase">Orchestrator</span>
+              <span className="text-[0.6875rem] tabular-nums">
+                v{orchestratorRelease.version}
+              </span>
             </span>
           </span>
         </Link>

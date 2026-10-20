@@ -8,6 +8,8 @@ import { Button } from "@workspace/ui/components/button"
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { LearnerNotifications } from "./LearnerNotifications"
 import { LearnerThemeMenuItem } from "./LearnerThemeMenuItem"
+import { ReleaseNotes } from "@workspace/ui/components/release-notes"
+import { learnerRelease } from "../release"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -69,6 +71,11 @@ export function LearnerWorkspace({
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <ReleaseNotes
+              key={user.id}
+              config={learnerRelease}
+              userId={user.id}
+            />
             <LearnerNotifications key={user.id} user={user} tab={tab} />
             <DropdownMenu>
               <DropdownMenuTrigger

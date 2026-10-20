@@ -23,6 +23,8 @@ import {
   SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
 import { Separator } from "@workspace/ui/components/separator"
+import { ReleaseNotes } from "@workspace/ui/components/release-notes"
+import { orchestratorRelease } from "../../release"
 import { WorkspaceNotifications } from "../notifications/WorkspaceNotifications"
 import { WorkspaceSidebar } from "./WorkspaceSidebar"
 import { WorkspacePageAction } from "./WorkspacePageAction"
@@ -111,6 +113,12 @@ export function WorkspaceLayout() {
             </BreadcrumbList>
           </Breadcrumb>
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ReleaseNotes
+              key={user.id}
+              config={orchestratorRelease}
+              userId={user.id}
+              showVersion={false}
+            />
             <WorkspaceNotifications key={user.id} user={user} />
             <WorkspacePageAction view={view} role={user.role} compact />
           </div>
