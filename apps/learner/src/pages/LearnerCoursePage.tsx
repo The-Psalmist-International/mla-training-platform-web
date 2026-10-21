@@ -37,6 +37,7 @@ import { LearnerShell } from "../components/LearnerShell"
 import { CourseSidebar } from "../components/course/CourseSidebar"
 import { TextLesson } from "../components/course/TextLesson"
 import { VideoLesson } from "../components/course/VideoLesson"
+import { FileLesson } from "../components/course/FileLesson"
 import { AssessmentLesson } from "../components/course/AssessmentLesson"
 import type { QuizResultMeta } from "../components/course/AssessmentLesson"
 import { VideoAssignment } from "../components/course/VideoAssignment"
@@ -89,6 +90,7 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
       { courseId }
     ),
     enabled: !!enrollment,
+    refetchInterval: enrollment ? 10000 : false,
   })
   const current = outline
     ? chooseCourseLesson(outline, enrollment, search.lesson)
@@ -107,9 +109,11 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
     )
     .find((item) => item.id === current?.id)
   const completed =
-    enrollment?.progress.some(
-      (row) => row.itemId === current?.id && row.status === "completed"
-    ) ?? false
+    !current?.isLocked &&
+    (enrollment?.progress.some(
+      (row) => row.itemId === current?.id && row.status === "completed" && (current?.type !== "file_lesson" || (lesson?.fileLesson?.fileAsset?.status === "ready" && row.fileAssetId === lesson.fileLesson.fileAsset.id))
+    ) ??
+      false)
   useEffect(() => {
     if (current && !search.lesson)
       void navigate({
@@ -202,10 +206,18 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
         </div>
       </div>
     )
+  const fileAssetIds = new Map<string, string | undefined>(
+    ordered.filter(item => item.type === "file_lesson").map(item => [item.id, undefined])
+  )
+  for (const module of content.data?.course.modules ?? [])
+    for (const item of module.items)
+      if (item.type === "file_lesson" && item.fileLesson?.fileAsset?.status === "ready")
+        fileAssetIds.set(item.id, item.fileLesson.fileAsset.id)
   const sidebar = (
     <CourseSidebar
       course={outline}
       enrollment={enrollment}
+      fileAssetIds={fileAssetIds}
       currentId={current?.id}
       nextId={next?.id}
       search={search}
@@ -371,6 +383,12 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                       }
                     />
                   </div>
+                ) : current?.isLocked || lesson.isLocked ? (
+                  <Alert>
+                    This is a private lesson. Ask your instructor or
+                    administrator to grant you access. Required private lessons
+                    must be completed before you can finish this course.
+                  </Alert>
                 ) : (
                   <div key={lesson.id}>
                     {lesson.type === "text" ? (
@@ -380,7 +398,9 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                         completed={completed}
                         refresh={refresh}
                       />
-                    ) : lesson.type === "video_lesson" ? (
+                    ) : lesson.type === "file_lesson" ? (
+                      <FileLesson lesson={lesson} courseId={courseId} enrollment={enrollment} user={user} refresh={refresh} />
+                    ) : lesson.type === "video_lesson" || lesson.type === "audio_lesson" ? (
                       <VideoLesson
                         lesson={lesson}
                         courseId={courseId}
@@ -408,52 +428,55 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                   </div>
                 )}
                 {!content.isPending && !content.isError && lesson && (
-                <nav
-                  aria-label="Lesson navigation"
-                  className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-6"
-                >
-                  {previous ? (
-                    <Button
-                      variant="outline"
-                      render={
-                        <Link
-                          to="/courses/$courseId"
-                          params={{ courseId }}
-                          search={{ ...search, lesson: previous.id }}
+                  <nav
+                    aria-label="Lesson navigation"
+                    className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-6"
+                  >
+                    {previous ? (
+                      <Button
+                        variant="outline"
+                        render={
+                          <Link
+                            to="/courses/$courseId"
+                            params={{ courseId }}
+                            search={{ ...search, lesson: previous.id }}
+                          />
+                        }
+                      >
+                        <ArrowLeftIcon aria-hidden />
+                        Previous lesson
+                      </Button>
+                    ) : (
+                      <span />
+                    )}
+                    {next ? (
+                      <Link
+                        to="/courses/$courseId"
+                        params={{ courseId }}
+                        search={{ ...search, lesson: next.id }}
+                        className="flex max-w-full items-center gap-4 rounded-md border border-border px-4 py-3 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-xs font-medium text-primary">
+                            Next lesson
+                          </span>
+                          <span className="mt-1 block text-sm font-medium">
+                            {next.title}
+                          </span>
+                        </span>
+                        <ArrowRightIcon
+                          aria-hidden
+                          className="size-5 shrink-0"
                         />
-                      }
-                    >
-                      <ArrowLeftIcon aria-hidden />
-                      Previous lesson
-                    </Button>
-                  ) : (
-                    <span />
-                  )}
-                  {next ? (
-                    <Link
-                      to="/courses/$courseId"
-                      params={{ courseId }}
-                      search={{ ...search, lesson: next.id }}
-                      className="flex max-w-full items-center gap-4 rounded-md border border-border px-4 py-3 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-xs font-medium text-primary">
-                          Next lesson
-                        </span>
-                        <span className="mt-1 block text-sm font-medium">
-                          {next.title}
-                        </span>
-                      </span>
-                      <ArrowRightIcon aria-hidden className="size-5 shrink-0" />
-                    </Link>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {enrollment.completedAt
-                        ? "You have completed this course."
-                        : "You have reached the final lesson."}
-                    </p>
-                  )}
-                </nav>
+                      </Link>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {enrollment.completedAt
+                          ? "You have completed this course."
+                          : "You have reached the final lesson."}
+                      </p>
+                    )}
+                  </nav>
                 )}
               </>
             )}

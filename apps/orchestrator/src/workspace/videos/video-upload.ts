@@ -15,6 +15,10 @@ const extensions: Record<string, string> = {
   avi: "video/x-msvideo",
   mkv: "video/x-matroska",
 }
+const audioExtensions: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg" }
+export function audioMimeType(file: Pick<File, "name" | "type">) {
+  return audioExtensions[file.name.split(".").at(-1)?.toLowerCase() ?? ""]
+}
 export function videoMimeType(file: Pick<File, "name" | "type">) {
   return mimeTypes.includes(file.type)
     ? file.type
@@ -106,7 +110,7 @@ export async function uploadLessonFile({
       fingerprint: async () => uploadFingerprint(userId, assetId, file),
       removeFingerprintOnSuccess: true,
       retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-      metadata: { filetype: videoMimeType(file) ?? file.type, title },
+      metadata: { filetype: videoMimeType(file) ?? audioMimeType(file) ?? file.type, title },
       onBeforeRequest: async (request) => {
         checkAbort(signal)
         const requestUrl = new URL(request.getURL(), target.endpoint)

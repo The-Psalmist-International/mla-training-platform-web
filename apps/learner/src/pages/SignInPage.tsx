@@ -5,8 +5,9 @@ import { Button } from "@workspace/ui/components/button"
 import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { useToast } from "@workspace/ui/components/toaster"
 import { LearnerAuthLayout } from "../components/LearnerAuthLayout"
+import { GoogleAuthButton } from "../components/GoogleAuthButton"
 import { signInSchema } from "../auth/validation"
-import { authErrorMessage, googleAuthorizationUrl } from "../auth/session"
+import { authErrorMessage } from "../auth/session"
 
 export function SignInPage() {
   const { auth, graphqlUrl } = useRouter().options.context
@@ -65,23 +66,6 @@ export function SignInPage() {
     },
   })
   const pending = form.isSubmitting || restoring || googlePending
-  const google = async () => {
-    if (pending) return
-    setGooglePending(true)
-    try {
-      window.location.assign(
-        await googleAuthorizationUrl(graphqlUrl, window.location.origin)
-      )
-    } catch (error) {
-      toast({
-        title: "Google sign-in unavailable",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
-        status: "error",
-      })
-      setGooglePending(false)
-    }
-  }
   return (
     <LearnerAuthLayout
       title="Welcome back"
@@ -89,32 +73,21 @@ export function SignInPage() {
       topRight={
         <p className="rounded-lg border border-border/60 bg-background/95 px-4 py-3 text-right text-xs leading-5 text-muted-foreground sm:text-sm">
           Don't have a learner account?{" "}
-          <span className="font-medium text-foreground">
-            Contact your admin.
-          </span>
+          <Link
+            to="/sign-up"
+            className="font-medium text-primary hover:underline"
+          >
+            Create an account.
+          </Link>
         </p>
       }
     >
-      <Button
-        variant="outline"
-        className="h-11 w-full gap-3"
+      <GoogleAuthButton
+        graphqlUrl={graphqlUrl}
         disabled={pending}
-        onClick={() => void google()}
-        aria-busy={googlePending}
-      >
-        <img
-          src="/images/google.png"
-          alt=""
-          aria-hidden
-          className="size-5 object-contain"
-        />
-        {googlePending ? "Connecting to Google…" : "Sign in with Google"}
-      </Button>
-      <div className="my-6 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        <span>or continue with email</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
+        pending={googlePending}
+        onPendingChange={setGooglePending}
+      />
       <FormikProvider value={form}>
         <Form
           className="space-y-5"

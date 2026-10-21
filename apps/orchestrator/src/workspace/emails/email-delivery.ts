@@ -22,6 +22,7 @@ export const emailStatusOptions = [
 export const emailPurposeOptions = [
   { value: "invitation", label: "Invitation" },
   { value: "password_reset", label: "Password reset" },
+  { value: "email_verification", label: "Email verification" },
   { value: "grading_pending", label: "Assessment awaiting grading" },
   { value: "assessment_graded", label: "Assessment graded" },
   { value: "submission_pending_review", label: "Submission awaiting review" },

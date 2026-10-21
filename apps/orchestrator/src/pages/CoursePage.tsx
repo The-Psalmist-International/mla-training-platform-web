@@ -274,7 +274,9 @@ function CourseManager({
                   value={value}
                   className="min-h-11 shrink-0 border-b-2 border-transparent px-1 py-3 text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring data-active:border-primary data-active:text-primary"
                 >
-                  {value.charAt(0).toUpperCase() + value.slice(1)}
+                  {value === "videos"
+                    ? "Media"
+                    : value.charAt(0).toUpperCase() + value.slice(1)}
                 </Tabs.Tab>
               ))}
             </Tabs.List>

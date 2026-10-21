@@ -37,6 +37,7 @@ import { FormInput, FormFeedback } from "@workspace/ui/components/form-input"
 import { Combobox } from "@workspace/ui/components/combobox"
 import { SelectInput } from "@workspace/ui/components/select"
 import { Alert } from "@workspace/ui/components/alert"
+import { useToast } from "@workspace/ui/components/toaster"
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,11 @@ import {
   VideoTransferError,
 } from "../../workspace/videos/video-upload"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
+import { AddFileLessonDocument, EditFileLessonDocument, AddAudioLessonDocument, EditAudioLessonDocument, LessonDocumentPreviewDocument } from "@workspace/data/apollo/documents/query"
+import { LessonFileUpload } from "./LessonFileUpload"
+import { DocumentReader } from "@workspace/ui/components/document-reader"
+import { audioMimeType } from "../../workspace/videos/video-upload"
+import { checkLessonVideoFile } from "../../workspace/videos/media-duration"
 
 export function CourseContentDialog({
   workspace,
@@ -86,11 +92,12 @@ export function CourseContentDialog({
     .replace(/^./, (letter) => letter.toUpperCase())
   const id = useId()
   const { busy, run } = useCourseTask(workspace)
+  const { toast } = useToast()
   const [videoSearch, setVideoSearch] = useState("")
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | undefined>()
+  const [mediaInputVersion, setMediaInputVersion] = useState(0)
   const uploadController = useRef<AbortController | null>(null)
   const form = useFormik({
     initialValues: {
@@ -100,6 +107,7 @@ export function CourseContentDialog({
       required: lesson?.required ?? true,
       body: lesson?.body ?? "",
       videoAssetId: lesson?.videoLesson?.videoAssetId ?? "",
+      fileAssetId: lesson?.fileLesson?.fileAssetId ?? "",
       completionThreshold: lesson?.videoLesson?.completionThreshold ?? 90,
       passMark: lesson?.assessment?.passMark ?? 70,
       attemptLimit: lesson?.assessment?.attemptLimit?.toString() ?? "",
@@ -125,7 +133,7 @@ export function CourseContentDialog({
               body: yup.string().max(100000),
               instructions: yup.string().max(100000),
               completionThreshold: yup.mixed().when("type", {
-                is: "video_lesson",
+                is: (type: string) => ["video_lesson", "audio_lesson"].includes(type),
                 then: () => yup.number().integer().min(1).max(100).required(),
               }),
               passMark: yup.mixed().when("type", {
@@ -214,22 +222,23 @@ export function CourseContentDialog({
                   itemId: lesson!.id,
                   input: { ...common, body: values.body },
                 })
-          if (values.type === "video_lesson") {
+          if (values.type === "file_lesson") {
+            const input = { ...common, fileAssetId: values.fileAssetId || null }
+            return adding ? courseMutation(workspace.clients, AddFileLessonDocument, { ...base, input })
+              : courseMutation(workspace.clients, EditFileLessonDocument, { ...base, itemId: lesson!.id, input })
+          }
+          if (values.type === "video_lesson" || values.type === "audio_lesson") {
             const input = {
               ...common,
               videoAssetId: values.videoAssetId || null,
               completionThreshold: Number(values.completionThreshold),
             }
-            return adding
-              ? courseMutation(workspace.clients, AddVideoLessonDocument, {
-                  ...base,
-                  input,
-                })
-              : courseMutation(workspace.clients, EditVideoLessonDocument, {
-                  ...base,
-                  itemId: lesson!.id,
-                  input,
-                })
+            if (adding) return values.type === "audio_lesson"
+              ? courseMutation(workspace.clients, AddAudioLessonDocument, { ...base, input })
+              : courseMutation(workspace.clients, AddVideoLessonDocument, { ...base, input })
+            return values.type === "audio_lesson"
+              ? courseMutation(workspace.clients, EditAudioLessonDocument, { ...base, itemId: lesson!.id, input })
+              : courseMutation(workspace.clients, EditVideoLessonDocument, { ...base, itemId: lesson!.id, input })
           }
           if (values.type === "assessment") {
             const input = {
@@ -293,28 +302,61 @@ export function CourseContentDialog({
       !isModule &&
       !archive &&
       !moving &&
-      form.values.type === "video_lesson",
+      ["video_lesson", "audio_lesson"].includes(form.values.type),
   })
-  const uploadVideo = async () => {
-    if (!uploadFile || uploading) return
-    const mimeType = videoMimeType(uploadFile)
+  const resetMediaInput = () => {
+    setUploadFile(null)
+    setUploadProgress(0)
+    setMediaInputVersion((value) => value + 1)
+  }
+  const mediaUploadFailed = (description: string) => {
+    resetMediaInput()
+    toast({
+      title: `${form.values.type === "audio_lesson" ? "Audio" : "Video"} upload failed`,
+      description,
+      status: "error",
+    })
+  }
+  const uploadVideo = async (selectedFile: File) => {
+    if (uploading) return
+    const mimeType =
+      form.values.type === "audio_lesson"
+        ? audioMimeType(selectedFile)
+        : videoMimeType(selectedFile)
     if (!mimeType) {
-      setUploadError("Choose an MP4, WebM, MOV, AVI, or MKV video.")
+      mediaUploadFailed(
+        form.values.type === "audio_lesson"
+          ? "Choose an MP3, WAV, or OGG file."
+          : "Choose an MP4, WebM, MOV, AVI, or MKV video."
+      )
       return
     }
-    if (uploadFile.size === 0) {
-      setUploadError("Choose a non-empty video file.")
+    if (selectedFile.size === 0) {
+      mediaUploadFailed("Choose a non-empty media file.")
       return
     }
     const title =
       form.values.title.trim() ||
-      uploadFile.name.replace(/\.[^.]+$/, "").slice(0, 200) ||
-      "Untitled video"
+      selectedFile.name.replace(/\.[^.]+$/, "").slice(0, 200) ||
+      (form.values.type === "audio_lesson" ? "Untitled audio" : "Untitled video")
     setUploading(true)
-    setUploadError(undefined)
     setUploadProgress(0)
     uploadController.current = new AbortController()
+    let succeeded = false
     try {
+      try {
+        await checkLessonVideoFile(
+          selectedFile,
+          uploadController.current.signal,
+          form.values.type === "audio_lesson" ? "audio" : "video"
+        )
+      } catch (failure) {
+        throw new VideoTransferError(
+          failure instanceof Error
+            ? failure.message
+            : "Cannot inspect this media file."
+        )
+      }
       const created = await createVideoUpload(
         workspace.clients,
         workspace.user,
@@ -325,7 +367,7 @@ export function CourseContentDialog({
         }
       )
       await uploadLessonFile({
-        file: uploadFile,
+        file: selectedFile,
         title: created.asset.title,
         userId: workspace.user.id,
         assetId: created.asset.id,
@@ -349,9 +391,9 @@ export function CourseContentDialog({
       await form.setFieldValue("videoAssetId", created.asset.id)
       setVideoSearch("")
       await videos.refetch()
-      setUploadFile(null)
+      succeeded = true
     } catch (error) {
-      setUploadError(
+      mediaUploadFailed(
         error instanceof UploadPausedError ||
           error instanceof VideoTransferError
           ? error.message
@@ -359,6 +401,7 @@ export function CourseContentDialog({
       )
     } finally {
       setUploading(false)
+      if (succeeded) resetMediaInput()
     }
   }
   const field = (
@@ -482,10 +525,10 @@ export function CourseContentDialog({
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open && !busy) workspace.close()
+        if (!open && !busy && !uploading) workspace.close()
       }}
     >
-      <DialogContent showCloseButton={!busy}>
+      <DialogContent showCloseButton={!busy && !uploading}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -559,6 +602,8 @@ export function CourseContentDialog({
                           options={[
                             { value: "text", label: "Text lesson" },
                             { value: "video_lesson", label: "Video lesson" },
+                            { value: "audio_lesson", label: "Audio lesson" },
+                            { value: "file_lesson", label: "File lesson (PDF, Word or PowerPoint)" },
                             { value: "assessment", label: "Assessment" },
                             {
                               value: "video_prompt",
@@ -580,7 +625,21 @@ export function CourseContentDialog({
                       </label>
                       {form.values.type === "text" &&
                         text("body", "Lesson content")}
-                      {form.values.type === "video_lesson" && (
+                      {form.values.type === "file_lesson" && (
+                        <LessonFileUpload
+                          clients={workspace.clients}
+                          user={workspace.user}
+                          assetId={form.values.fileAssetId}
+                          onChange={(value) =>
+                            void form.setFieldValue("fileAssetId", value)
+                          }
+                          disabled={busy || viewing}
+                          onBusyChange={setUploading}
+                        />
+                      )}
+                      {["video_lesson", "audio_lesson"].includes(
+                        form.values.type
+                      ) && (
                         <>
                           {!viewing && (
                             <>
@@ -589,18 +648,20 @@ export function CourseContentDialog({
                                   htmlFor={`${id}-video`}
                                   className="font-medium"
                                 >
-                                  Video
+                                  {form.values.type === "audio_lesson"
+                                    ? "Audio"
+                                    : "Video"}
                                 </label>
                                 <Combobox
                                   id={`${id}-video`}
                                   value={form.values.videoAssetId}
-                                  selectedLabel="Current attached video"
-                                  placeholder="Search and select a library video"
+                                  selectedLabel={`Current attached ${form.values.type === "audio_lesson" ? "audio" : "video"}`}
+                                  placeholder={`Search and select library ${form.values.type === "audio_lesson" ? "audio" : "video"}`}
                                   onSearchChange={setVideoSearch}
                                   loading={videos.isFetching}
                                   error={
                                     videos.isError
-                                      ? "Videos could not be loaded."
+                                      ? "Media could not be loaded."
                                       : undefined
                                   }
                                   onRetry={() => void videos.refetch()}
@@ -615,48 +676,61 @@ export function CourseContentDialog({
                                   options={[
                                     ...(
                                       videos.data?.myVideoAssetsPage.items ?? []
-                                    ).map((asset) => ({
-                                      value: asset.id,
-                                      label: asset.title,
-                                      description: asset.status.replaceAll(
-                                        "_",
-                                        " "
-                                      ),
-                                    })),
+                                    )
+                                      .filter(
+                                        (asset) =>
+                                          asset.mimeType.startsWith("audio/") ===
+                                          (form.values.type ===
+                                            "audio_lesson")
+                                      )
+                                      .map((asset) => ({
+                                        value: asset.id,
+                                        label: asset.title,
+                                        description: asset.status.replaceAll(
+                                          "_",
+                                          " "
+                                        ),
+                                      })),
                                   ]}
                                 />
                               </div>
                               <div className="space-y-2">
                                 <span className="font-medium">
-                                  Or upload a new video
+                                  {form.values.type === "audio_lesson"
+                                    ? "Or upload audio (30 minutes maximum)"
+                                    : "Or upload a video (15 minutes maximum)"}
                                 </span>
                                 <FileInput
+                                  key={mediaInputVersion}
                                   id={`${id}-video-file`}
                                   name="lesson-video-file"
                                   file={uploadFile}
-                                  helperText="Select an MP4, WebM, MOV, AVI, or MKV file to upload."
-                                  accept=".mp4,.webm,.mov,.avi,.mkv"
+                                  progress={
+                                    uploading ? uploadProgress : undefined
+                                  }
+                                  helperText={
+                                    form.values.type === "audio_lesson"
+                                      ? "MP3, WAV or OGG · 30 minutes maximum."
+                                      : "MP4, WebM, MOV, AVI or MKV · 15 minutes maximum."
+                                  }
+                                  accept={
+                                    form.values.type === "audio_lesson"
+                                      ? ".mp3,.wav,.ogg"
+                                      : ".mp4,.webm,.mov,.avi,.mkv"
+                                  }
                                   disabled={busy || uploading}
                                   onChange={(event) => {
-                                    setUploadFile(
+                                    const selectedFile =
                                       event.target.files?.[0] ?? null
-                                    )
-                                    setUploadError(undefined)
+                                    setUploadFile(selectedFile)
+                                    if (selectedFile)
+                                      void uploadVideo(selectedFile)
                                   }}
                                   onRemove={() => {
                                     uploadController.current?.abort()
-                                    setUploadFile(null)
-                                    setUploadError(undefined)
+                                    resetMediaInput()
                                   }}
                                 />
-                                {uploadError && (
-                                  <p
-                                    className="text-sm text-destructive"
-                                    role="alert"
-                                  >
-                                    {uploadError}
-                                  </p>
-                                )}
                                 {(uploading || uploadProgress > 0) && (
                                   <p
                                     className="text-xs text-muted-foreground"
@@ -664,21 +738,9 @@ export function CourseContentDialog({
                                   >
                                     {uploading
                                       ? `${uploadProgress}% transferred`
-                                      : "Upload complete. Select the video above."}
+                                      : `Upload complete. Select the ${form.values.type === "audio_lesson" ? "audio" : "video"} above.`}
                                   </p>
                                 )}
-                                <div>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={busy || uploading || !uploadFile}
-                                    onClick={() => void uploadVideo()}
-                                  >
-                                    {uploading
-                                      ? "Uploading..."
-                                      : "Upload and attach"}
-                                  </Button>
-                                </div>
                               </div>
                             </>
                           )}
@@ -740,7 +802,7 @@ export function CourseContentDialog({
                 <Button
                   type="submit"
                   variant={archive ? "destructive" : "default"}
-                  disabled={busy || form.isSubmitting}
+                  disabled={busy || uploading || form.isSubmitting}
                 >
                   {busy ? "Saving..." : archive ? "Archive" : "Save"}
                 </Button>
@@ -748,7 +810,7 @@ export function CourseContentDialog({
               <Button
                 type="button"
                 variant="outline"
-                disabled={busy}
+                disabled={busy || uploading}
                 onClick={workspace.close}
               >
                 {viewing || !available ? "Close" : "Cancel"}
@@ -784,7 +846,7 @@ function LessonReader({
         itemId: lessonId,
       }
     ),
-    enabled: !!lesson && lesson.type === "video_lesson",
+    enabled: !!lesson && ["video_lesson", "audio_lesson"].includes(lesson.type),
     gcTime: 0,
     staleTime: 0,
   })
@@ -860,7 +922,15 @@ function LessonReader({
                       />
                     </div>
                   )
-                ) : lesson.type === "video_lesson" ? (
+                ) : lesson.type === "file_lesson" ? (
+                  <ManagedDocumentPreview
+                    workspace={workspace}
+                    moduleId={moduleId}
+                    lessonId={lessonId}
+                    title={lesson.title}
+                    ready={lesson.fileLesson?.fileAsset?.status === "ready"}
+                  />
+                ) : ["video_lesson", "audio_lesson"].includes(lesson.type) ? (
                   <div className="space-y-3">
                     {playback.isPending ? (
                       <VideoPlayer
@@ -880,7 +950,7 @@ function LessonReader({
                     ) : (
                       <div className="flex justify-center py-8">
                         <ErrorState
-                          title="This video could not be loaded"
+                          title={`This ${lesson.type === "audio_lesson" ? "audio" : "video"} could not be loaded`}
                           description="Check its processing status and try again."
                           action={
                             <Button
@@ -895,7 +965,8 @@ function LessonReader({
                     )}
                     <p className="text-sm text-muted-foreground">
                       Completion:{" "}
-                      {lesson.videoLesson?.completionThreshold ?? 90}% watched
+                      {lesson.videoLesson?.completionThreshold ?? 90}%{" "}
+                      {lesson.type === "audio_lesson" ? "listened" : "watched"}
                     </p>
                   </div>
                 ) : lesson.type === "assessment" ? (
@@ -1000,6 +1071,27 @@ function LessonReader({
       </DialogContent>
     </Dialog>
   )
+}
+
+function ManagedDocumentPreview({ workspace, moduleId, lessonId, title, ready }: { workspace: CourseWorkspace; moduleId: string; lessonId: string; title: string; ready: boolean }) {
+  const preview = useQuery({
+    ...courseResourceOptions(workspace.clients, workspace.user, "document-preview", LessonDocumentPreviewDocument, { courseId: workspace.course.id, moduleId, itemId: lessonId }),
+    enabled: ready,
+    staleTime: 0,
+    gcTime: 0,
+  })
+  if (!ready) return <p role="status" className="text-sm text-muted-foreground">Upload a lesson file and wait for its preview to be ready.</p>
+  const raw = preview.data?.lessonFilePreview.url
+  let safeUrl: string | undefined
+  try {
+    if (raw) {
+      const url = new URL(raw), api = new URL(workspace.clients.graphqlUrl)
+      if (url.origin === api.origin && /^\/lesson-files\/[0-9a-f-]+\/preview$/i.test(url.pathname)) safeUrl = url.href
+    }
+  } catch { /* Invalid or foreign preview URL. */ }
+  if (preview.isError || (raw && !safeUrl)) return <Alert variant="warning">The secure preview could not be loaded. <Button type="button" variant="ghost" onClick={() => void preview.refetch()}>Try again</Button></Alert>
+  if (!safeUrl) return <p role="status" className="text-sm text-muted-foreground">Loading secure document…</p>
+  return <DocumentReader key={`${safeUrl}:${preview.dataUpdatedAt}`} url={safeUrl} title={title} onRetry={() => void preview.refetch()} />
 }
 
 function LessonMarkdownField({

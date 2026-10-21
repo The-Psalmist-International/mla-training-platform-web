@@ -8,7 +8,7 @@
     "dev:orchestrator": "npm run dev --workspace=@martyrs/orchestrator",
     "dev:learner": "npm run dev --workspace=@martyrs/learner",
     "test": "npm run test:tooling && turbo test",
-    "test:tooling": "node --experimental-strip-types --test tooling/vendor-chunks.test.mjs",
+    "test:tooling": "node --experimental-strip-types --test tooling/*.test.mjs",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",

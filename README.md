@@ -33,6 +33,10 @@ Orchestrator opens at `/sign-in`, with sign-in, forgot-password and reset-passwo
 
 ## Checks and components
 
+See [application versions and release notes](docs/releases.md) for the historical changelog dialog and the release publishing checklist for both apps.
+
+See [verified learner signup and private content](docs/authentication-and-private-access.md) for email verification, staff enrollment, per-learner lesson grants, and backend-first rollout requirements.
+
 See [CI and Vercel deployment](docs/deployment.md) for ordered workflows, backend schema access, and staging/production setup for both apps.
 
 ```sh

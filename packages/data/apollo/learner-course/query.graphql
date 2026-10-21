@@ -4,6 +4,7 @@ query LearnerCourseState($courseId: ID!) {
     title
     description
     status
+    isPrivate
     modules {
       id
       title
@@ -14,6 +15,8 @@ query LearnerCourseState($courseId: ID!) {
         type
         position
         required
+        isPrivate
+        isLocked
       }
     }
   }
@@ -31,6 +34,7 @@ query LearnerCourseState($courseId: ID!) {
     progress {
       itemId
       status
+      fileAssetId
       resumePositionSeconds
       watchedPercentage
       completedAt
@@ -54,7 +58,13 @@ query LearnerCourseContent($courseId: ID!) {
         type
         position
         required
+        isPrivate
+        isLocked
         body
+        fileLesson {
+          fileAssetId
+          fileAsset { id filename format sizeBytes status }
+        }
         videoLesson {
           completionThreshold
           videoAssetId

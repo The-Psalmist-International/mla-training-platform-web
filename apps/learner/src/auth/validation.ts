@@ -16,3 +16,7 @@ export const resetPasswordSchema = Yup.object({
     .required("Confirm your password.")
     .oneOf([Yup.ref("password")], "Your passwords don't match."),
 })
+export const signUpSchema = resetPasswordSchema.shape({
+  name: Yup.string().trim().min(1).max(100).required("Enter your name."),
+  email,
+})
