@@ -37,6 +37,7 @@ import { LearnerShell } from "../components/LearnerShell"
 import { CourseSidebar } from "../components/course/CourseSidebar"
 import { TextLesson } from "../components/course/TextLesson"
 import { VideoLesson } from "../components/course/VideoLesson"
+import { FileLesson } from "../components/course/FileLesson"
 import { AssessmentLesson } from "../components/course/AssessmentLesson"
 import type { QuizResultMeta } from "../components/course/AssessmentLesson"
 import { VideoAssignment } from "../components/course/VideoAssignment"
@@ -110,7 +111,7 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
   const completed =
     !current?.isLocked &&
     (enrollment?.progress.some(
-      (row) => row.itemId === current?.id && row.status === "completed"
+      (row) => row.itemId === current?.id && row.status === "completed" && (current?.type !== "file_lesson" || (lesson?.fileLesson?.fileAsset?.status === "ready" && row.fileAssetId === lesson.fileLesson.fileAsset.id))
     ) ??
       false)
   useEffect(() => {
@@ -205,10 +206,18 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
         </div>
       </div>
     )
+  const fileAssetIds = new Map<string, string | undefined>(
+    ordered.filter(item => item.type === "file_lesson").map(item => [item.id, undefined])
+  )
+  for (const module of content.data?.course.modules ?? [])
+    for (const item of module.items)
+      if (item.type === "file_lesson" && item.fileLesson?.fileAsset?.status === "ready")
+        fileAssetIds.set(item.id, item.fileLesson.fileAsset.id)
   const sidebar = (
     <CourseSidebar
       course={outline}
       enrollment={enrollment}
+      fileAssetIds={fileAssetIds}
       currentId={current?.id}
       nextId={next?.id}
       search={search}
@@ -389,7 +398,9 @@ function CoursePlayer({ user }: { user: CurrentUser }) {
                         completed={completed}
                         refresh={refresh}
                       />
-                    ) : lesson.type === "video_lesson" ? (
+                    ) : lesson.type === "file_lesson" ? (
+                      <FileLesson lesson={lesson} courseId={courseId} enrollment={enrollment} user={user} refresh={refresh} />
+                    ) : lesson.type === "video_lesson" || lesson.type === "audio_lesson" ? (
                       <VideoLesson
                         lesson={lesson}
                         courseId={courseId}

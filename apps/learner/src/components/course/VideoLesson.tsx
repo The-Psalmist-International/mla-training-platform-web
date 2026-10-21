@@ -143,7 +143,7 @@ export function VideoLesson({
         void refresh()
       } else if (data.event === "error")
         setError(
-          "The video could not be played. Reload the player to try again."
+          `The ${lesson.type === "audio_lesson" ? "audio" : "video"} could not be played. Reload the player to try again.`
         )
     }
     window.addEventListener("message", receive)
@@ -201,13 +201,13 @@ export function VideoLesson({
     <section className="space-y-4 pt-6">
       {query.isPending ? (
         <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-muted">
-          <BrandLoader label="Loading video…" className="py-6" />
+          <BrandLoader label={lesson.type === "audio_lesson" ? "Loading audio…" : "Loading video…"} className="py-6" />
         </div>
       ) : url ? (
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
           {!ready && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <BrandLoader label="Loading video…" className="py-6" />
+              <BrandLoader label={lesson.type === "audio_lesson" ? "Loading audio…" : "Loading video…"} className="py-6" />
             </div>
           )}
           <iframe
@@ -231,7 +231,7 @@ export function VideoLesson({
           />
         </div>
       ) : (
-        <Alert variant="warning">This lesson video could not be loaded.</Alert>
+        <Alert variant="warning">This lesson {lesson.type === "audio_lesson" ? "audio" : "video"} could not be loaded.</Alert>
       )}
       {(error || query.isError || (!query.isPending && !url)) && (
         <Alert variant="warning">

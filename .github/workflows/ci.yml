@@ -35,3 +35,10 @@ jobs:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
+
+  release:
+    needs: deploy
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/releases.yml

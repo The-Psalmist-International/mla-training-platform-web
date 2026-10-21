@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-10-20",
+    "title": "Read and listen in your course",
+    "summary": "Lessons now include documents and audio alongside video.",
+    "changes": [
+      { "type": "new", "text": "Read PDF, Word, and PowerPoint lessons in the course without downloading a file." },
+      { "type": "new", "text": "Mark a file lesson as read to save your progress." },
+      { "type": "new", "text": "Listen to audio lessons in the course player." }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-10-20",
     "title": "A more open learning experience",

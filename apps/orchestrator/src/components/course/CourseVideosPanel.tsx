@@ -40,6 +40,14 @@ import {
   type CourseWorkspace,
 } from "./course-workspace"
 
+function mediaKind(type: string) {
+  return type === "audio_lesson" ? "audio" : "video"
+}
+
+function mediaCompletionUnit(type: string) {
+  return type === "audio_lesson" ? "listened" : "watched"
+}
+
 export function CourseVideosPanel({
   workspace,
 }: {
@@ -52,7 +60,9 @@ export function CourseVideosPanel({
     page = (search.coursePage ?? 1) - 1
   const all = course.modules.flatMap((module) =>
     module.items
-      .filter((lesson) => lesson.type === "video_lesson")
+      .filter((lesson) =>
+        ["video_lesson", "audio_lesson"].includes(lesson.type)
+      )
       .map((lesson) => ({
         ...lesson,
         moduleId: module.id,
@@ -75,9 +85,10 @@ export function CourseVideosPanel({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Course videos</h2>
+          <h2 className="text-lg font-semibold">Course media</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Video lessons attached to this course, with their module placement.
+            Video and audio lessons attached to this course, with their module
+            placement.
           </p>
         </div>
         {editable && (
@@ -91,7 +102,7 @@ export function CourseVideosPanel({
                 })
               }
             >
-              Attach library video
+              Add media lesson
             </Button>
             <Button
               disabled={!course.modules.length}
@@ -109,7 +120,7 @@ export function CourseVideosPanel({
       <DataTable
         rows={rows.slice(page * size, (page + 1) * size)}
         getRowId={(lesson) => lesson.id}
-        ariaLabel="Course videos"
+        ariaLabel="Course media"
         search={{
           value: tableSearch.value,
           onChange: tableSearch.onChange,
@@ -117,7 +128,7 @@ export function CourseVideosPanel({
         }}
         filters={
           <SelectInput
-            aria-label="Filter videos by module"
+            aria-label="Filter media by module"
             value={search.module ?? "all"}
             onValueChange={(module) =>
               workspace.update({
@@ -144,7 +155,7 @@ export function CourseVideosPanel({
           onPageSizeChange: (coursePageSize) =>
             workspace.update({ coursePageSize, coursePage: undefined }),
         }}
-        emptyState="No video lessons match this view. Add a video lesson or upload a video to a module."
+        emptyState="No video or audio lessons match this view. Add a media lesson to a module."
         columns={[
           {
             id: "title",
@@ -179,7 +190,7 @@ export function CourseVideosPanel({
                 }
               >
                 {lesson.videoLesson?.videoAsset?.status.replaceAll("_", " ") ??
-                  "No video attached"}
+                  `No ${mediaKind(lesson.type)} attached`}
               </StatusBadge>
             ),
           },
@@ -195,7 +206,7 @@ export function CourseVideosPanel({
             id: "completion",
             header: "Completion",
             cell: (lesson) =>
-              `${lesson.videoLesson?.completionThreshold ?? 90}% watched`,
+              `${lesson.videoLesson?.completionThreshold ?? 90}% ${mediaCompletionUnit(lesson.type)}`,
           },
           {
             id: "actions",
@@ -206,7 +217,7 @@ export function CourseVideosPanel({
                 subject={lesson.title}
                 primary={[
                   {
-                    label: "Preview video",
+                    label: `Preview ${mediaKind(lesson.type)}`,
                     icon: <EyeIcon aria-hidden />,
                     disabled:
                       lesson.videoLesson?.videoAsset?.status !== "ready",
@@ -219,7 +230,7 @@ export function CourseVideosPanel({
                   ...(editable
                     ? [
                         {
-                          label: "Edit video lesson",
+                          label: `Edit ${mediaKind(lesson.type)} lesson`,
                           icon: <PencilSimpleIcon aria-hidden />,
                           onSelect: () =>
                             workspace.open("edit-lesson", {
@@ -284,7 +295,8 @@ export function CourseVideoPreviewDialog({
   )
   const lesson = module?.items.find(
     (entry) =>
-      entry.id === workspace.search.lessonId && entry.type === "video_lesson"
+      entry.id === workspace.search.lessonId &&
+      ["video_lesson", "audio_lesson"].includes(entry.type)
   )
   const query = useQuery({
     ...courseResourceOptions(
@@ -323,9 +335,9 @@ export function CourseVideoPreviewDialog({
     >
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{lesson?.title ?? "Video preview"}</DialogTitle>
+          <DialogTitle>{lesson?.title ?? "Media preview"}</DialogTitle>
           <DialogDescription>
-            {module?.title ?? "Course video"}
+            {module?.title ?? "Course media"}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -343,7 +355,7 @@ export function CourseVideoPreviewDialog({
           ) : (
             <div className="flex justify-center py-8">
               <ErrorState
-                title="This video could not be loaded"
+                title={`This ${mediaKind(lesson?.type ?? "video_lesson")} could not be loaded`}
                 description="Check its processing status and try again."
                 action={
                   <Button

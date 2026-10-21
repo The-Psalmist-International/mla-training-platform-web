@@ -536,17 +536,32 @@ function LessonSummary({ lesson }: { lesson: ManagedLesson }) {
       </div>
     )
   }
-  if (lesson.type === "video_lesson")
+  if (["video_lesson", "audio_lesson"].includes(lesson.type))
     return (
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         <span>
           Status:{" "}
           {lesson.videoLesson?.videoAsset?.status.replaceAll("_", " ") ??
-            "No video attached"}
+            `No ${lesson.type === "audio_lesson" ? "audio" : "video"} attached`}
         </span>
         <span>
-          Completion: {lesson.videoLesson?.completionThreshold ?? 90}% watched
+          Completion: {lesson.videoLesson?.completionThreshold ?? 90}%{" "}
+          {lesson.type === "audio_lesson" ? "listened" : "watched"}
         </span>
+      </div>
+    )
+  if (lesson.type === "file_lesson")
+    return (
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <span>
+          File: {lesson.fileLesson?.fileAsset?.filename ?? "No file attached"}
+        </span>
+        <span>
+          Status:{" "}
+          {lesson.fileLesson?.fileAsset?.status.replaceAll("_", " ") ??
+            "not uploaded"}
+        </span>
+        <span>Completion: learner marks as read</span>
       </div>
     )
   if (lesson.type === "assessment")

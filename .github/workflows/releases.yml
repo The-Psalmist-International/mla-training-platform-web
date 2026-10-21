@@ -1,0 +1,24 @@
+name: GitHub Releases
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publish deployed app versions and matching changelogs
+        run: node tooling/github-releases.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}

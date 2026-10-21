@@ -34,6 +34,7 @@ import {
   UploadPausedError,
   VideoTransferError,
 } from "../../workspace/videos/video-upload"
+import { checkLessonVideoFile } from "../../workspace/videos/media-duration"
 
 export function VideoUploadDialog({
   assetId,
@@ -95,6 +96,17 @@ export function VideoUploadDialog({
       setPhase("preparing")
       controller.current = new AbortController()
       try {
+        try {
+          await checkLessonVideoFile(file, controller.current.signal)
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError")
+            throw new UploadPausedError()
+          throw new VideoTransferError(
+            error instanceof Error
+              ? error.message
+              : "Unable to inspect this video."
+          )
+        }
         let upload: LessonUpload
         if (assetId || reservation.current)
           upload = await refreshVideoUpload(
@@ -135,11 +147,13 @@ export function VideoUploadDialog({
         try {
           const updated = await syncVideo(dataClients, user, upload.asset.id)
           message =
-            updated.status === "ready"
-              ? `${updated.title}: video ready to preview.`
-              : updated.status === "failed"
-                ? `${updated.title}: file uploaded, but video processing failed. Check its details.`
-                : `${updated.title}: file uploaded. Video status: ${updated.status.replaceAll("_", " ")}.`
+            updated.durationSeconds !== null && updated.durationSeconds > 900
+              ? `${updated.title}: lesson videos must be 15 minutes or shorter. Choose a shorter video.`
+              : updated.status === "ready"
+                ? `${updated.title}: video ready to preview.`
+                : updated.status === "failed"
+                  ? `${updated.title}: file uploaded, but video processing failed. Check its details.`
+                  : `${updated.title}: file uploaded. Video status: ${updated.status.replaceAll("_", " ")}.`
         } catch {
           message = `${upload.asset.title}: file uploaded, but its status could not be refreshed. Check status from the video details.`
         }
@@ -271,7 +285,7 @@ export function VideoUploadDialog({
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`${id}-file`} className="font-medium">
-                      Video file
+                      Video file (15 minutes maximum)
                     </label>
                     <FileInput
                       id={`${id}-file`}

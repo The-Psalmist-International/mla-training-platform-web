@@ -1,0 +1,30 @@
+mutation CreateLessonDocumentUpload($input: LessonFileUploadInput!) {
+  createLessonFileUpload(input: $input) {
+    asset { id filename format sizeBytes status }
+    upload { endpoint publicId timestamp apiKey signature }
+  }
+}
+mutation FinalizeLessonDocumentUpload($id: ID!) {
+  finalizeLessonFileUpload(id: $id) { id filename format sizeBytes status }
+}
+query LessonDocumentAsset($id: ID!) {
+  lessonFileAsset(id: $id) { id filename format sizeBytes status }
+}
+query LessonDocumentPreview($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
+  lessonFilePreview(courseId: $courseId, moduleId: $moduleId, itemId: $itemId) { url expires }
+}
+mutation AddFileLesson($courseId: ID!, $moduleId: ID!, $input: CreateFileLessonInput!) {
+  createFileLesson(courseId: $courseId, moduleId: $moduleId, input: $input) { id }
+}
+mutation EditFileLesson($courseId: ID!, $moduleId: ID!, $itemId: ID!, $input: UpdateFileLessonInput!) {
+  updateFileLesson(courseId: $courseId, moduleId: $moduleId, itemId: $itemId, input: $input) { id }
+}
+mutation AddAudioLesson($courseId: ID!, $moduleId: ID!, $input: CreateVideoLessonInput!) {
+  createAudioLesson(courseId: $courseId, moduleId: $moduleId, input: $input) { id }
+}
+mutation EditAudioLesson($courseId: ID!, $moduleId: ID!, $itemId: ID!, $input: UpdateVideoLessonInput!) {
+  updateAudioLesson(courseId: $courseId, moduleId: $moduleId, itemId: $itemId, input: $input) { id }
+}
+mutation MarkLearnerFileRead($enrollmentId: ID!, $itemId: ID!) {
+  completeFileLesson(enrollmentId: $enrollmentId, itemId: $itemId) { itemId status completedAt fileAssetId }
+}
