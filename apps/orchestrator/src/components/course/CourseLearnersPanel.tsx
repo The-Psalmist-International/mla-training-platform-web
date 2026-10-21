@@ -455,8 +455,14 @@ export function CourseLearnerDialog({
                         {(
                           progress.get(lesson.id)?.status ?? "not_started"
                         ).replaceAll("_", " ")}
-                        {lesson.type === "video_lesson"
-                          ? ` · ${progress.get(lesson.id)?.watchedPercentage ?? 0}% watched`
+                        {["video_lesson", "audio_lesson"].includes(
+                          lesson.type
+                        )
+                          ? ` · ${progress.get(lesson.id)?.watchedPercentage ?? 0}% ${
+                              lesson.type === "audio_lesson"
+                                ? "listened"
+                                : "watched"
+                            }`
                           : ""}
                       </span>
                     </li>

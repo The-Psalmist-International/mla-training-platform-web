@@ -34,6 +34,7 @@ query LearnerCourseState($courseId: ID!) {
     progress {
       itemId
       status
+      fileAssetId
       resumePositionSeconds
       watchedPercentage
       completedAt
@@ -60,6 +61,10 @@ query LearnerCourseContent($courseId: ID!) {
         isPrivate
         isLocked
         body
+        fileLesson {
+          fileAssetId
+          fileAsset { id filename format sizeBytes status }
+        }
         videoLesson {
           completionThreshold
           videoAssetId

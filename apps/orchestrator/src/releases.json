@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-10-20",
+    "title": "More lesson formats",
+    "summary": "Teach with documents and audio alongside video, with clear upload limits.",
+    "changes": [
+      { "type": "new", "text": "Add PDF, Word, and PowerPoint lesson files with private in-app previews." },
+      { "type": "new", "text": "Add audio lessons hosted in Bunny, with a 30-minute limit." },
+      { "type": "improved", "text": "Video lessons are limited to 15 minutes, with a duration check before upload." }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-10-20",
     "title": "More control over course access",

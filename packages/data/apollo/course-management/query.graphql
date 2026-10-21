@@ -23,6 +23,10 @@ query CourseManagement($id: ID!) {
         required
         isPrivate
         body
+        fileLesson {
+          fileAssetId
+          fileAsset { id filename format sizeBytes status }
+        }
         videoLesson {
           videoAssetId
           completionThreshold
