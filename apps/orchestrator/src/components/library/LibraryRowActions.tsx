@@ -7,6 +7,7 @@ import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTil
 import { ArrowUUpLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowUUpLeft"
 import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive"
 import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash"
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react/dist/csr/ArrowsLeftRight"
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play"
 import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple"
 import {
@@ -45,6 +46,9 @@ export function LibraryRowActions({
   ]
   const secondary: TableRowAction[] = []
   if (view === "courses") {
+    if (owns && item.canDelete && item.status !== "archived") secondary.push({
+      label: "Move into another course", icon: <ArrowsLeftRightIcon aria-hidden />, onSelect: () => onSelect("move", item.id),
+    })
     if (owns && item.status === "draft") {
       primary.push({
         label: "Edit course",

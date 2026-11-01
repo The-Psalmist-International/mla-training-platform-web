@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-01",
+    "title": "Organize courses into modules",
+    "summary": "Combine unenrolled courses into a draft course while preserving lesson content and privacy.",
+    "changes": [
+      { "type": "new", "text": "Drag a course onto another draft course to move it as a module, with confirmation before moving." },
+      { "type": "new", "text": "Use Move into another course from course actions to choose a destination without dragging." },
+      { "type": "improved", "text": "Courses with enrollment history cannot be moved. Source courses are archived after a successful move." }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-01",
     "title": "Assessment uploads and safer content management",

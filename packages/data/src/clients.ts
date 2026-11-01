@@ -206,6 +206,37 @@ export function createDataClients(options: DataClientOptions) {
     apolloClient,
     queryClient,
     graphqlUrl,
+    async fetchCertificatePdf(id: string, signal?: AbortSignal) {
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid certificate.")
+      await ensureSession?.()
+      const generation = authGeneration
+      const token = options.getAccessToken
+        ? await options.getAccessToken()
+        : accessToken
+      if (!token) throw new Error("Sign in to download your certificate.")
+      const response = await (options.fetch ?? globalThis.fetch)(
+        new URL(`/certificates/${id}/pdf`, graphqlUrl),
+        {
+          headers: { authorization: `Bearer ${token}` },
+          credentials: "include",
+          redirect: "error",
+          signal,
+        }
+      )
+      if (generation !== authGeneration)
+        throw new Error("Your account changed. Open the certificate again.")
+      if (
+        !response.ok ||
+        !response.headers.get("content-type")?.includes("application/pdf")
+      )
+        throw new Error(
+          "The certificate could not be loaded. Please try again."
+        )
+      const blob = await response.blob()
+      if (generation !== authGeneration)
+        throw new Error("Your account changed. Open the certificate again.")
+      return blob
+    },
     setSessionRenewal(renew: (() => Promise<void>) | undefined) {
       ensureSession = renew
     },

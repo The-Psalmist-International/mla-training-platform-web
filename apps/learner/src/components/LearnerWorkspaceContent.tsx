@@ -16,6 +16,8 @@ import {
   type CourseListItem,
 } from "@workspace/data/apollo/course/query"
 import { MY_CERTIFICATES_QUERY } from "@workspace/data/apollo/certificate/query"
+import { CertificateActions } from "./CertificateActions"
+import { LearnerGradebook } from "./LearnerGradebook"
 import { EmptyState } from "@workspace/ui/components/empty-state"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -59,7 +61,9 @@ export function LearnerWorkspaceContent({
               ? "My learning"
               : tab === "library"
                 ? "Course library"
-                : "Results"}
+                : tab === "gradebook"
+                  ? "Gradebook"
+                  : "Results"}
         </h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           {tab === "overview"
@@ -68,10 +72,14 @@ export function LearnerWorkspaceContent({
               ? "Keep track of the courses you have been enrolled in."
               : tab === "library"
                 ? "Explore the training available in your academy."
-                : "Your earned training certificates, all in one place."}
+                : tab === "gradebook"
+                  ? "Review your assessment grades, feedback, and attempt history."
+                  : "Your earned training certificates, all in one place."}
         </p>
       </div>
-      {tab === "library" ? (
+      {tab === "gradebook" ? (
+        <LearnerGradebook user={user} search={search} />
+      ) : tab === "library" ? (
         <Library user={user} search={search} />
       ) : tab === "results" ? (
         <Results user={user} search={search} />
@@ -474,6 +482,7 @@ function Results({
                   {certificate.status === "revoked" ? "Revoked" : "Issued"}
                 </span>
               </div>
+              <CertificateActions certificate={certificate} />
             </article>
           ))}
         </div>

@@ -7,6 +7,56 @@ import { backendHealthOptions } from "./health"
 const graphqlUrl = "http://localhost:4000/graphql"
 
 describe("shared data clients", () => {
+  it("renews authentication before fetching a certificate PDF from the API origin", async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response("%PDF-1.7", {
+          headers: { "content-type": "application/pdf" },
+        })
+      )
+    const clients = createDataClients({ graphqlUrl, fetch: request })
+    await clients.setAccessToken("old-token")
+    const renew = vi.fn(async () => {
+      clients.rotateAccessToken("renewed-token")
+    })
+    clients.setSessionRenewal(renew)
+    const id = "12345678-1234-1234-1234-123456789abc"
+    const blob = await clients.fetchCertificatePdf(id)
+    expect(renew).toHaveBeenCalledOnce()
+    expect(String(request.mock.calls[0]![0])).toBe(
+      `http://localhost:4000/certificates/${id}/pdf`
+    )
+    expect(
+      new Headers(request.mock.calls[0]![1]?.headers).get("authorization")
+    ).toBe("Bearer renewed-token")
+    expect(await blob.text()).toBe("%PDF-1.7")
+    await clients.setAccessToken(null)
+    clients.setSessionRenewal(undefined)
+    await expect(clients.fetchCertificatePdf(id)).rejects.toThrow("Sign in")
+    expect(request).toHaveBeenCalledOnce()
+  })
+
+  it("does not expose a certificate response after the account changes", async () => {
+    let finish!: (response: Response) => void
+    const request = vi.fn<typeof fetch>(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    const clients = createDataClients({ graphqlUrl, fetch: request })
+    await clients.setAccessToken("first-user")
+    const pending = clients.fetchCertificatePdf(
+      "12345678-1234-1234-1234-123456789abc"
+    )
+    await vi.waitFor(() => expect(request).toHaveBeenCalledOnce())
+    await clients.setAccessToken("second-user")
+    finish(
+      new Response("%PDF", { headers: { "content-type": "application/pdf" } })
+    )
+    await expect(pending).rejects.toThrow("account changed")
+  })
   it("creates isolated clients and caches for separate requests/apps", () => {
     const first = createDataClients({ graphqlUrl })
     const second = createDataClients({ graphqlUrl })

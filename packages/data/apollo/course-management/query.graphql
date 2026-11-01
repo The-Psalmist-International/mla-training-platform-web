@@ -1,3 +1,9 @@
+mutation MoveCourseIntoCourse($sourceId: ID!, $destinationId: ID!) {
+  moveCourseIntoCourse(sourceId: $sourceId, destinationId: $destinationId) { id title }
+}
+query CourseMovePreview($id: ID!) {
+  course(id: $id) { id title ownerId status canDelete modules { id items { id } } }
+}
 query CourseManagement($id: ID!) {
   course(id: $id) {
     id

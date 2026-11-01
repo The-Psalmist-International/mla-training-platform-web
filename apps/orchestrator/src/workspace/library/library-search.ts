@@ -34,10 +34,12 @@ export interface LibrarySearchState {
     | "unpublish"
     | "archive"
     | "delete"
+    | "move"
     | "upload"
     | "resume"
     | "preview"
   item?: string
+  destination?: string
 }
 export function validateLibrarySearch(
   view: LibraryView,
@@ -56,6 +58,7 @@ export function validateLibrarySearch(
           "unpublish",
           "archive",
           "delete",
+          "move",
         ] as const)
       : (["upload", "resume", "details", "preview", "delete"] as const)
   const modal = allowed.find((value) => value === search.modal)
@@ -68,6 +71,7 @@ export function validateLibrarySearch(
       : undefined
   const creating = modal === "create" || modal === "upload"
   return {
+    destination: view === "courses" && modal === "move" && typeof search.destination === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.destination) ? search.destination : undefined,
     q: q || undefined,
     status: options.find((option) => option.value === search.status)?.value,
     scope:

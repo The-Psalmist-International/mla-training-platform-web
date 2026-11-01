@@ -1,0 +1,33 @@
+query LearnerGradebook($limit: Int!, $offset: Int!, $courseId: ID) {
+  myGradebook(limit: $limit, offset: $offset, courseId: $courseId) {
+    totalCount
+    items {
+      id
+      courseId
+      courseTitle
+      assessmentId
+      assessmentTitle
+      attemptNumber
+      status
+      maxScore
+      score
+      passed
+      passMark
+      startedAt
+      gradedAt
+    }
+  }
+}
+query LearnerGradebookCourses($limit: Int!, $offset: Int!) {
+  myGradebookCourses(limit: $limit, offset: $offset) {
+    totalCount
+    items {
+      id
+      title
+      assessmentCount
+      attemptCount
+      passedCount
+      pendingCount
+    }
+  }
+}
