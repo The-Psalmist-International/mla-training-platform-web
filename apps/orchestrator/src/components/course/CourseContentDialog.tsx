@@ -8,7 +8,9 @@ import {
   CreateCourseModuleDocument,
   ManageModuleDocument,
   ArchiveModuleDocument,
+  DeleteModuleDocument,
   ArchiveLessonDocument,
+  DeleteLessonDocument,
   MoveLessonDocument,
   AddTextLessonDocument,
   EditTextLessonDocument,
@@ -81,12 +83,13 @@ export function CourseContentDialog({
   const lesson = module?.items.find((entry) => entry.id === search.lessonId)
   const isModule = action.endsWith("module")
   const archive = action.startsWith("archive-")
+  const removing = action.startsWith("delete-")
   const moving = action === "move-lesson"
   const viewing = action === "view-lesson"
   const adding = action.startsWith("add-")
   const available = viewing
     ? !!lesson
-    : editable && (adding || (isModule ? !!module : !!lesson))
+    : (removing ? workspace.owns : editable) && (adding || (isModule ? !!module : !!lesson))
   const title = action
     .replaceAll("-", " ")
     .replace(/^./, (letter) => letter.toUpperCase())
@@ -119,7 +122,7 @@ export function CourseContentDialog({
         course.modules.find((entry) => entry.id !== module?.id)?.id ?? "",
     },
     validationSchema:
-      archive || viewing
+      archive || removing || viewing
         ? undefined
         : moving
           ? yup.object({
@@ -192,11 +195,15 @@ export function CourseContentDialog({
               ArchiveModuleDocument,
               base
             )
+          if (action === "delete-module")
+            return courseMutation(workspace.clients, DeleteModuleDocument, base)
           if (action === "archive-lesson")
             return courseMutation(workspace.clients, ArchiveLessonDocument, {
               ...base,
               itemId: lesson!.id,
             })
+          if (action === "delete-lesson")
+            return courseMutation(workspace.clients, DeleteLessonDocument, { ...base, itemId: lesson!.id })
           if (moving)
             return courseMutation(workspace.clients, MoveLessonDocument, {
               ...base,
@@ -279,7 +286,7 @@ export function CourseContentDialog({
                 input,
               })
         },
-        archive
+        removing ? "Content deleted permanently." : archive
           ? "Content archived; learning history retained."
           : moving
             ? "Lesson moved."
@@ -473,7 +480,7 @@ export function CourseContentDialog({
       </div>
     )
   }
-  if (archive)
+  if (archive || removing)
     return (
       <ConfirmationDialog
         title={title}
@@ -483,9 +490,9 @@ export function CourseContentDialog({
         description={
           available ? (
             <>
-              Archive “{isModule ? module?.title : lesson?.title}”?{" "}
-              {isModule && "Its lessons will also be archived. "}Historical
-              learner records will be retained.
+              {removing ? "Delete" : "Archive"} {isModule ? module?.title : lesson?.title}?{" "}
+              {isModule && `Its lessons will also be ${removing ? "deleted" : "archived"}. `}
+              {removing ? "This only succeeds when the course has no learner history." : "Historical learner records will be retained."}
             </>
           ) : (
             "This content or action is no longer available. Close the dialog and refresh the course."
@@ -506,7 +513,7 @@ export function CourseContentDialog({
                 disabled={busy || form.isSubmitting}
                 onClick={() => void form.submitForm()}
               >
-                {busy || form.isSubmitting ? "Archiving..." : "Archive"}
+                {busy || form.isSubmitting ? (removing ? "Deleting..." : "Archiving...") : (removing ? "Delete permanently" : "Archive")}
               </Button>
             )}
           </>
@@ -605,10 +612,6 @@ export function CourseContentDialog({
                             { value: "audio_lesson", label: "Audio lesson" },
                             { value: "file_lesson", label: "File lesson (PDF, Word or PowerPoint)" },
                             { value: "assessment", label: "Assessment" },
-                            {
-                              value: "video_prompt",
-                              label: "Video submission prompt",
-                            },
                           ]}
                         />
                       </label>
@@ -768,27 +771,6 @@ export function CourseContentDialog({
                             Manage questions from the lesson's actions after
                             saving.
                           </Alert>
-                        </>
-                      )}
-                      {form.values.type === "video_prompt" && (
-                        <>
-                          {text("instructions", "Submission instructions")}
-                          {field(
-                            "maxDurationSeconds",
-                            "Maximum duration (seconds)",
-                            "number"
-                          )}
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              name="requiresReview"
-                              checked={form.values.requiresReview}
-                              onChange={form.handleChange}
-                              disabled={busy || viewing}
-                              className="size-4 accent-primary"
-                            />
-                            Require instructor review
-                          </label>
                         </>
                       )}
                     </>

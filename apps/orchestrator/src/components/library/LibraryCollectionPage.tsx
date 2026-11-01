@@ -30,6 +30,7 @@ import { CourseThumbnail } from "../course/CourseThumbnail"
 import { VideoThumbnail } from "../videos/VideoThumbnail"
 import { VideoUploadDialog } from "../videos/VideoUploadDialog"
 import { VideoLibraryDialog } from "../videos/VideoLibraryDialog"
+import { VideoDeleteDialog } from "../videos/VideoDeleteDialog"
 import { formatPeopleCreatedAt } from "../../workspace/people/people"
 import {
   libraryTableOptions,
@@ -491,6 +492,9 @@ function LibraryTable({
             onChanged={changed}
           />
         )}
+      {view === "videos" && urlState.modal === "delete" && urlState.item && (
+        <VideoDeleteDialog id={urlState.item} user={user} onClose={closeAction} onChanged={changed} />
+      )}
       {view === "videos" &&
         (urlState.modal === "details" || urlState.modal === "preview") &&
         urlState.item && (

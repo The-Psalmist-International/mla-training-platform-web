@@ -21,11 +21,13 @@ import { courseMutation } from "../../workspace/course/course-management"
 import { useCourseTask, type CourseWorkspace } from "./course-workspace"
 
 type Question = {
-  type: "mcq" | "true_false" | "short_answer"
+  type: "mcq" | "true_false" | "short_answer" | "video_upload" | "file_upload"
   prompt: string
   points: number
   explanation: string
   referenceAnswer: string
+  maxDurationSeconds: number | null
+  requiresReview: boolean
   options: { label: string; isCorrect: boolean }[]
 }
 const blankQuestion = (): Question => ({
@@ -34,6 +36,8 @@ const blankQuestion = (): Question => ({
   points: 1,
   explanation: "",
   referenceAnswer: "",
+  maxDurationSeconds: null,
+  requiresReview: true,
   options: [
     { label: "", isCorrect: true },
     { label: "", isCorrect: false },
@@ -59,12 +63,15 @@ export const questionsSchema = yup.object({
             .required("Enter question points."),
           explanation: yup.string().max(10000),
           referenceAnswer: yup.string().max(10000),
+          maxDurationSeconds: yup.number().nullable().min(1).max(900),
         })
         .test(
           "answers",
           "Short answers need a reference answer. Choice questions need 2–10 unique answers and exactly one correct answer.",
           (question) => {
             const row = question as unknown as Question
+            if (row.type === "video_upload") return Number(row.maxDurationSeconds) >= 1 && Number(row.maxDurationSeconds) <= 900
+            if (row.type === "file_upload") return true
             if (row.type === "short_answer") return !!row.referenceAnswer.trim()
             const labels = row.options.map((option) =>
               option.label.trim().toLowerCase()
@@ -106,6 +113,8 @@ export function CourseQuestionsDialog({
         points: question.points,
         explanation: question.explanation,
         referenceAnswer: question.referenceAnswer ?? "",
+        maxDurationSeconds: question.maxDurationSeconds ?? null,
+        requiresReview: question.requiresReview,
         options: question.options.map((option) => ({
           label: option.label,
           isCorrect: option.isCorrect,
@@ -129,8 +138,10 @@ export function CourseQuestionsDialog({
                 question.type === "short_answer"
                   ? question.referenceAnswer.trim()
                   : null,
+              maxDurationSeconds: question.type === "video_upload" ? Number(question.maxDurationSeconds) : null,
+              requiresReview: question.type === "video_upload" ? question.requiresReview : true,
               options:
-                question.type === "short_answer"
+                ["short_answer", "video_upload", "file_upload"].includes(question.type)
                   ? []
                   : question.options.map((option) => ({
                       ...option,
@@ -220,6 +231,8 @@ export function CourseQuestionsDialog({
                                   value: "short_answer",
                                   label: "Short answer",
                                 },
+                                { value: "video_upload", label: "Video upload" },
+                                { value: "file_upload", label: "File upload" },
                               ]}
                               onValueChange={(type) => {
                                 void form.setFieldValue(
@@ -228,7 +241,7 @@ export function CourseQuestionsDialog({
                                 )
                                 void form.setFieldValue(
                                   `questions.${index}.options`,
-                                  type === "short_answer"
+                                  ["short_answer", "video_upload", "file_upload"].includes(type)
                                     ? []
                                     : type === "true_false"
                                       ? [
@@ -240,6 +253,7 @@ export function CourseQuestionsDialog({
                                           { label: "", isCorrect: false },
                                         ]
                                 )
+                                void form.setFieldValue(`questions.${index}.maxDurationSeconds`, type === "video_upload" ? 900 : null)
                               }}
                             />
                           </label>
@@ -261,6 +275,16 @@ export function CourseQuestionsDialog({
                               disabled={busy}
                             />
                           </label>
+                          {question.type === "video_upload" && (
+                            <label className="block space-y-2">
+                              <span className="font-medium">Maximum video length (seconds)</span>
+                              <FormInput name={`questions.${index}.maxDurationSeconds`} type="number" min={1} max={900} disabled={busy} />
+                              <span className="text-sm text-muted-foreground">Up to 15 minutes.</span>
+                            </label>
+                          )}
+                          {question.type === "file_upload" && (
+                            <p className="text-sm text-muted-foreground">Learners may submit one private PDF, Word, or PowerPoint file up to 20 MB. Files are graded manually.</p>
+                          )}
                           {question.type === "short_answer" ? (
                             <label className="block space-y-2">
                               <span className="font-medium">
@@ -272,7 +296,7 @@ export function CourseQuestionsDialog({
                                 disabled={busy}
                               />
                             </label>
-                          ) : (
+                          ) : !["video_upload", "file_upload"].includes(question.type) ? (
                             <div className="space-y-3">
                               <p className="text-sm font-medium">
                                 Answers · select the correct answer
@@ -357,7 +381,7 @@ export function CourseQuestionsDialog({
                                 </Button>
                               )}
                             </div>
-                          )}
+                          ) : null}
                           <label className="block space-y-2">
                             <span className="font-medium">
                               Explanation (optional)

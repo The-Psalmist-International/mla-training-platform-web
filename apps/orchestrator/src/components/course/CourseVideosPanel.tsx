@@ -9,6 +9,7 @@ import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
 import { PencilSimpleIcon } from "@phosphor-icons/react/dist/csr/PencilSimple"
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwise"
 import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive"
+import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash"
 import { Button } from "@workspace/ui/components/button"
 import { ErrorState } from "@workspace/ui/components/error-state"
 import { DataTable } from "@workspace/ui/components/data-table"
@@ -270,6 +271,12 @@ export function CourseVideosPanel({
                                     moduleId: lesson.moduleId,
                                     lessonId: lesson.id,
                                   }),
+                              },
+                              {
+                                label: "Delete lesson permanently",
+                                icon: <TrashIcon aria-hidden />,
+                                destructive: true,
+                                onSelect: () => workspace.open("delete-lesson", { moduleId: lesson.moduleId, lessonId: lesson.id }),
                               },
                             ]
                           : []),

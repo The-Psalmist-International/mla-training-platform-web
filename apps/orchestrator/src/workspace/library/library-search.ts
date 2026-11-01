@@ -33,6 +33,7 @@ export interface LibrarySearchState {
     | "publish"
     | "unpublish"
     | "archive"
+    | "delete"
     | "upload"
     | "resume"
     | "preview"
@@ -54,8 +55,9 @@ export function validateLibrarySearch(
           "publish",
           "unpublish",
           "archive",
+          "delete",
         ] as const)
-      : (["upload", "resume", "details", "preview"] as const)
+      : (["upload", "resume", "details", "preview", "delete"] as const)
   const modal = allowed.find((value) => value === search.modal)
   const item =
     typeof search.item === "string" &&
