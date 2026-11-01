@@ -31,6 +31,16 @@ import { VideoThumbnail } from "../videos/VideoThumbnail"
 import { VideoUploadDialog } from "../videos/VideoUploadDialog"
 import { VideoLibraryDialog } from "../videos/VideoLibraryDialog"
 import { VideoDeleteDialog } from "../videos/VideoDeleteDialog"
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import { CourseMoveSurface } from "../course/CourseMoveSurface"
+import { CourseMoveDialog } from "../course/CourseMoveDialog"
 import { formatPeopleCreatedAt } from "../../workspace/people/people"
 import {
   libraryTableOptions,
@@ -140,6 +150,13 @@ function LibraryTable({
   const navigate = useNavigate()
   const id = useId()
   const [search, setSearch] = useState(urlState.q ?? "")
+  const [dragTitle, setDragTitle] = useState<string>()
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  )
+  const canManage = (item: LibraryItem) =>
+    user.role === "admin" || item.ownerId === user.id
   const updateSearch = useCallback(
     (patch: Partial<LibrarySearchState>, replace = false) => {
       void navigate({
@@ -191,7 +208,7 @@ function LibraryTable({
   const openAction = (
     modal: NonNullable<LibrarySearchState["modal"]>,
     item: string
-  ) => updateSearch({ modal, item })
+  ) => updateSearch({ modal, item, destination: undefined })
   const expandCourse = (courseId: string) => {
     void navigate({
       to: "/workspace/courses/$courseId",
@@ -201,7 +218,10 @@ function LibraryTable({
   }
   const closeAction = () => {
     if (auth.getUser() === user)
-      updateSearch({ modal: undefined, item: undefined }, true)
+      updateSearch(
+        { modal: undefined, item: undefined, destination: undefined },
+        true
+      )
   }
   const changed = (message?: string, status: ToastStatus = "success") => {
     if (message && auth.getUser() === user)
@@ -237,31 +257,37 @@ function LibraryTable({
       header: "Title",
       className: "min-w-64",
       cell: (item) => (
-        <div className="flex items-center gap-3">
-          {view === "courses" ? (
-            <CourseThumbnail
-              title={item.title}
-              thumbnailUrl={item.thumbnailUrl}
-              compact
-              className="w-16"
-            />
-          ) : (
-            <VideoThumbnail
-              thumbnailUrl={item.thumbnailUrl}
-              compact
-              className="w-16"
-            />
-          )}
-          <div className="min-w-0">
-            <button
-              type="button"
-              onClick={() => openAction("details", item.id)}
-              className="text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              {item.title}
-            </button>
+        <CourseMoveSurface
+          item={item}
+          owns={canManage(item)}
+          enabled={view === "courses"}
+        >
+          <div className="flex items-center gap-3">
+            {view === "courses" ? (
+              <CourseThumbnail
+                title={item.title}
+                thumbnailUrl={item.thumbnailUrl}
+                compact
+                className="w-16"
+              />
+            ) : (
+              <VideoThumbnail
+                thumbnailUrl={item.thumbnailUrl}
+                compact
+                className="w-16"
+              />
+            )}
+            <div className="min-w-0">
+              <button
+                type="button"
+                onClick={() => openAction("details", item.id)}
+                className="text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {item.title}
+              </button>
+            </div>
           </div>
-        </div>
+        </CourseMoveSurface>
       ),
     },
     {
@@ -316,197 +342,263 @@ function LibraryTable({
     },
   ]
   return (
-    <WorkspacePageFrame view={view}>
-      <DataTable
-        rows={query.data?.items ?? []}
-        columns={columns}
-        getRowId={(item) => item.id}
-        ariaLabel={label}
-        layout={{
-          mode: "toggle",
-          view: urlState.layout ?? "table",
-          onViewChange: (layout) =>
-            updateSearch({ layout: layout === "grid" ? "grid" : undefined }),
-          renderCard: (item) => (
-            <LibraryCard
-              item={item}
-              view={view}
-              onOpen={() => openAction("details", item.id)}
-              actions={
-                <LibraryRowActions
+    <DndContext
+      sensors={sensors}
+      onDragStart={(event) =>
+        setDragTitle(String(event.active.data.current?.title ?? "Course"))
+      }
+      onDragCancel={() => setDragTitle(undefined)}
+      onDragEnd={(event) => {
+        setDragTitle(undefined)
+        if (
+          !event.over ||
+          event.active.id === event.over.id ||
+          view !== "courses"
+        )
+          return
+        const source = query.data?.items.find(
+          (item) => item.id === event.active.id
+        )
+        const destination = query.data?.items.find(
+          (item) => item.id === event.over!.id
+        )
+        if (
+          source?.canDelete &&
+          canManage(source) &&
+          source.status !== "archived" &&
+          destination?.status === "draft" &&
+          canManage(destination)
+        )
+          updateSearch({
+            modal: "move",
+            item: source.id,
+            destination: destination.id,
+          })
+      }}
+    >
+      <WorkspacePageFrame view={view}>
+        <DataTable
+          rows={query.data?.items ?? []}
+          columns={columns}
+          getRowId={(item) => item.id}
+          ariaLabel={label}
+          layout={{
+            mode: "toggle",
+            view: urlState.layout ?? "table",
+            onViewChange: (layout) =>
+              updateSearch({ layout: layout === "grid" ? "grid" : undefined }),
+            renderCard: (item) => (
+              <CourseMoveSurface
+                item={item}
+                owns={canManage(item)}
+                enabled={view === "courses"}
+              >
+                <LibraryCard
                   item={item}
                   view={view}
-                  user={user}
-                  onSelect={openAction}
-                  onExpand={
-                    view === "courses" ? () => expandCourse(item.id) : undefined
+                  onOpen={() => openAction("details", item.id)}
+                  actions={
+                    <LibraryRowActions
+                      item={item}
+                      view={view}
+                      user={user}
+                      onSelect={openAction}
+                      onExpand={
+                        view === "courses"
+                          ? () => expandCourse(item.id)
+                          : undefined
+                      }
+                    />
                   }
                 />
-              }
-            />
-          ),
-        }}
-        search={{
-          value: search,
-          onChange: (value) => setSearch(value.slice(0, 200)),
-          label: `Search ${label}`,
-          placeholder:
-            view === "courses"
-              ? "Search courses by title or description..."
-              : "Search videos by title...",
-        }}
-        filters={
-          <>
-            {view === "courses" && (
-              <>
-                <label className="sr-only" htmlFor={`${id}-scope`}>
-                  Course scope
-                </label>
-                <SelectInput
-                  id={`${id}-scope`}
-                  value={scope}
-                  options={[
-                    { value: "all", label: "All accessible courses" },
-                    { value: "mine", label: "My courses" },
-                  ]}
-                  onValueChange={(nextScope) =>
-                    updateSearch({
-                      q: search.trim(),
-                      scope: nextScope,
-                      page: undefined,
-                    })
-                  }
-                  className="min-w-36"
-                />
-              </>
-            )}
-            <label className="sr-only" htmlFor={`${id}-status`}>
-              Filter by status
-            </label>
-            <SelectInput
-              id={`${id}-status`}
-              value={urlState.status ?? "all"}
-              options={[
-                {
-                  value: "all",
-                  label:
-                    view === "courses" ? "Draft & published" : "All statuses",
-                },
-                ...(view === "courses"
-                  ? courseStatusOptions
-                  : videoStatusOptions),
-              ]}
-              onValueChange={(status) =>
-                updateSearch({
-                  q: search.trim(),
-                  status: status === "all" ? undefined : status,
-                  page: undefined,
-                })
-              }
-              className="min-w-36"
-            />
-            {hasFilters && (
-              <Button type="button" variant="ghost" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            )}
-          </>
-        }
-        onRefresh={() => void query.refetch()}
-        pagination={{
-          pageIndex,
-          pageSize,
-          totalCount: query.data?.totalCount ?? 0,
-          onPageChange: (page) => updateSearch({ page: page + 1 }),
-          onPageSizeChange: (nextPageSize) =>
-            updateSearch({ pageSize: nextPageSize, page: undefined }),
-        }}
-        isLoading={query.isPending}
-        isFetching={query.isFetching || search.trim() !== (urlState.q ?? "")}
-        emptyState={
-          <EmptyState
-            icon={view === "courses" ? BookOpenIcon : FilmStripIcon}
-            title={
-              hasFilters
-                ? `No matching ${view === "courses" ? "courses" : "videos"}`
-                : view === "courses"
-                  ? "No courses yet"
-                  : "No videos yet"
-            }
-            description={
-              hasFilters
-                ? "Try a different search or clear your filters."
-                : view === "courses"
-                  ? "Your courses will appear here as they are created."
-                  : "Your lesson videos will appear here as they are uploaded."
-            }
-            action={
-              hasFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
+              </CourseMoveSurface>
+            ),
+          }}
+          search={{
+            value: search,
+            onChange: (value) => setSearch(value.slice(0, 200)),
+            label: `Search ${label}`,
+            placeholder:
+              view === "courses"
+                ? "Search courses by title or description..."
+                : "Search videos by title...",
+          }}
+          filters={
+            <>
+              {view === "courses" && (
+                <>
+                  <label className="sr-only" htmlFor={`${id}-scope`}>
+                    Course scope
+                  </label>
+                  <SelectInput
+                    id={`${id}-scope`}
+                    value={scope}
+                    options={[
+                      { value: "all", label: "All accessible courses" },
+                      { value: "mine", label: "My courses" },
+                    ]}
+                    onValueChange={(nextScope) =>
+                      updateSearch({
+                        q: search.trim(),
+                        scope: nextScope,
+                        page: undefined,
+                      })
+                    }
+                    className="min-w-36"
+                  />
+                </>
+              )}
+              <label className="sr-only" htmlFor={`${id}-status`}>
+                Filter by status
+              </label>
+              <SelectInput
+                id={`${id}-status`}
+                value={urlState.status ?? "all"}
+                options={[
+                  {
+                    value: "all",
+                    label:
+                      view === "courses" ? "Draft & published" : "All statuses",
+                  },
+                  ...(view === "courses"
+                    ? courseStatusOptions
+                    : videoStatusOptions),
+                ]}
+                onValueChange={(status) =>
+                  updateSearch({
+                    q: search.trim(),
+                    status: status === "all" ? undefined : status,
+                    page: undefined,
+                  })
+                }
+                className="min-w-36"
+              />
+              {hasFilters && (
+                <Button type="button" variant="ghost" onClick={clearFilters}>
                   Clear filters
                 </Button>
-              ) : (
-                <WorkspacePageAction view={view} role={user.role} />
-              )
-            }
-          />
-        }
-        errorState={
-          query.isError ? (
-            <ErrorState
-              title={`We couldn't load ${label.toLowerCase()}`}
+              )}
+            </>
+          }
+          onRefresh={() => void query.refetch()}
+          pagination={{
+            pageIndex,
+            pageSize,
+            totalCount: query.data?.totalCount ?? 0,
+            onPageChange: (page) => updateSearch({ page: page + 1 }),
+            onPageSizeChange: (nextPageSize) =>
+              updateSearch({ pageSize: nextPageSize, page: undefined }),
+          }}
+          isLoading={query.isPending}
+          isFetching={query.isFetching || search.trim() !== (urlState.q ?? "")}
+          emptyState={
+            <EmptyState
+              icon={view === "courses" ? BookOpenIcon : FilmStripIcon}
+              title={
+                hasFilters
+                  ? `No matching ${view === "courses" ? "courses" : "videos"}`
+                  : view === "courses"
+                    ? "No courses yet"
+                    : "No videos yet"
+              }
+              description={
+                hasFilters
+                  ? "Try a different search or clear your filters."
+                  : view === "courses"
+                    ? "Your courses will appear here as they are created."
+                    : "Your lesson videos will appear here as they are uploaded."
+              }
               action={
-                <Button
-                  variant="outline"
-                  disabled={query.isFetching}
-                  onClick={() => void query.refetch()}
-                >
-                  Try again
-                </Button>
+                hasFilters ? (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <WorkspacePageAction view={view} role={user.role} />
+                )
               }
             />
-          ) : undefined
-        }
-      />
-      {view === "courses" &&
-        urlState.modal &&
-        urlState.modal !== "upload" &&
-        urlState.modal !== "resume" &&
-        urlState.modal !== "preview" && (
-          <CourseLibraryDialog
-            key={`${urlState.modal}-${urlState.item ?? "new"}`}
-            modal={urlState.modal}
+          }
+          errorState={
+            query.isError ? (
+              <ErrorState
+                title={`We couldn't load ${label.toLowerCase()}`}
+                action={
+                  <Button
+                    variant="outline"
+                    disabled={query.isFetching}
+                    onClick={() => void query.refetch()}
+                  >
+                    Try again
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
+        />
+        {view === "courses" &&
+          urlState.modal &&
+          urlState.modal !== "upload" &&
+          urlState.modal !== "resume" &&
+          urlState.modal !== "preview" &&
+          urlState.modal !== "move" && (
+            <CourseLibraryDialog
+              key={`${urlState.modal}-${urlState.item ?? "new"}`}
+              modal={urlState.modal}
+              id={urlState.item}
+              user={user}
+              onClose={closeAction}
+              onChanged={changed}
+            />
+          )}
+        {view === "courses" && urlState.modal === "move" && urlState.item && (
+          <CourseMoveDialog
+            sourceId={urlState.item}
+            destinationId={urlState.destination}
+            user={user}
+            onDestination={(destination) => updateSearch({ destination })}
+            onClose={closeAction}
+            onChanged={changed}
+          />
+        )}
+        {view === "videos" &&
+          (urlState.modal === "upload" || urlState.modal === "resume") && (
+            <VideoUploadDialog
+              key={`${urlState.modal}-${urlState.item ?? "new"}`}
+              assetId={urlState.modal === "resume" ? urlState.item : undefined}
+              user={user}
+              onClose={closeAction}
+              onChanged={changed}
+            />
+          )}
+        {view === "videos" && urlState.modal === "delete" && urlState.item && (
+          <VideoDeleteDialog
             id={urlState.item}
             user={user}
             onClose={closeAction}
             onChanged={changed}
           />
         )}
-      {view === "videos" &&
-        (urlState.modal === "upload" || urlState.modal === "resume") && (
-          <VideoUploadDialog
-            key={`${urlState.modal}-${urlState.item ?? "new"}`}
-            assetId={urlState.modal === "resume" ? urlState.item : undefined}
-            user={user}
-            onClose={closeAction}
-            onChanged={changed}
-          />
-        )}
-      {view === "videos" && urlState.modal === "delete" && urlState.item && (
-        <VideoDeleteDialog id={urlState.item} user={user} onClose={closeAction} onChanged={changed} />
-      )}
-      {view === "videos" &&
-        (urlState.modal === "details" || urlState.modal === "preview") &&
-        urlState.item && (
-          <VideoLibraryDialog
-            key={`${urlState.modal}-${urlState.item}`}
-            id={urlState.item}
-            preview={urlState.modal === "preview"}
-            user={user}
-            onClose={closeAction}
-            onChanged={changed}
-          />
-        )}
-    </WorkspacePageFrame>
+        {view === "videos" &&
+          (urlState.modal === "details" || urlState.modal === "preview") &&
+          urlState.item && (
+            <VideoLibraryDialog
+              key={`${urlState.modal}-${urlState.item}`}
+              id={urlState.item}
+              preview={urlState.modal === "preview"}
+              user={user}
+              onClose={closeAction}
+              onChanged={changed}
+            />
+          )}
+      </WorkspacePageFrame>
+      <DragOverlay>
+        {dragTitle ? (
+          <div className="rounded-lg border border-primary bg-background px-4 py-3 font-medium shadow-lg">
+            {dragTitle}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }

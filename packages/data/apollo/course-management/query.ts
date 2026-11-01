@@ -1,4 +1,6 @@
 export {
+  MoveCourseIntoCourseDocument,
+  CourseMovePreviewDocument,
   SetCoursePrivacyDocument,
   SetLessonPrivacyDocument,
   LessonAccessGrantsDocument,

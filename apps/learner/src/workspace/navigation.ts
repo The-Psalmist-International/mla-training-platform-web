@@ -3,6 +3,7 @@ export const learnerTabs = [
   { id: "learning", label: "My learning" },
   { id: "library", label: "Course library" },
   { id: "results", label: "Results" },
+  { id: "gradebook", label: "Gradebook" },
 ] as const
 
 export type LearnerTab = (typeof learnerTabs)[number]["id"]
@@ -11,6 +12,8 @@ export type LearnerSearch = {
   page: number
   pageSize?: number
   q?: string
+  attempt?: string
+  gradeCourse?: string
 }
 
 export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
@@ -23,6 +26,20 @@ export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
   const size = Number(search.pageSize)
   return {
     tab,
+    ...(tab === "gradebook" &&
+    typeof search.gradeCourse === "string" &&
+    /^[0-9a-f-]{36}$/i.test(search.gradeCourse)
+      ? {
+          gradeCourse: search.gradeCourse,
+        }
+      : {}),
+    ...(tab === "gradebook" &&
+    typeof search.attempt === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      search.attempt
+    )
+      ? { attempt: search.attempt }
+      : {}),
     page:
       tab !== "overview" &&
       typeof page === "number" &&
@@ -31,7 +48,8 @@ export function learnerSearch(search: Record<string, unknown>): LearnerSearch {
       page <= 100000
         ? page
         : 1,
-    ...(tab === "learning" && [10, 50, 100].includes(size)
+    ...(["learning", "gradebook"].includes(tab) &&
+    [10, 20, 50, 100].includes(size)
       ? { pageSize: size }
       : {}),
     ...(tab === "learning" && typeof search.q === "string" && search.q

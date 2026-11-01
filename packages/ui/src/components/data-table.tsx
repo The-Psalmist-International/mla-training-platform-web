@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react"
+import { Fragment, useId, useState, type ReactNode } from "react"
 import { SquaresFourIcon } from "@phosphor-icons/react/dist/csr/SquaresFour"
 import { TableIcon } from "@phosphor-icons/react/dist/csr/Table"
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwise"
@@ -39,6 +39,9 @@ export type DataTableLayout<TRow> =
     ))
 
 export interface DataTableProps<TRow> {
+  /** Detail rows inside another table: omit the toolbar, visible headings and footer. */
+  embedded?: boolean
+  renderExpandedRow?: (row: TRow) => ReactNode
   rows: TRow[]
   columns: DataTableColumn<TRow>[]
   getRowId: (row: TRow) => string
@@ -72,6 +75,8 @@ export interface DataTableProps<TRow> {
 
 export function DataTable<TRow>({
   rows,
+  embedded = false,
+  renderExpandedRow,
   columns,
   getRowId,
   ariaLabel,
@@ -134,84 +139,86 @@ export function DataTable<TRow>({
         className
       )}
     >
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
-        {search && (
-          <div className="relative w-full sm:w-72">
-            <label htmlFor={`${id}-search`} className="sr-only">
-              {search.label ?? "Search"}
-            </label>
-            <MagnifyingGlassIcon
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              id={`${id}-search`}
-              type="search"
-              value={search.value}
-              onChange={(event) => search.onChange(event.target.value)}
-              placeholder={search.placeholder ?? "Search…"}
-              className="pl-9"
-            />
-          </div>
-        )}
-        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-          {filters}
-          {layout.mode === "toggle" && (
-            <div
-              role="group"
-              aria-label={`${ariaLabel} layout`}
-              className="flex items-center gap-1 rounded-md border border-border p-1"
-            >
-              {(
-                [
-                  ["table", TableIcon, "Table view"],
-                  ["grid", SquaresFourIcon, "Grid view"],
-                ] as const
-              ).map(([value, Icon, label]) => (
-                <Tooltip key={value}>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type="button"
-                        variant={view === value ? "secondary" : "ghost"}
-                        size="icon-sm"
-                        aria-label={label}
-                        aria-pressed={view === value}
-                        onClick={() => changeView(value)}
-                      />
-                    }
-                  >
-                    <Icon aria-hidden className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>{label}</TooltipContent>
-                </Tooltip>
-              ))}
+      {!embedded && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
+          {search && (
+            <div className="relative w-full sm:w-72">
+              <label htmlFor={`${id}-search`} className="sr-only">
+                {search.label ?? "Search"}
+              </label>
+              <MagnifyingGlassIcon
+                aria-hidden
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id={`${id}-search`}
+                type="search"
+                value={search.value}
+                onChange={(event) => search.onChange(event.target.value)}
+                placeholder={search.placeholder ?? "Search…"}
+                className="pl-9"
+              />
             </div>
           )}
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={`Refresh ${ariaLabel}`}
-                  disabled={isLoading || isFetching}
-                  onClick={onRefresh}
-                />
-              }
-            >
-              <ArrowClockwiseIcon aria-hidden className="size-4" />
-            </TooltipTrigger>
-            <TooltipContent>Refresh {ariaLabel}</TooltipContent>
-          </Tooltip>
+          <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+            {filters}
+            {layout.mode === "toggle" && (
+              <div
+                role="group"
+                aria-label={`${ariaLabel} layout`}
+                className="flex items-center gap-1 rounded-md border border-border p-1"
+              >
+                {(
+                  [
+                    ["table", TableIcon, "Table view"],
+                    ["grid", SquaresFourIcon, "Grid view"],
+                  ] as const
+                ).map(([value, Icon, label]) => (
+                  <Tooltip key={value}>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant={view === value ? "secondary" : "ghost"}
+                          size="icon-sm"
+                          aria-label={label}
+                          aria-pressed={view === value}
+                          onClick={() => changeView(value)}
+                        />
+                      }
+                    >
+                      <Icon aria-hidden className="size-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>{label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            )}
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Refresh ${ariaLabel}`}
+                    disabled={isLoading || isFetching}
+                    onClick={onRefresh}
+                  />
+                }
+              >
+                <ArrowClockwiseIcon aria-hidden className="size-4" />
+              </TooltipTrigger>
+              <TooltipContent>Refresh {ariaLabel}</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
-      </div>
+      )}
       <div
         role="region"
         aria-label={`${ariaLabel} ${view} scroll area`}
         tabIndex={0}
-        className="min-h-0 min-w-0 flex-1 overflow-auto outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-ring/25 [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 min-w-0 flex-1 [scrollbar-width:none] overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring/25 [&::-webkit-scrollbar]:hidden"
       >
         {view === "grid" && layout.mode !== "table" ? (
           hasError ? (
@@ -266,7 +273,13 @@ export function DataTable<TRow>({
             aria-busy={!hasError && (isLoading || isFetching)}
           >
             <caption className="sr-only">{ariaLabel}</caption>
-            <thead className="sticky top-0 z-10 h-9 text-muted-foreground">
+            <thead
+              className={
+                embedded
+                  ? "sr-only"
+                  : "sticky top-0 z-10 h-9 text-muted-foreground"
+              }
+            >
               <tr>
                 {columns.map((column) => (
                   <th
@@ -329,87 +342,101 @@ export function DataTable<TRow>({
                   </td>
                 </tr>
               ) : (
-                rows.map((row) => (
-                  <tr
-                    key={getRowId(row)}
-                    className="even:bg-muted/60 hover:bg-muted/80"
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={column.id}
-                        className={cn(
-                          "px-3 py-2.5 whitespace-nowrap",
-                          column.className
-                        )}
-                      >
-                        {column.cell(row)}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                rows.map((row) => {
+                  const expanded = renderExpandedRow?.(row)
+                  return (
+                    <Fragment key={getRowId(row)}>
+                      <tr className="even:bg-muted/60 hover:bg-muted/80">
+                        {columns.map((column) => (
+                          <td
+                            key={column.id}
+                            className={cn(
+                              "px-3 py-2.5 whitespace-nowrap",
+                              column.className
+                            )}
+                          >
+                            {column.cell(row)}
+                          </td>
+                        ))}
+                      </tr>
+                      {expanded && (
+                        <tr>
+                          <td
+                            colSpan={columns.length}
+                            className="bg-muted/20 px-4 py-5"
+                          >
+                            {expanded}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })
               )}
             </tbody>
           </table>
         )}
       </div>
-      <footer className="sticky bottom-0 z-10 grid w-full shrink-0 grid-cols-2 items-center gap-3 bg-background py-4 @4xl/data-table:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-        <p
-          aria-live="polite"
-          className="col-start-1 row-start-1 min-w-0 text-sm text-muted-foreground"
-        >
-          {hasError
-            ? "Unable to load results"
-            : isLoading
-              ? "Loading results…"
-              : `Showing ${start} to ${rows.length === 0 ? 0 : end} out of ${totalCount}`}
-        </p>
-        <nav
-          aria-label={`${ariaLabel} pagination`}
-          className="col-span-2 row-start-2 grid w-full max-w-md grid-cols-4 gap-2 justify-self-center @4xl/data-table:col-span-1 @4xl/data-table:col-start-2 @4xl/data-table:row-start-1 @4xl/data-table:w-[28rem]"
-        >
-          {navigation.map(([label, Icon, page, boundary]) => (
-            <Button
-              key={label}
-              type="button"
-              variant="outline"
-              className="h-8 w-full gap-1 px-2 shadow-none disabled:border-transparent disabled:bg-muted disabled:text-muted-foreground"
-              aria-label={label}
-              title={label}
-              disabled={disabled || boundary}
-              onClick={() => onPageChange(page)}
-            >
-              {label !== "Next page" && (
-                <Icon aria-hidden className="size-3.5" />
-              )}
-              {label === "Previous page" && (
-                <span className="hidden @sm/data-table:inline">Previous</span>
-              )}
-              {label === "Next page" && (
-                <>
-                  <span className="hidden @sm/data-table:inline">Next</span>
+      {!embedded && (
+        <footer className="sticky bottom-0 z-10 grid w-full shrink-0 grid-cols-2 items-center gap-3 bg-background py-4 @4xl/data-table:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <p
+            aria-live="polite"
+            className="col-start-1 row-start-1 min-w-0 text-sm text-muted-foreground"
+          >
+            {hasError
+              ? "Unable to load results"
+              : isLoading
+                ? "Loading results…"
+                : `Showing ${start} to ${rows.length === 0 ? 0 : end} out of ${totalCount}`}
+          </p>
+          <nav
+            aria-label={`${ariaLabel} pagination`}
+            className="col-span-2 row-start-2 grid w-full max-w-md grid-cols-4 gap-2 justify-self-center @4xl/data-table:col-span-1 @4xl/data-table:col-start-2 @4xl/data-table:row-start-1 @4xl/data-table:w-[28rem]"
+          >
+            {navigation.map(([label, Icon, page, boundary]) => (
+              <Button
+                key={label}
+                type="button"
+                variant="outline"
+                className="h-8 w-full gap-1 px-2 shadow-none disabled:border-transparent disabled:bg-muted disabled:text-muted-foreground"
+                aria-label={label}
+                title={label}
+                disabled={disabled || boundary}
+                onClick={() => onPageChange(page)}
+              >
+                {label !== "Next page" && (
                   <Icon aria-hidden className="size-3.5" />
-                </>
-              )}
-            </Button>
-          ))}
-        </nav>
-        <div className="col-start-2 row-start-1 justify-self-end @4xl/data-table:col-start-3">
-          <label htmlFor={`${id}-page-size`} className="sr-only">
-            Rows per page
-          </label>
-          <SelectInput
-            id={`${id}-page-size`}
-            value={pageSize}
-            onValueChange={onPageSizeChange}
-            disabled={unavailable || isFetching}
-            options={pageSizes.map((size) => ({
-              value: size,
-              label: `${size} / page`,
-            }))}
-            className="h-8 min-w-24 px-2"
-          />
-        </div>
-      </footer>
+                )}
+                {label === "Previous page" && (
+                  <span className="hidden @sm/data-table:inline">Previous</span>
+                )}
+                {label === "Next page" && (
+                  <>
+                    <span className="hidden @sm/data-table:inline">Next</span>
+                    <Icon aria-hidden className="size-3.5" />
+                  </>
+                )}
+              </Button>
+            ))}
+          </nav>
+          <div className="col-start-2 row-start-1 justify-self-end @4xl/data-table:col-start-3">
+            <label htmlFor={`${id}-page-size`} className="sr-only">
+              Rows per page
+            </label>
+            <SelectInput
+              id={`${id}-page-size`}
+              value={pageSize}
+              onValueChange={onPageSizeChange}
+              disabled={unavailable || isFetching}
+              options={pageSizes.map((size) => ({
+                value: size,
+                label: `${size} / page`,
+              }))}
+              className="h-8 min-w-24 px-2"
+            />
+          </div>
+        </footer>
+      )}
     </div>
   )
 }
