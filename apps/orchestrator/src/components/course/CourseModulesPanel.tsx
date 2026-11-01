@@ -23,6 +23,7 @@ import { PencilSimpleIcon } from "@phosphor-icons/react/dist/csr/PencilSimple"
 import { ArrowUpIcon } from "@phosphor-icons/react/dist/csr/ArrowUp"
 import { ArrowDownIcon } from "@phosphor-icons/react/dist/csr/ArrowDown"
 import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive"
+import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash"
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react/dist/csr/ArrowsLeftRight"
 import { ListChecksIcon } from "@phosphor-icons/react/dist/csr/ListChecks"
 import { DotsSixVerticalIcon } from "@phosphor-icons/react/dist/csr/DotsSixVertical"
@@ -254,6 +255,13 @@ function SortableModule({
           onSelect: () =>
             workspace.open("archive-module", { moduleId: module.id }),
         },
+        {
+          label: "Delete module permanently",
+          icon: <TrashIcon aria-hidden />,
+          destructive: true,
+          disabled: task.busy || !workspace.course.canDelete,
+          onSelect: () => workspace.open("delete-module", { moduleId: module.id }),
+        },
       ]
     : []
   return (
@@ -467,6 +475,13 @@ function SortableLesson({
           destructive: true,
           disabled: task.busy,
           onSelect: () => workspace.open("archive-lesson", select),
+        },
+        {
+          label: "Delete lesson permanently",
+          icon: <TrashIcon aria-hidden />,
+          destructive: true,
+          disabled: task.busy || !workspace.course.canDelete,
+          onSelect: () => workspace.open("delete-lesson", select),
         },
       ]
     : []

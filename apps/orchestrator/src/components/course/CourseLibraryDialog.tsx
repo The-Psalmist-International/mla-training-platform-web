@@ -47,6 +47,7 @@ const titles: Record<CourseModal, string> = {
   publish: "Publish course",
   unpublish: "Return course to draft",
   archive: "Archive course",
+  delete: "Delete course permanently",
 }
 export function CourseLibraryDialog({
   modal,
@@ -156,7 +157,7 @@ function CourseActionDialog({
           ? course?.status === "draft"
           : modal === "unpublish"
             ? course?.status === "published"
-            : course?.status !== "archived")))
+            : modal === "delete" || course?.status !== "archived")))
   const form = useFormik<CourseFormValues>({
     initialValues: {
       thumbnailUrl: course?.thumbnailUrl ?? "",
@@ -210,7 +211,7 @@ function CourseActionDialog({
           pending.current = false
           helpers.setSubmitting(false)
           onChanged(
-            `${result.title} ${modal === "publish" ? "published" : modal === "unpublish" ? "returned to draft" : "archived"}.`
+            `${modal === "delete" ? course.title : result.title} ${modal === "publish" ? "published" : modal === "unpublish" ? "returned to draft" : modal === "delete" ? "deleted permanently" : "archived"}.`
           )
         }
         onClose()
@@ -244,7 +245,7 @@ function CourseActionDialog({
   const close = () => {
     if (!pending.current) onClose()
   }
-  if (["publish", "unpublish", "archive"].includes(modal)) {
+  if (["publish", "unpublish", "archive", "delete"].includes(modal)) {
     const hasContent = !!course?.modules.some((module) => module.items.length)
     const description = !available
       ? "This course or action is no longer available. Close the dialog and refresh the library."
@@ -254,7 +255,9 @@ function CourseActionDialog({
           : "Add at least one section with a lesson before publishing. A title and description are not enough."
         : modal === "unpublish"
           ? `Return “${course?.title}” to draft so its content can be edited? It will no longer be available as a published course.`
-          : `Archive “${course?.title}”? It will leave the default course list, while its historical records are retained.`
+          : modal === "archive"
+            ? `Archive “${course?.title}”? It will leave the default course list, while its historical records are retained.`
+            : `Delete “${course?.title}” permanently? This only succeeds when the course has no learner enrollment history. Otherwise, archive it instead.`
     return (
       <ConfirmationDialog
         title={titles[modal]}
@@ -273,7 +276,7 @@ function CourseActionDialog({
             </Button>
             {available && (
               <Button
-                variant={modal === "archive" ? "destructive" : "default"}
+                variant={modal === "archive" || modal === "delete" ? "destructive" : "default"}
                 disabled={
                   form.isSubmitting || (modal === "publish" && !hasContent)
                 }

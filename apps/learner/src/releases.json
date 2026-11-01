@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-01",
+    "title": "Your grades and certificates",
+    "summary": "Review assessment results by course and open your earned certificates.",
+    "changes": [
+      { "type": "new", "text": "Expand courses in your gradebook to see assessment attempts, scores, and grading status." },
+      { "type": "fixed", "text": "Preview certificates in the app and download a PDF to keep or share." },
+      { "type": "new", "text": "Share a certificate verification link directly from its viewer." }
+    ]
+  },
+  {
+    "version": "0.3.0",
+    "date": "2026-11-01",
+    "title": "More ways to answer assessments",
+    "summary": "Submit videos and documents as assessment answers while keeping your learning history.",
+    "changes": [
+      { "type": "new", "text": "Answer assessment questions with a video upload or recording." },
+      { "type": "new", "text": "Upload PDF, Word, or PowerPoint assessment answers up to 20 MB." },
+      { "type": "improved", "text": "Previous video assignments and reviews are retained in assessment history." }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-10-20",
     "title": "Read and listen in your course",

@@ -7,6 +7,7 @@ import {
   PUBLISH_COURSE_MUTATION,
   UNPUBLISH_COURSE_MUTATION,
   ARCHIVE_COURSE_MUTATION,
+  DELETE_COURSE_MUTATION,
   CREATE_COURSE_MODULE_MUTATION,
   VIDEO_ASSET_DETAILS_QUERY,
   PREVIEW_LESSON_VIDEO_QUERY,
@@ -77,7 +78,7 @@ export const courseModuleSchema = yup.object({
     .required("Enter a section title.")
     .max(200, "Title must be 200 characters or fewer."),
 })
-export type CourseAction = "publish" | "unpublish" | "archive"
+export type CourseAction = "publish" | "unpublish" | "archive" | "delete"
 export function courseDetailsOptions(
   clients: DataClients,
   user: CurrentUser,
@@ -170,13 +171,14 @@ export async function changeCourseStatus(
     if (!result.data) throw new Error("Missing unpublication response")
     return result.data.unpublishCourse
   }
-  const result = await clients.apolloClient.mutate({
-    mutation: ARCHIVE_COURSE_MUTATION,
-    context: { toast: false },
-    variables: { id },
-  })
-  if (!result.data) throw new Error("Missing archive response")
-  return result.data.archiveCourse
+  if (action === "archive") {
+    const result = await clients.apolloClient.mutate({ mutation: ARCHIVE_COURSE_MUTATION, context: { toast: false }, variables: { id } })
+    if (!result.data) throw new Error("Missing archive response")
+    return result.data.archiveCourse
+  }
+  const result = await clients.apolloClient.mutate({ mutation: DELETE_COURSE_MUTATION, context: { toast: false }, variables: { id } })
+  if (!result.data?.deleteCourse) throw new Error("Missing course deletion response")
+  return { id, status: "archived" as const, title: "" }
 }
 export function videoDetailsOptions(
   clients: DataClients,

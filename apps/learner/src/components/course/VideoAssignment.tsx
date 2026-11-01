@@ -44,11 +44,15 @@ export function VideoAssignment({
   enrollmentId,
   user,
   refresh,
+  question,
+  assessmentAttemptId,
 }: {
   lesson: CourseLesson
   enrollmentId: string
   user: CurrentUser
   refresh: () => Promise<void>
+  question?: { id: string; prompt: string; maxDurationSeconds?: number | null }
+  assessmentAttemptId?: string
 }) {
   const { dataClients } = useRouter().options.context
   const [error, setError] = useState("")
@@ -64,7 +68,7 @@ export function VideoAssignment({
       user,
       "submissions",
       MY_VIDEO_SUBMISSIONS_QUERY,
-      { enrollmentId, itemId: lesson.id, limit: 1, offset: 0 }
+      { enrollmentId, itemId: lesson.id, questionId: question?.id, assessmentAttemptId, limit: 1, offset: 0 }
     ),
     refetchInterval: (q) =>
       ["uploading", "processing", "pending_review"].includes(
@@ -120,6 +124,8 @@ export function VideoAssignment({
                   input: {
                     enrollmentId,
                     itemId: lesson.id,
+                    questionId: question?.id,
+                    assessmentAttemptId,
                     mimeType: submissionMimeType(file)!,
                     requestKey:
                       requestKey.current ??
@@ -180,7 +186,7 @@ export function VideoAssignment({
     !submissionStatus ||
     ["uploading", "needs_revision", "failed"].includes(submissionStatus)
   const [method, setMethod] = useState<"upload" | "record">("upload")
-  const maxDurationSeconds = lesson.videoPrompt?.maxDurationSeconds ?? 300
+  const maxDurationSeconds = question?.maxDurationSeconds ?? lesson.videoPrompt?.maxDurationSeconds ?? 900
   const useRecording = async (file: File) => {
     await form.setFieldValue("file", file)
     await form.setFieldTouched("file", true, false)
@@ -188,7 +194,7 @@ export function VideoAssignment({
   }
   return (
     <section className="space-y-5 pt-6">
-      <Markdown value={lesson.videoPrompt?.instructions ?? ""} />
+      <Markdown value={question?.prompt ?? lesson.videoPrompt?.instructions ?? ""} />
       <div className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3">
         <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
@@ -198,7 +204,7 @@ export function VideoAssignment({
             />
             <dt className="text-muted-foreground">Maximum length</dt>
             <dd className="font-medium tabular-nums">
-              {formatDuration(lesson.videoPrompt?.maxDurationSeconds ?? 300)}
+              {formatDuration(maxDurationSeconds)}
             </dd>
           </div>
         </dl>

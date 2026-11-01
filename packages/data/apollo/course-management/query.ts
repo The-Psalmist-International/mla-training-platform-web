@@ -1,4 +1,6 @@
 export {
+  MoveCourseIntoCourseDocument,
+  CourseMovePreviewDocument,
   SetCoursePrivacyDocument,
   SetLessonPrivacyDocument,
   LessonAccessGrantsDocument,
@@ -9,9 +11,11 @@ export {
   CourseManagementDocument,
   ManageModuleDocument,
   ArchiveModuleDocument,
+  DeleteModuleDocument,
   ReorderModulesDocument,
   ReorderLessonsDocument,
   ArchiveLessonDocument,
+  DeleteLessonDocument,
   MoveLessonDocument,
   AddTextLessonDocument,
   EditTextLessonDocument,

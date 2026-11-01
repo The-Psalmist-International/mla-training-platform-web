@@ -12,6 +12,7 @@ export {
   RefreshLessonVideoUploadDocument as REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
   SyncLessonVideoAssetDocument as SYNC_LESSON_VIDEO_ASSET_MUTATION,
   SetLessonVideoThumbnailDocument as SET_LESSON_VIDEO_THUMBNAIL_MUTATION,
+  DeleteLessonVideoAssetDocument as DELETE_LESSON_VIDEO_ASSET_MUTATION,
 } from "../../src/generated/graphql"
 export type { CreateLessonVideoUploadMutation } from "../../src/generated/graphql"
 export type {

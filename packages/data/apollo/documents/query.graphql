@@ -7,6 +7,21 @@ mutation CreateLessonDocumentUpload($input: LessonFileUploadInput!) {
 mutation FinalizeLessonDocumentUpload($id: ID!) {
   finalizeLessonFileUpload(id: $id) { id filename format sizeBytes status }
 }
+mutation CreateAssessmentDocumentUpload($input: AssessmentFileUploadInput!) {
+  createAssessmentFileUpload(input: $input) {
+    asset { id filename format sizeBytes status }
+    upload { endpoint publicId timestamp apiKey signature }
+  }
+}
+mutation FinalizeAssessmentDocumentUpload($attemptId: ID!, $questionId: ID!, $id: ID!) {
+  finalizeAssessmentFileUpload(attemptId: $attemptId, questionId: $questionId, id: $id) { id filename format sizeBytes status }
+}
+query AssessmentDocumentAsset($attemptId: ID!, $questionId: ID!) {
+  assessmentFileAsset(attemptId: $attemptId, questionId: $questionId) { id filename format sizeBytes status }
+}
+query AssessmentDocumentPreview($attemptId: ID!, $questionId: ID!) {
+  assessmentFilePreview(attemptId: $attemptId, questionId: $questionId) { url expires }
+}
 query LessonDocumentAsset($id: ID!) {
   lessonFileAsset(id: $id) { id filename format sizeBytes status }
 }

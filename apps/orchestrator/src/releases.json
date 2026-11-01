@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-01",
+    "title": "Organize courses into modules",
+    "summary": "Combine unenrolled courses into a draft course while preserving lesson content and privacy.",
+    "changes": [
+      { "type": "new", "text": "Drag a course onto another draft course to move it as a module, with confirmation before moving." },
+      { "type": "new", "text": "Use Move into another course from course actions to choose a destination without dragging." },
+      { "type": "improved", "text": "Courses with enrollment history cannot be moved. Source courses are archived after a successful move." }
+    ]
+  },
+  {
+    "version": "0.3.0",
+    "date": "2026-11-01",
+    "title": "Assessment uploads and safer content management",
+    "summary": "Collect video and document answers and protect learner history when managing content.",
+    "changes": [
+      { "type": "new", "text": "Add video upload and file upload questions to assessments." },
+      { "type": "improved", "text": "Review document answers alongside written assessment answers and retain existing video review screens." },
+      { "type": "new", "text": "Permanently delete unused courses and content; courses with learner enrollment history must be archived." },
+      { "type": "improved", "text": "Archived courses are unavailable to learners, including enrolled learners." }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-10-20",
     "title": "More lesson formats",

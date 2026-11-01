@@ -1,6 +1,13 @@
+mutation MoveCourseIntoCourse($sourceId: ID!, $destinationId: ID!) {
+  moveCourseIntoCourse(sourceId: $sourceId, destinationId: $destinationId) { id title }
+}
+query CourseMovePreview($id: ID!) {
+  course(id: $id) { id title ownerId status canDelete modules { id items { id } } }
+}
 query CourseManagement($id: ID!) {
   course(id: $id) {
     id
+    canDelete
     ownerId
     title
     description
@@ -49,6 +56,8 @@ query CourseManagement($id: ID!) {
             position
             explanation
             referenceAnswer
+            maxDurationSeconds
+            requiresReview
             options {
               id
               label
@@ -127,6 +136,9 @@ mutation ArchiveModule($courseId: ID!, $moduleId: ID!) {
     id
   }
 }
+mutation DeleteModule($courseId: ID!, $moduleId: ID!) {
+  deleteCourseModule(courseId: $courseId, moduleId: $moduleId)
+}
 mutation ReorderModules($courseId: ID!, $orderedIds: [ID!]!) {
   reorderCourseModules(courseId: $courseId, orderedIds: $orderedIds) {
     id
@@ -145,6 +157,9 @@ mutation ArchiveLesson($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
   archiveCourseItem(courseId: $courseId, moduleId: $moduleId, itemId: $itemId) {
     id
   }
+}
+mutation DeleteLesson($courseId: ID!, $moduleId: ID!, $itemId: ID!) {
+  deleteCourseItem(courseId: $courseId, moduleId: $moduleId, itemId: $itemId)
 }
 mutation MoveLesson(
   $courseId: ID!
@@ -406,6 +421,8 @@ query CourseAttemptReview($id: ID!) {
         type
         prompt
         points
+        maxDurationSeconds
+        requiresReview
         options {
           id
           label
@@ -413,6 +430,7 @@ query CourseAttemptReview($id: ID!) {
       }
       selectedOptionId
       textAnswer
+      fileAssetId
       awardedPoints
       feedback
       explanation
