@@ -5,8 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": ["VITE_GRAPHQL_URL", "VITE_WORKSPACE_URL", "VITE_LEARNER_URL"],
-      "outputs": ["dist/**", ".output/**"]
+      "env": ["VITE_GRAPHQL_URL", "VITE_WORKSPACE_URL", "VITE_LEARNER_URL", "NITRO_PRESET", "VERCEL", "VERCEL_ENV", "VERCEL_TARGET_ENV"],
+      "outputs": ["dist/**", ".output/**", ".vercel/output/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
