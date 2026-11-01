@@ -29,7 +29,8 @@ describe("learner release notes", () => {
       <ReleaseTimeline releases={[latest, older]} />
     )
     expect(html).toContain('aria-label="Release history"')
-    expect(html).toContain('dateTime="2026-10-20"')
+    expect(html).toContain(`dateTime="${latest.date}"`)
+    expect(html).toContain(`dateTime="${older.date}"`)
     expect(html).toContain("Previous learner release")
     expect(html.indexOf(latest.title)).toBeLessThan(html.indexOf(older.title))
     expect(html.match(/Latest release/g)).toHaveLength(1)
@@ -41,7 +42,7 @@ describe("learner release notes", () => {
     expect(html).toContain("motion-reduce:")
     expect(html).toContain("bg-success text-success-foreground")
     expect(html.indexOf(latest.title)).toBeLessThan(
-      html.indexOf('dateTime="2026-10-20"')
+      html.indexOf(`dateTime="${latest.date}"`)
     )
     expect(html.indexOf(latest.changes[0]!.text)).toBeLessThan(
       html.indexOf('data-change-type="new"')
