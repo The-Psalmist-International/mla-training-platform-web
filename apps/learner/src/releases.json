@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-11-01",
+    "title": "More ways to answer assessments",
+    "summary": "Submit videos and documents as assessment answers while keeping your learning history.",
+    "changes": [
+      { "type": "new", "text": "Answer assessment questions with a video upload or recording." },
+      { "type": "new", "text": "Upload PDF, Word, or PowerPoint assessment answers up to 20 MB." },
+      { "type": "improved", "text": "Previous video assignments and reviews are retained in assessment history." }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-10-20",
     "title": "Read and listen in your course",

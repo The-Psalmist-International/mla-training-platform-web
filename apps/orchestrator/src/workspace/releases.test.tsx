@@ -29,6 +29,8 @@ describe("orchestrator release notes", () => {
       <ReleaseTimeline releases={[latest, older]} />
     )
     expect(html).toContain('aria-label="Release history"')
+    expect(html).toContain(`dateTime="${latest.date}"`)
+    expect(html).toContain(`dateTime="${older.date}"`)
     expect(html).toContain("Previous staff release")
     expect(html.indexOf(latest.title)).toBeLessThan(html.indexOf(older.title))
     expect(html.match(/Latest release/g)).toHaveLength(1)
@@ -36,7 +38,7 @@ describe("orchestrator release notes", () => {
       html.indexOf(`Changes in version ${latest.version}`)
     )
     expect(html.indexOf(latest.title)).toBeLessThan(
-      html.indexOf('dateTime="2026-10-20"')
+      html.indexOf(`dateTime="${latest.date}"`)
     )
     expect(html).toContain("bg-success text-success-foreground")
     expect(html.indexOf(latest.changes[0]!.text)).toBeLessThan(

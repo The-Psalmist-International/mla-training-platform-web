@@ -1,5 +1,6 @@
 fragment CourseListFields on Course {
   id
+  canDelete
   ownerId
   title
   description
@@ -97,6 +98,9 @@ mutation ArchiveCourse($id: ID!) {
     title
     status
   }
+}
+mutation DeleteCourse($id: ID!) {
+  deleteCourse(id: $id)
 }
 mutation CreateCourseModule($courseId: ID!, $input: CourseModuleInput!) {
   createCourseModule(courseId: $courseId, input: $input) {

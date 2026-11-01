@@ -109,6 +109,7 @@ describe("learner horizontal workspace", () => {
   it("renders enrollment metadata in a grid only with no table or view toggle", () => {
     const course = {
       id: "course-1",
+      canDelete: false,
       ownerId: "instructor-1",
       title: "Workplace safety",
       description: "Essential training",
@@ -256,6 +257,7 @@ describe("learner horizontal workspace", () => {
       createElement(CourseCard, {
         course: {
           id: "course-1",
+          canDelete: false,
           ownerId: "instructor-1",
           title: "Workplace safety",
           description: "Complete essential workplace training.",

@@ -18,6 +18,7 @@ export interface LibraryItem {
   createdAt: string
   ownerId?: string
   certificateEnabled?: boolean
+  canDelete?: boolean
   durationSeconds?: number | null
   sizeBytes?: string | null
   mimeType?: string

@@ -79,6 +79,9 @@ mutation SetLessonVideoThumbnail($id: ID!, $thumbnailUrl: String) {
     ...VideoAssetListFields
   }
 }
+mutation DeleteLessonVideoAsset($id: ID!) {
+  deleteLessonVideoAsset(id: $id)
+}
 
 query MyVideoAssets($limit: Int! = 20, $offset: Int! = 0) {
   myVideoAssets(limit: $limit, offset: $offset) {

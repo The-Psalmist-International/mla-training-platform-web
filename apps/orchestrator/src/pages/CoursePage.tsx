@@ -161,10 +161,12 @@ function CourseManager({
       "add-module",
       "edit-module",
       "archive-module",
+      "delete-module",
       "add-lesson",
       "view-lesson",
       "edit-lesson",
       "archive-lesson",
+      "delete-lesson",
       "move-lesson",
     ].includes(search.action)
   return (

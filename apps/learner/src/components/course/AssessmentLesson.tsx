@@ -20,6 +20,8 @@ import { RepeatIcon } from "@phosphor-icons/react/dist/csr/Repeat"
 import { Button } from "@workspace/ui/components/button"
 import { Alert } from "@workspace/ui/components/alert"
 import { BrandLoader } from "@workspace/ui/components/brand-loader"
+import { VideoAssignment } from "./VideoAssignment"
+import { AssessmentFileUpload } from "./AssessmentFileUpload"
 import {
   learnerResource,
   learnerMutation,
@@ -193,6 +195,9 @@ export function AssessmentLesson({
         <AttemptForm
           key={attempt.id}
           attempt={attempt}
+          lesson={lesson}
+          enrollmentId={enrollmentId}
+          user={user}
           onSaved={accept}
           refresh={refresh}
           reload={() => void query.refetch()}
@@ -217,7 +222,7 @@ export function AssessmentLesson({
                   {answer.question.options.find(
                     (option) => option.id === answer.selectedOptionId
                   )?.label ??
-                    (answer.textAnswer || "No answer")}
+                    (answer.textAnswer || (["video_upload", "file_upload"].includes(answer.question.type) ? "File submitted" : "No answer"))}
                 </p>
                 {answer.feedback && (
                   <p className="mt-2 text-sm">{answer.feedback}</p>
@@ -448,12 +453,18 @@ function formatDueDate(value: string) {
 
 function AttemptForm({
   attempt,
+  lesson,
+  enrollmentId,
+  user,
   onSaved,
   refresh,
   reload,
   onExpiredNotice,
 }: {
   attempt: Attempt
+  lesson: CourseLesson
+  enrollmentId: string
+  user: CurrentUser
   onSaved: (attempt: Attempt) => void
   refresh: () => Promise<void>
   reload: () => void
@@ -467,10 +478,9 @@ function AttemptForm({
     Object.fromEntries(
       attempt.answers.map(({ question }) => [
         question.id,
-        yup
-          .string()
-          .max(10000, "Use 10,000 characters or fewer.")
-          .required("Answer this question before submitting."),
+        ["video_upload", "file_upload"].includes(question.type)
+          ? yup.string().notRequired()
+          : yup.string().max(10000, "Use 10,000 characters or fewer.").required("Answer this question before submitting."),
       ])
     )
   )
@@ -488,7 +498,7 @@ function AttemptForm({
     },
   })
   const answers = (values: Record<string, string>) =>
-    attempt.answers.map(({ question }) =>
+    attempt.answers.filter(({ question }) => !["video_upload", "file_upload"].includes(question.type)).map(({ question }) =>
       question.type === "short_answer"
         ? { questionId: question.id, textAnswer: values[question.id] ?? "" }
         : {
@@ -525,27 +535,20 @@ function AttemptForm({
     setError("")
     setSaved(false)
     try {
-      const draft = await learnerMutation(
-        dataClients,
-        SaveLearnerAssessmentDocument,
-        {
-          input: {
-            attemptId: attempt.id,
-            expectedVersion: attempt.version,
-            answers: answers(values),
-          },
-        }
-      )
-      onSaved(draft.saveAssessmentAnswers)
+      const inputAnswers = answers(values)
+      const savedAttempt = inputAnswers.length ? (await learnerMutation(dataClients, SaveLearnerAssessmentDocument, {
+        input: { attemptId: attempt.id, expectedVersion: attempt.version, answers: inputAnswers },
+      })).saveAssessmentAnswers : attempt
+      onSaved(savedAttempt)
       form.resetForm({ values })
-      if (submit && draft.saveAssessmentAnswers.status === "in_progress") {
+      if (submit && savedAttempt.status === "in_progress") {
         const result = await learnerMutation(
           dataClients,
           SubmitLearnerAssessmentDocument,
           {
             input: {
               attemptId: attempt.id,
-              expectedVersion: draft.saveAssessmentAnswers.version,
+              expectedVersion: savedAttempt.version,
             },
           }
         )
@@ -567,7 +570,7 @@ function AttemptForm({
     enableBeforeUnload: form.dirty || busy,
   })
   return (
-    <form onSubmit={form.handleSubmit} noValidate className="space-y-6">
+    <div className="space-y-6">
       {error && (
         <Alert variant="warning">
           {error}
@@ -591,7 +594,13 @@ function AttemptForm({
               ({question.points} points)
             </span>
           </legend>
-          {question.type === "short_answer" ? (
+          {question.type === "video_upload" ? (
+            <VideoAssignment lesson={lesson} enrollmentId={enrollmentId} user={user} refresh={refresh}
+              assessmentAttemptId={attempt.id}
+              question={{ id: question.id, prompt: question.prompt, maxDurationSeconds: question.maxDurationSeconds }} />
+          ) : question.type === "file_upload" ? (
+            <AssessmentFileUpload attemptId={attempt.id} questionId={question.id} user={user} disabled={busy || expired} onReady={reload} />
+          ) : question.type === "short_answer" ? (
             <>
               <label htmlFor={question.id} className="sr-only">
                 Your answer to question {index + 1}
@@ -642,7 +651,7 @@ function AttemptForm({
         </fieldset>
       ))}
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={busy || expired}>
+        <Button type="button" disabled={busy || expired} onClick={() => void form.submitForm()}>
           {busy ? "Saving…" : "Submit assessment"}
         </Button>
         <Button
@@ -659,6 +668,6 @@ function AttemptForm({
           </span>
         )}
       </div>
-    </form>
+    </div>
   )
 }

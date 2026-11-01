@@ -12,6 +12,7 @@ import {
   type CourseAttemptReviewQuery,
   type CourseSubmissionReviewQuery,
 } from "@workspace/data"
+import { AssessmentDocumentPreviewDocument } from "@workspace/data/apollo/documents/query"
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye"
 import { CheckCircleIcon } from "@phosphor-icons/react/dist/csr/CheckCircle"
 import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info"
@@ -366,12 +367,12 @@ function AssessmentReviewForm({
   task: ReturnType<typeof useCourseTask>
 }) {
   const attempt = data.assessmentAttempt
-  const short = attempt.answers.filter(
-    (answer) => answer.question.type === "short_answer"
+  const reviewable = attempt.answers.filter(
+    (answer) => answer.question.type === "short_answer" || answer.question.type === "file_upload"
   )
   const form = useFormik({
     initialValues: {
-      grades: short.map((answer) => ({
+      grades: reviewable.map((answer) => ({
         questionId: answer.question.id,
         awardedPoints: answer.awardedPoints?.toString() ?? "",
         feedback: answer.feedback ?? "",
@@ -424,11 +425,11 @@ function AssessmentReviewForm({
       <Form noValidate className="flex min-h-0 flex-1 flex-col">
         <DialogBody className="space-y-5">
           {attempt.answers.map((answer, index) => {
-            const shortIndex = short.findIndex(
+            const shortIndex = reviewable.findIndex(
               (entry) => entry.question.id === answer.question.id
             )
             const learnerAnswer =
-              answer.textAnswer ??
+              (answer.question.type === "file_upload" ? "Uploaded assessment file" : answer.textAnswer) ??
               answer.question.options.find(
                 (option) => option.id === answer.selectedOptionId
               )?.label ??
@@ -482,6 +483,14 @@ function AssessmentReviewForm({
                   <p className="mt-1 text-sm whitespace-pre-wrap">
                     {learnerAnswer}
                   </p>
+                  {answer.question.type === "file_upload" && answer.fileAssetId && (
+                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={async () => {
+                      const result = await workspace.clients.apolloClient.query({ query: AssessmentDocumentPreviewDocument,
+                        variables: { attemptId: attempt.id, questionId: answer.question.id }, fetchPolicy: "network-only" })
+                      const url = result.data?.assessmentFilePreview.url
+                      if (url) window.open(url, "_blank", "noopener,noreferrer")
+                    }}><EyeIcon aria-hidden /> Open file</Button>
+                  )}
                 </div>
                 {answer.referenceAnswer && (
                   <div className="px-3 py-2">
@@ -532,7 +541,7 @@ function AssessmentReviewForm({
               task.busy ||
               form.isSubmitting ||
               attempt.status !== "needs_grading" ||
-              !short.length
+              !reviewable.length
             }
           >
             {task.busy ? "Saving..." : "Submit grades"}

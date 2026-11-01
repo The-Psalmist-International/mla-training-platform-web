@@ -144,6 +144,8 @@ fragment LearnerAttemptFields on AssessmentAttempt {
       type
       prompt
       points
+      maxDurationSeconds
+      requiresReview
       options {
         id
         label
@@ -152,6 +154,7 @@ fragment LearnerAttemptFields on AssessmentAttempt {
     }
     selectedOptionId
     textAnswer
+    fileAssetId
     awardedPoints
     feedback
     explanation

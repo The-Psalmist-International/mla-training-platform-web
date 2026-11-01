@@ -10,6 +10,7 @@ export {
   PUBLISH_COURSE_MUTATION,
   UNPUBLISH_COURSE_MUTATION,
   ARCHIVE_COURSE_MUTATION,
+  DELETE_COURSE_MUTATION,
   CREATE_COURSE_MODULE_MUTATION,
 } from "../apollo/course/query"
 export type { CourseDetailsQuery } from "../apollo/course/query"
@@ -30,6 +31,7 @@ export {
   REFRESH_LESSON_VIDEO_UPLOAD_MUTATION,
   SYNC_LESSON_VIDEO_ASSET_MUTATION,
   SET_LESSON_VIDEO_THUMBNAIL_MUTATION,
+  DELETE_LESSON_VIDEO_ASSET_MUTATION,
 } from "../apollo/media/query"
 export type { CreateLessonVideoUploadMutation } from "../apollo/media/query"
 export type {

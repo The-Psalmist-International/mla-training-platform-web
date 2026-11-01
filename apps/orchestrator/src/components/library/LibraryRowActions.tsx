@@ -6,6 +6,7 @@ import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus"
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt"
 import { ArrowUUpLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowUUpLeft"
 import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive"
+import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash"
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play"
 import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple"
 import {
@@ -82,6 +83,13 @@ export function LibraryRowActions({
         onSelect: () => onSelect("archive", item.id),
         destructive: true,
       })
+    if (owns && item.canDelete)
+      secondary.push({
+        label: "Delete permanently",
+        icon: <TrashIcon aria-hidden />,
+        onSelect: () => onSelect("delete", item.id),
+        destructive: true,
+      })
   } else {
     if (item.status === "ready")
       secondary.push({
@@ -95,6 +103,9 @@ export function LibraryRowActions({
         icon: <UploadSimpleIcon aria-hidden />,
         onSelect: () => onSelect("resume", item.id),
       })
+    if (owns)
+      secondary.push({ label: "Delete permanently", icon: <TrashIcon aria-hidden />, destructive: true,
+        onSelect: () => onSelect("delete", item.id) })
   }
   return (
     <TableRowActions
